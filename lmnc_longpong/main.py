@@ -1,5 +1,6 @@
 import pygame
 import random
+import math
 
 # Initialize Pygame
 pygame.init()
@@ -22,8 +23,9 @@ ball_radius = 10
 paddle_width = 10
 paddle_height = 60
 paddle_speed = 5
-ball_speed_x = 3
-ball_speed_y = 3
+ball_speed = 3
+ball_max_speed = 8
+ball_min_speed = 3
 player_score = 0
 ai_score = 0
 
@@ -33,7 +35,9 @@ ai_paddle = pygame.Rect(WIDTH - paddle_width, HEIGHT // 2 - paddle_height // 2, 
 
 # Create ball
 ball = pygame.Rect(WIDTH // 2 - ball_radius // 2, HEIGHT // 2 - ball_radius // 2, ball_radius, ball_radius)
-ball_speed = [random.choice((1, -1)) * ball_speed_x, random.choice((1, -1)) * ball_speed_y]
+ball_angle = random.uniform(-math.pi / 4, math.pi / 4)
+ball_speed_x = ball_speed * math.cos(ball_angle)
+ball_speed_y = ball_speed * math.sin(ball_angle)
 
 # Function to update the score on the screen
 def draw_score():
@@ -50,22 +54,54 @@ def update_paddles():
     # Keep the paddles inside the screen
     player_paddle.y = max(min(player_paddle.y, HEIGHT - paddle_height), 0)
     ai_paddle.y = max(min(ai_paddle.y, HEIGHT - paddle_height), 0)
-
 # Function to update the ball's position
 def update_ball():
-    global player_score, ai_score
+    global player_score, ai_score, ball_speed_x, ball_speed_y
 
-    ball.x += ball_speed[0]
-    ball.y += ball_speed[1]
+    ball.x += ball_speed_x
+    ball.y += ball_speed_y
 
     # Check collision with paddles
-    if ball.colliderect(player_paddle) or ball.colliderect(ai_paddle):
-        ball_speed[0] = -ball_speed[0]
-    
+    if ball.colliderect(player_paddle):
+        delta_y = ball.centery - player_paddle.centery
+        ball_angle = math.pi / 4 * (delta_y / (paddle_height / 2))
+        ball_speed = math.hypot(ball_speed_x, ball_speed_y)
+        ball_speed_x = ball_speed * math.cos(ball_angle)
+        ball_speed_y = ball_speed * math.sin(ball_angle)
+
+        ball_speed_x = abs(ball_speed_x)  # Ensure the ball always moves towards the AI paddle
+
+        # Increase ball speed if paddle is moving in the same direction
+        if player_paddle_direction * ball_speed_y > 0:
+            ball_speed_y *= 1.2
+        # Decrease ball speed if paddle is moving in the opposite direction
+        elif player_paddle_direction * ball_speed_y < 0:
+            ball_speed_y /= 1.2
+
+        ball_speed_y = max(min(ball_speed_y, ball_max_speed), -ball_max_speed)
+
+    elif ball.colliderect(ai_paddle):
+        delta_y = ball.centery - ai_paddle.centery
+        ball_angle = math.pi - math.pi / 4 * (delta_y / (paddle_height / 2))
+        ball_speed = math.hypot(ball_speed_x, ball_speed_y)
+        ball_speed_x = ball_speed * math.cos(ball_angle)
+        ball_speed_y = ball_speed * math.sin(ball_angle)
+
+        ball_speed_x = -abs(ball_speed_x)  # Ensure the ball always moves towards the player paddle
+
+        # Increase ball speed if paddle is moving in the same direction
+        if ai_paddle_direction * ball_speed_y > 0:
+            ball_speed_y *= 1.2
+        # Decrease ball speed if paddle is moving in the opposite direction
+        elif ai_paddle_direction * ball_speed_y < 0:
+            ball_speed_y /= 1.2
+
+        ball_speed_y = max(min(ball_speed_y, ball_max_speed), -ball_max_speed)
+
     # Check collision with walls
     if ball.top <= 0 or ball.bottom >= HEIGHT:
-        ball_speed[1] = -ball_speed[1]
-    
+        ball_speed_y = -ball_speed_y
+
     # Check if the ball went out of bounds
     if ball.left <= 0:
         ai_score += 1
@@ -74,11 +110,13 @@ def update_ball():
         player_score += 1
         reset_ball()
 
-# Function to reset the ball's position
+
+# Function to reset the ball's position and speed
 def reset_ball():
     ball.center = (WIDTH // 2, HEIGHT // 2)
-    ball_speed[0] = random.choice((1, -1)) * ball_speed_x
-    ball_speed[1] = random.choice((1, -1)) * ball_speed_y
+    ball_angle = random.uniform(-math.pi / 4, math.pi / 4)
+    ball_speed_x = ball_speed * math.cos(ball_angle)
+    ball_speed_y = ball_speed * math.sin(ball_angle)
 
 # Game loop
 running = True
@@ -130,3 +168,4 @@ while running:
 
 # Quit the game
 pygame.quit()
+
