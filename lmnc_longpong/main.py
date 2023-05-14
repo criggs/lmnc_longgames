@@ -23,11 +23,17 @@ ball_radius = 10
 paddle_width = 10
 paddle_height = 60
 paddle_speed = 5
-ball_speed = 3
-ball_max_speed = 8
-ball_min_speed = 3
 player_score = 0
 ai_score = 0
+
+# Initialize ball speed variables
+ball_start_speed_x = 5
+ball_start_speed_y = 5
+ball_speed_x = random.choice([-1, 1]) * ball_start_speed_x
+ball_speed_y = random.choice([-1, 1]) * ball_start_speed_y
+ball_speed = 3
+ball_max_speed = 10
+ball_min_speed = 3
 
 # Create paddles
 player_paddle = pygame.Rect(0, HEIGHT // 2 - paddle_height // 2, paddle_width, paddle_height)
@@ -54,9 +60,11 @@ def update_paddles():
     # Keep the paddles inside the screen
     player_paddle.y = max(min(player_paddle.y, HEIGHT - paddle_height), 0)
     ai_paddle.y = max(min(ai_paddle.y, HEIGHT - paddle_height), 0)
+
+
 # Function to update the ball's position
 def update_ball():
-    global player_score, ai_score, ball_speed_x, ball_speed_y
+    global player_score, ai_score, ball_speed_x, ball_speed_y, ball_start_speed_x, ball_start_speed_y
 
     ball.x += ball_speed_x
     ball.y += ball_speed_y
@@ -80,6 +88,9 @@ def update_ball():
 
         ball_speed_y = max(min(ball_speed_y, ball_max_speed), -ball_max_speed)
 
+        # Add spin to the ball based on paddle's velocity and direction
+        ball_speed_x += paddle_speed * player_paddle_direction / 2
+
     elif ball.colliderect(ai_paddle):
         delta_y = ball.centery - ai_paddle.centery
         ball_angle = math.pi - math.pi / 4 * (delta_y / (paddle_height / 2))
@@ -98,10 +109,13 @@ def update_ball():
 
         ball_speed_y = max(min(ball_speed_y, ball_max_speed), -ball_max_speed)
 
+        # Add spin to the ball based on paddle's velocity and direction
+        ball_speed_x -= paddle_speed * ai_paddle_direction / 2
+
     # Check collision with walls
     if ball.top <= 0 or ball.bottom >= HEIGHT:
         ball_speed_y = -ball_speed_y
-
+        
     # Check if the ball went out of bounds
     if ball.left <= 0:
         ai_score += 1
@@ -110,13 +124,17 @@ def update_ball():
         player_score += 1
         reset_ball()
 
-
 # Function to reset the ball's position and speed
 def reset_ball():
+    global ball_speed_x, ball_speed_y, ball_start_speed_x, ball_start_speed_y
+
     ball.center = (WIDTH // 2, HEIGHT // 2)
-    ball_angle = random.uniform(-math.pi / 4, math.pi / 4)
-    ball_speed_x = ball_speed * math.cos(ball_angle)
-    ball_speed_y = ball_speed * math.sin(ball_angle)
+    ball_speed_x = random.choice([-1, 1]) * ball_start_speed_x
+    ball_speed_y = random.choice([-1, 1]) * ball_start_speed_y
+
+    # Reset ball starting speeds
+    ball_start_speed_x = 5
+    ball_start_speed_y = 5
 
 # Game loop
 running = True
