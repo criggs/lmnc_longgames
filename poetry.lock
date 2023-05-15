@@ -116,7 +116,22 @@ files = [
     {file = "pygame-2.4.0.tar.gz", hash = "sha256:e3603e70e96ee30af1954ce57d4922a059402f368013e7138e90f1c03d185267"},
 ]
 
+[[package]]
+name = "pyserial"
+version = "3.5"
+description = "Python Serial Port Extension"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "pyserial-3.5-py2.py3-none-any.whl", hash = "sha256:c4451db6ba391ca6ca299fb3ec7bae67a5c55dde170964c7a14ceefec02f2cf0"},
+    {file = "pyserial-3.5.tar.gz", hash = "sha256:3c77e014170dfffbd816e6ffc205e9842efb10be9f58ec16d3e8675b4925cddb"},
+]
+
+[package.extras]
+cp2110 = ["hidapi"]
+
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "125f7ccccc8677bbad3ce8b27ff9af4d60bc746a442786f0bd9812761cf390ed"
+content-hash = "12e7ffa6821efbed86b539826051805bd31ab5b0b2247c8088cff13cd49ee52c"
