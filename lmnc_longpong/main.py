@@ -1,11 +1,22 @@
 import pygame
 import random
 import math
+from multiverse import Multiverse, Display
 
-# Contants
-UPSCALE_FACTOR = 5
+# TODO: Configure display
+# display = Multiverse(
+#     #       Serial Port,       W,  H,  X,  Y
+#     Display("/dev/Fire-Alice", 53, 11, 18, 28),
+#     Display("/dev/Fire-James", 53, 11, 18, 39),
+#     Display("/dev/Fire-Susan", 53, 11, 18, 51),
+# )
 
-BOARD_COUNT = 22
+# display.setup()
+
+# Contants/Configuration
+UPSCALE_FACTOR = 1
+
+BOARD_COUNT = 10 # len(display.displays)
 MATRIX_HEIGHT = 53
 MATRIX_WIDTH = 11 * BOARD_COUNT
 
@@ -14,9 +25,27 @@ HEIGHT = MATRIX_HEIGHT * UPSCALE_FACTOR
 FPS = 30
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
-FONT_SIZE = 8 * UPSCALE_FACTOR
+FONT_SIZE = 10 * UPSCALE_FACTOR
 FONT_COLOR = WHITE
 
+BALL_RADIUS = 2 * UPSCALE_FACTOR
+PADDLE_WIDTH = 2 * UPSCALE_FACTOR
+PADDLE_HEIGHT = 10 * UPSCALE_FACTOR
+
+PLAYER_PADDLE_SPEED = 3 * UPSCALE_FACTOR
+AI_PADDLE_SPEED = 2 * UPSCALE_FACTOR
+
+BALL_MAX_SPEED = 10 * UPSCALE_FACTOR
+BALL_MIN_SPEED = 2 * UPSCALE_FACTOR
+
+MODE_ONE_PLAYER = 1
+MODE_TWO_PLAYER = 2
+MODE_AI_VS_AI = 3
+
+# Game State/Settings
+gameMode = 1
+menuSelection = True
+running = True
 
 # Helper Classes
 class Player:
@@ -42,6 +71,16 @@ class Player:
         self.speed = 0
         self.score = 0
         self.direction = 0
+        
+    def update_paddle(self):
+        global gameMode
+        speed = PLAYER_PADDLE_SPEED
+        if self.is_ai:
+            update_for_ai(self)
+            #Only use the slower ai speed if one player is human
+            speed = AI_PADDLE_SPEED if gameMode == MODE_ONE_PLAYER else PLAYER_PADDLE_SPEED
+        self.rect.y += speed * self.direction
+        self.rect.y = max(min(self.rect.y, HEIGHT - PADDLE_HEIGHT), 0)
 
 class Ball:
     def __init__(self, radius: int) -> None:
@@ -70,26 +109,18 @@ pygame.init()
 
 # Set up the game window
 
-font = pygame.font.Font("lmnc_longpong/Amble-Bold.ttf", FONT_SIZE)
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
+
 pygame.display.set_caption("Pong")
+
 clock = pygame.time.Clock()
 
-# Game variables
-ball_radius = 2 * UPSCALE_FACTOR
-paddle_width = 2 * UPSCALE_FACTOR
-paddle_height = 10 * UPSCALE_FACTOR
+font = pygame.font.Font("lmnc_longpong/Amble-Bold.ttf", FONT_SIZE)
 
-player_paddle_speed = 3 * UPSCALE_FACTOR
-ai_paddle_speed = 2 * UPSCALE_FACTOR
-
-ball_max_speed = 10 * UPSCALE_FACTOR
-ball_min_speed = 2 * UPSCALE_FACTOR
-
-# Create paddles
-player_one = Player(pygame.Rect(0, HEIGHT // 2 - paddle_height // 2, paddle_width, paddle_height))
-player_two = Player(pygame.Rect(WIDTH - paddle_width, HEIGHT // 2 - paddle_height // 2, paddle_width, paddle_height))
+# Create players
+player_one = Player(pygame.Rect(0, HEIGHT // 2 - PADDLE_HEIGHT // 2, PADDLE_WIDTH, PADDLE_HEIGHT))
+player_two = Player(pygame.Rect(WIDTH - PADDLE_WIDTH, HEIGHT // 2 - PADDLE_HEIGHT // 2, PADDLE_WIDTH, PADDLE_HEIGHT))
 
 # Create ball
 ball = Ball(2 * UPSCALE_FACTOR)
@@ -97,18 +128,9 @@ ball = Ball(2 * UPSCALE_FACTOR)
 # Function to update the score on the screen
 def draw_score():
     global font
-    text = font.render(f"P1: {player_one.score}    P2: {player_two.score}", True, FONT_COLOR)
+    text = font.render(f"{player_one.score}    {player_two.score}", True, FONT_COLOR)
     text_rect = text.get_rect(center=(WIDTH // 2, FONT_SIZE))
     screen.blit(text, text_rect)
-
-def update_paddle(player: Player):
-    speed = player_paddle_speed
-    if player.is_ai:
-        update_for_ai(player)
-        #Only use the slower ai speed if one player is human
-        speed = ai_paddle_speed if player_one.is_ai != player_two.is_ai else player_paddle_speed
-    player.rect.y += speed * player.direction
-    player.rect.y = max(min(player.rect.y, HEIGHT - paddle_height), 0)
 
 def update_for_ai(ai_player: Player):
     if ball.direction_x != ai_player.position or abs(ball.rect.centerx - ai_player.rect.centerx) > WIDTH // 2:
@@ -116,9 +138,9 @@ def update_for_ai(ai_player: Player):
         return
     
     # AI Player logic
-    if ai_player.rect.centery < ball.rect.centery - paddle_height // 2:
+    if ai_player.rect.centery < ball.rect.centery - PADDLE_HEIGHT // 2:
         ai_player.direction = 1
-    elif ai_player.rect.centery > ball.rect.centery + paddle_height // 2:
+    elif ai_player.rect.centery > ball.rect.centery + PADDLE_HEIGHT // 2:
         ai_player.direction = -1
     else:
         ai_player.direction = 0
@@ -129,10 +151,10 @@ def update_ball():
     ball.rect.y += ball.speed_y
 
     # Detect Left Paddle Collision
-    left_collision = ball.rect.left <= paddle_width and (abs(ball.rect.centery - player_one.rect.centery) <= paddle_height//2)
+    left_collision = ball.rect.left <= PADDLE_WIDTH and (abs(ball.rect.centery - player_one.rect.centery) <= PADDLE_HEIGHT//2)
     
     # Detect Right Paddle Collision
-    right_collision = ball.rect.right >= WIDTH - paddle_width and (abs(ball.rect.centery - player_two.rect.centery) <= paddle_height//2)
+    right_collision = ball.rect.right >= WIDTH - PADDLE_WIDTH and (abs(ball.rect.centery - player_two.rect.centery) <= PADDLE_HEIGHT//2)
 
     # Check collision with paddles
     if left_collision:
@@ -155,7 +177,7 @@ def update_ball():
 
 def update_ball_speed_from_collision(colliding_player: Player):
     delta_y = ball.rect.centery - colliding_player.rect.centery
-    ball.angle = math.pi / 4 * (delta_y / (paddle_height / 2))
+    ball.angle = math.pi / 4 * (delta_y / (PADDLE_HEIGHT / 2))
 
     # Increase ball speed if paddle is moving in the same direction
     if colliding_player.direction * ball.speed_y > 0:
@@ -168,32 +190,75 @@ def update_ball_speed_from_collision(colliding_player: Player):
     
 # Function to display the countdown
 def display_countdown():
-    global font
     for i in range(3, 0, -1):
         screen.fill(BLACK)
         countdown_text = font.render(str(i), True, WHITE)
-        screen.blit(countdown_text, (WIDTH // 2 - countdown_text.get_width() // 2, HEIGHT // 2 - countdown_text.get_height() // 2))
+        screen.blit(countdown_text, (WIDTH // 4 - countdown_text.get_width() // 2, HEIGHT // 2 - countdown_text.get_height() // 2))
+        screen.blit(countdown_text, (3 * WIDTH // 4 - countdown_text.get_width() // 2, HEIGHT // 2 - countdown_text.get_height() // 2))
         pygame.display.flip()
         pygame.time.wait(1000)
 
 def reset_game():
-    global running, player_one, player_two, ball
-    running = True
-    
+    global menuSelection, gameMode
     screen.fill(BLACK)
 
-    display_countdown()
     ball.reset()
     player_one.reset()
     player_two.reset()
+        
+    menuSelection = True
+
+
+def menuLoop():
+    global running, gameMode, menuSelection
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+            
+        # Control the player paddle
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_q:
+                running = False
+            if event.key == pygame.K_1:
+                gameMode = 1
+                menuSelection = False
+            if event.key == pygame.K_2:
+                gameMode = 2
+                menuSelection = False
+            if event.key == pygame.K_3:
+                gameMode = 3
+                menuSelection = False
+                
+    # Fill the screen
+    screen.fill(BLACK)
+
+    title_text = font.render("Select Game Mode", True, WHITE)
+    mode1_text = font.render("1. 1 Player", True, WHITE)
+    mode2_text = font.render("2. 2 Players", True, WHITE)
+    mode3_text = font.render("3. AI vs AI", True, WHITE)
     
-    player_one.is_ai = True
-    player_two.is_ai = True
+    
+    screen.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, 5 * UPSCALE_FACTOR))
+    screen.blit(mode1_text, (WIDTH // 2 - mode1_text.get_width() // 2, 15 * UPSCALE_FACTOR))
+    screen.blit(mode2_text, (WIDTH // 2 - mode2_text.get_width() // 2, 25 * UPSCALE_FACTOR))
+    screen.blit(mode3_text, (WIDTH // 2 - mode3_text.get_width() // 2, 35 * UPSCALE_FACTOR))
+    
+    # The user selected an option
+    if not menuSelection:
+        if gameMode == MODE_ONE_PLAYER:
+            player_one.is_ai = False
+            player_two.is_ai = True
+        elif gameMode == MODE_TWO_PLAYER:
+            player_one.is_ai = False
+            player_two.is_ai = False
+        else:
+            player_one.is_ai = True
+            player_two.is_ai = True
+        display_countdown()
 
-reset_game()
 
-# Game loop
-while running:
+def gameLoop():
+    global running
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -209,15 +274,17 @@ while running:
                 player_one.direction = 0
             if event.key == pygame.K_r:
                 reset_game()
+            if event.key == pygame.K_q:
+                running = False
 
     # Update game elements
-    update_paddle(player_one)
-    update_paddle(player_two)
+    player_one.update_paddle()
+    player_two.update_paddle()
     update_ball()
 
     # Fill the screen
     screen.fill(BLACK)
-
+    
     # Draw paddles and ball
     pygame.draw.rect(screen, WHITE, player_one)
     pygame.draw.rect(screen, WHITE, player_two)
@@ -228,9 +295,22 @@ while running:
     # Draw score
     draw_score()
 
+# Game loop
+
+reset_game()
+while running:
+    if menuSelection:
+        menuLoop()
+    else:
+        gameLoop()
     # Update the display
     pygame.display.flip()
 
+    # TODO: Grab the frame buffer, downsample with a numpy slice, pass to the multiverse. Do we need to convert?
+    framegrab = screen.convert(16, 0).get_buffer()
+    # Update the displays from the buffer
+    #display.update(framegrab)
+    
     # Set the frame rate
     clock.tick(FPS)
 

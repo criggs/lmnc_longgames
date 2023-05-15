@@ -10,6 +10,7 @@ packages = [{include = "lmnc_longpong"}]
 python = "^3.10"
 numpy = "^1.24.3"
 pygame = "^2.4.0"
+pyserial = "^3.5"
 
 
 [build-system]
