@@ -19,7 +19,7 @@ pygame.init()
 
 # Set up the game window
 
-UPSCALE_FACTOR = 5
+UPSCALE_FACTOR = 1
 BOARD_COUNT = 22
 MATRIX_HEIGHT = 53
 MATRIX_WIDTH = 11 * BOARD_COUNT
@@ -29,8 +29,10 @@ HEIGHT = MATRIX_HEIGHT * UPSCALE_FACTOR
 FPS = 30
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
-FONT_SIZE = 32
+FONT_SIZE = 8 * UPSCALE_FACTOR
 FONT_COLOR = WHITE
+
+font = pygame.font.Font("lmnc_longpong/Amble-Bold.ttf", FONT_SIZE)
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Pong")
@@ -62,7 +64,7 @@ ball = pygame.Rect(WIDTH // 2 - ball_radius // 2, HEIGHT // 2 - ball_radius // 2
 
 # Function to update the score on the screen
 def draw_score():
-    font = pygame.font.Font(None, FONT_SIZE)
+    global font
     text = font.render(f"P1: {player_one.score}    P2: {player_two.score}", True, FONT_COLOR)
     text_rect = text.get_rect(center=(WIDTH // 2, FONT_SIZE))
     screen.blit(text, text_rect)
@@ -150,7 +152,7 @@ def update_ball():
 
 # Function to display the countdown
 def display_countdown():
-    font = pygame.font.Font(None, 36)
+    global font
     for i in range(3, 0, -1):
         screen.fill(BLACK)
         countdown_text = font.render(str(i), True, WHITE)
@@ -170,15 +172,14 @@ def reset_ball():
 
 
 def update_for_ai(ai_paddle: Player, p2: bool):
-    if p2 and ball.x < WIDTH // 2:
-        return
-    if not p2 and ball.x > WIDTH//2:
+    if p2 and ball.x < WIDTH // 2 or not p2 and ball.x > WIDTH//2:
+        ai_paddle.direction = 0
         return
     
     # AI Player logic
-    if ai_paddle.rect.centery < ball.y - 2:
+    if ai_paddle.rect.centery < ball.centery - paddle_height // 2:
         ai_paddle.direction = 1
-    elif ai_paddle.rect.centery > ball.y + 2:
+    elif ai_paddle.rect.centery > ball.centery + paddle_height // 2:
         ai_paddle.direction = -1
     else:
         ai_paddle.direction = 0
