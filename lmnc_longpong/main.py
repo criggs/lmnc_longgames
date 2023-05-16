@@ -6,12 +6,29 @@ from multiverse import Multiverse, Display
 
 # TODO: Configure display
 # display = Multiverse(
-#     #       Serial Port,       W,  H,  X,  Y
-#     Display("/dev/Fire-Alice", 53, 11, 18, 28),
-#     Display("/dev/Fire-James", 53, 11, 18, 39),
-#     Display("/dev/Fire-Susan", 53, 11, 18, 51),
+#     #       Serial Port,            W,  H,  X,  Y
+#    Display("/dev/serial/by-id/_01", 53, 11, 0, 0),
+#    Display("/dev/serial/by-id/_02", 53, 11, 0, 11),
+#    Display("/dev/serial/by-id/_03", 53, 11, 0, 22),
+#    Display("/dev/serial/by-id/_04", 53, 11, 0, 33),
+#    Display("/dev/serial/by-id/_05", 53, 11, 0, 44),
+#    Display("/dev/serial/by-id/_06", 53, 11, 0, 55),
+#    Display("/dev/serial/by-id/_07", 53, 11, 0, 66),
+#    Display("/dev/serial/by-id/_08", 53, 11, 0, 77),
+#    Display("/dev/serial/by-id/_09", 53, 11, 0, 88),
+#    Display("/dev/serial/by-id/_10", 53, 11, 0, 99),
+#    Display("/dev/serial/by-id/_11", 53, 11, 0, 110),
+#    Display("/dev/serial/by-id/_12", 53, 11, 0, 121,
+#    Display("/dev/serial/by-id/_13", 53, 11, 0, 132),
+#    Display("/dev/serial/by-id/_14", 53, 11, 0, 143),
+#    Display("/dev/serial/by-id/_15", 53, 11, 0, 154),
+#    Display("/dev/serial/by-id/_16", 53, 11, 0, 165),
+#    Display("/dev/serial/by-id/_17", 53, 11, 0, 176),
+#    Display("/dev/serial/by-id/_18", 53, 11, 0, 187),
+#    Display("/dev/serial/by-id/_19", 53, 11, 0, 198),
+#    Display("/dev/serial/by-id/_20", 53, 11, 0, 209),
+#    Display("/dev/serial/by-id/_21", 53, 11, 0, 220),
 # )
-
 # display.setup()
 
 # Contants/Configuration
