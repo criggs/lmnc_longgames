@@ -5,6 +5,22 @@ import math
 import numpy
 from multiverse import Multiverse, Display
 
+# This code is messy, it will be cleaned up at some point.....
+#
+# Python Dependencies: pygame, numpy, pyserial, multiverse (from https://github.com/Gadgetoid/gu-multiverse)
+# 
+# 3 Game Modes:
+#   - One Player
+#   - Two Player
+#   - AI vs AI
+#
+# Controls:
+#  - Player One: Up/Down
+#  - Player Two: w/s
+#  - q: Quit
+#  - r: Reset Game, back to menu
+
+
 # TODO: Configure display
 # display = Multiverse(
 #     #       Serial Port,            W,  H,  X,  Y
@@ -44,7 +60,7 @@ HEIGHT = MATRIX_HEIGHT * UPSCALE_FACTOR
 FPS = 120
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
-FONT_SIZE = 10 * UPSCALE_FACTOR
+FONT_SIZE = 11 * UPSCALE_FACTOR
 FONT_COLOR = WHITE
 
 BALL_RADIUS = 2 * UPSCALE_FACTOR
@@ -143,7 +159,7 @@ pygame.display.set_caption("Pong")
 
 clock = pygame.time.Clock()
 
-font = pygame.font.Font("lmnc_longpong/Amble-Bold.ttf", FONT_SIZE)
+font = pygame.font.Font(None, FONT_SIZE)
 
 # Create players
 player_one = Player(pygame.Rect(0, HEIGHT // 2 - PADDLE_HEIGHT // 2, PADDLE_WIDTH, PADDLE_HEIGHT))
