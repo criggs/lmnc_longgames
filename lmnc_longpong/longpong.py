@@ -2,6 +2,7 @@ import time
 import pygame
 import random
 import math
+import numpy
 from multiverse import Multiverse, Display
 
 # TODO: Configure display
@@ -130,9 +131,10 @@ pygame.init()
 def flip_display():
     pygame.display.flip()
     # TODO: Grab the frame buffer, downsample with a numpy slice, pass to the multiverse. Do we need to convert?
-    framegrab = screen.convert(16, 0).get_buffer()
+    framegrab = pygame.surfarray.array2d(screen)
+    downsample = numpy.array(framegrab)[::UPSCALE_FACTOR,::UPSCALE_FACTOR]
     # Update the displays from the buffer
-    #display.update(framegrab)
+    #display.update(downsample)
 
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
