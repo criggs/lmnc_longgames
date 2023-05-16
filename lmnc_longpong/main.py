@@ -1,3 +1,4 @@
+import time
 import pygame
 import random
 import math
@@ -14,15 +15,15 @@ from multiverse import Multiverse, Display
 # display.setup()
 
 # Contants/Configuration
-UPSCALE_FACTOR = 1
+UPSCALE_FACTOR = 6
 
 BOARD_COUNT = 10 # len(display.displays)
 MATRIX_HEIGHT = 53
-MATRIX_WIDTH = 11 * BOARD_COUNT
+MATRIX_WIDTH = 22 * BOARD_COUNT
 
 WIDTH = MATRIX_WIDTH * UPSCALE_FACTOR
 HEIGHT = MATRIX_HEIGHT * UPSCALE_FACTOR
-FPS = 30
+FPS = 120
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 FONT_SIZE = 10 * UPSCALE_FACTOR
@@ -32,11 +33,11 @@ BALL_RADIUS = 2 * UPSCALE_FACTOR
 PADDLE_WIDTH = 2 * UPSCALE_FACTOR
 PADDLE_HEIGHT = 10 * UPSCALE_FACTOR
 
-PLAYER_PADDLE_SPEED = 3 * UPSCALE_FACTOR
-AI_PADDLE_SPEED = 2 * UPSCALE_FACTOR
+PLAYER_PADDLE_SPEED = 3 * 30 * UPSCALE_FACTOR
+AI_PADDLE_SPEED = 2 * 30 * UPSCALE_FACTOR
 
-BALL_MAX_SPEED = 10 * UPSCALE_FACTOR
-BALL_MIN_SPEED = 2 * UPSCALE_FACTOR
+BALL_MAX_SPEED = 20 * 30 * UPSCALE_FACTOR
+BALL_MIN_SPEED = 4 * 30 * UPSCALE_FACTOR
 
 MODE_ONE_PLAYER = 1
 MODE_TWO_PLAYER = 2
@@ -73,13 +74,13 @@ class Player:
         self.direction = 0
         
     def update_paddle(self):
-        global gameMode
+        global gameMode, dt
         speed = PLAYER_PADDLE_SPEED
         if self.is_ai:
             update_for_ai(self)
             #Only use the slower ai speed if one player is human
             speed = AI_PADDLE_SPEED if gameMode == MODE_ONE_PLAYER else PLAYER_PADDLE_SPEED
-        self.rect.y += speed * self.direction
+        self.rect.y += speed * dt * self.direction
         self.rect.y = max(min(self.rect.y, HEIGHT - PADDLE_HEIGHT), 0)
 
 class Ball:
@@ -87,14 +88,14 @@ class Ball:
         self.radius = radius
         self.direction_y = -1
         self.direction_x = 1
-        self.speed = 1
+        self.speed = 30 * UPSCALE_FACTOR
         self.angle = 0
         self.rect = pygame.Rect(WIDTH // 2 - self.radius // 2, HEIGHT // 2 - self.radius // 2, self.radius, self.radius)
         
     def reset(self):
         self.rect.center = (WIDTH // 2, HEIGHT // 2)
         self.angle = random.uniform(-math.pi / 4, math.pi / 4)
-        self.speed = 2 * UPSCALE_FACTOR
+        self.speed = random.uniform(40 * UPSCALE_FACTOR, 80 * UPSCALE_FACTOR)
     
     @property
     def speed_x(self):
@@ -108,6 +109,13 @@ class Ball:
 pygame.init()
 
 # Set up the game window
+
+def flip_display():
+    pygame.display.flip()
+    # TODO: Grab the frame buffer, downsample with a numpy slice, pass to the multiverse. Do we need to convert?
+    framegrab = screen.convert(16, 0).get_buffer()
+    # Update the displays from the buffer
+    #display.update(framegrab)
 
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -145,10 +153,14 @@ def update_for_ai(ai_player: Player):
     else:
         ai_player.direction = 0
 
+def score_and_reset(player: Player):
+    player.score += 1
+    ball.reset()
+
 # Function to update the ball's position
 def update_ball():
-    ball.rect.x += ball.speed_x
-    ball.rect.y += ball.speed_y
+    ball.rect.x += ball.speed_x * dt
+    ball.rect.y += ball.speed_y * dt
 
     # Detect Left Paddle Collision
     left_collision = ball.rect.left <= PADDLE_WIDTH and (abs(ball.rect.centery - player_one.rect.centery) <= PADDLE_HEIGHT//2)
@@ -169,11 +181,9 @@ def update_ball():
         
     # Check if the ball went out of bounds
     if ball.rect.right <= 0:
-        player_two.score += 1
-        ball.reset()
+        score_and_reset(player_two)
     elif ball.rect.left >= WIDTH:
-        player_one.score += 1
-        ball.reset()
+        score_and_reset(player_one)
 
 def update_ball_speed_from_collision(colliding_player: Player):
     delta_y = ball.rect.centery - colliding_player.rect.centery
@@ -181,10 +191,10 @@ def update_ball_speed_from_collision(colliding_player: Player):
 
     # Increase ball speed if paddle is moving in the same direction
     if colliding_player.direction * ball.speed_y > 0:
-        ball.speed *= 1.2
+        ball.speed = min(ball.speed * 1.2, BALL_MAX_SPEED)
     # Decrease ball speed if paddle is moving in the opposite direction
     elif colliding_player.direction * ball.speed_y < 0:
-        ball.speed /= 1.2
+        ball.speed = min (ball.speed/1.2, BALL_MIN_SPEED)
     # Reverse the direction of travel
     ball.direction_x = colliding_player.position * -1
     
@@ -195,7 +205,7 @@ def display_countdown():
         countdown_text = font.render(str(i), True, WHITE)
         screen.blit(countdown_text, (WIDTH // 4 - countdown_text.get_width() // 2, HEIGHT // 2 - countdown_text.get_height() // 2))
         screen.blit(countdown_text, (3 * WIDTH // 4 - countdown_text.get_width() // 2, HEIGHT // 2 - countdown_text.get_height() // 2))
-        pygame.display.flip()
+        flip_display()
         pygame.time.wait(1000)
 
 def reset_game():
@@ -210,7 +220,7 @@ def reset_game():
 
 
 def menuLoop():
-    global running, gameMode, menuSelection
+    global running, gameMode, menuSelection, dt, prev_time
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -254,7 +264,13 @@ def menuLoop():
         else:
             player_one.is_ai = True
             player_two.is_ai = True
+        
         display_countdown()
+        player_one.reset()
+        player_two.reset()
+        ball.reset()
+        dt = 0
+        prev_time = time.time()
 
 
 def gameLoop():
@@ -264,14 +280,31 @@ def gameLoop():
             running = False
             
         # Control the player paddle
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
-                player_one.direction = -1
-            elif event.key == pygame.K_DOWN:
-                player_one.direction = 1
-        elif event.type == pygame.KEYUP:
-            if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
-                player_one.direction = 0
+        
+        #Player One
+        if gameMode != MODE_AI_VS_AI: 
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    player_one.direction = -1
+                elif event.key == pygame.K_DOWN:
+                    player_one.direction = 1
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
+                    player_one.direction = 0
+        
+        #Player Two
+        if gameMode == MODE_TWO_PLAYER: 
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_w:
+                    player_two.direction = -1
+                elif event.key == pygame.K_s:
+                    player_two.direction = 1
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_w or event.key == pygame.K_s:
+                    player_two.direction = 0
+        
+        # Game Lifecycle Controls
+        if event.type == pygame.KEYUP:
             if event.key == pygame.K_r:
                 reset_game()
             if event.key == pygame.K_q:
@@ -298,22 +331,26 @@ def gameLoop():
 # Game loop
 
 reset_game()
+
+
+prev_time = time.time()
+dt = 0
+
 while running:
+    
+    now = time.time()
+    dt = now - prev_time
+    prev_time = now
+    
     if menuSelection:
         menuLoop()
     else:
         gameLoop()
     # Update the display
-    pygame.display.flip()
-
-    # TODO: Grab the frame buffer, downsample with a numpy slice, pass to the multiverse. Do we need to convert?
-    framegrab = screen.convert(16, 0).get_buffer()
-    # Update the displays from the buffer
-    #display.update(framegrab)
-    
+    flip_display()
+        
     # Set the frame rate
     clock.tick(FPS)
 
 # Quit the game
 pygame.quit()
-
