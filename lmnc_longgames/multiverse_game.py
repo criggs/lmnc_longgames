@@ -121,6 +121,7 @@ class MultiverseGame:
             # Get all events
             events = pygame.event.get()
 
+            #TODO: Make the controls work with GPIO/Joysticks    
             # Check for quit
             for event in events:
                 if event.type == pygame.QUIT:

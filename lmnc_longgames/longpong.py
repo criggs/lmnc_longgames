@@ -130,6 +130,7 @@ def update_for_ai(ai_player: Player):
 
 def score_and_reset(player: Player):
     player.score += 1
+    print(f'Score: {player_one.score}/{player_two.score}')
     ball.reset()
 
 # Function to update the ball's position
@@ -180,16 +181,18 @@ def game_mode_callback(game_mode):
     Parameters:
         game_mode: The selected game mode
     """
-    if game_mode == MODE_ONE_PLAYER:
+    print(f'Playing game mode {game_mode}')
+    reset_game_callback()
+    if game.game_mode == MODE_ONE_PLAYER:
         player_one.is_ai = False
         player_two.is_ai = True
-    if game_mode == MODE_TWO_PLAYER:
+    elif game.game_mode == MODE_TWO_PLAYER:
         player_one.is_ai = False
         player_two.is_ai = False
     else:
         player_one.is_ai = True
         player_two.is_ai = True
-    reset_game_callback()
+
 
 
 def game_loop_callback(events: List, dt: float):
@@ -201,7 +204,8 @@ def game_loop_callback(events: List, dt: float):
         dt: The delta time since the last loop iteration. This is for framerate independance.
     """
     for event in events:
-            
+        
+        #TODO: Make the controls work with GPIO/Joysticks    
         # Control the player paddle
         
         #Player One
@@ -277,7 +281,7 @@ MODE_AI_VS_AI = 3
 # Script Args
 
 config_file = ''
-show_window = False
+show_window = True
 debug = False
 opts, args = getopt.getopt(sys.argv[1:],"hi:wd",["conf="])
 for opt, arg in opts:
