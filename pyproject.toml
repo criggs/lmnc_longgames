@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "lmnc-longpong"
+name = "lmnc-longgames"
 version = "0.1.0"
 description = ""
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
-packages = [{include = "lmnc_longpong"}]
+packages = [{include = "lmnc_longgames"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"

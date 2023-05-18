@@ -1,3 +1,5 @@
+import sys, os
+import getopt
 from typing import List
 import pygame
 import random
@@ -172,12 +174,12 @@ def update_ball_speed_from_collision(colliding_player: Player):
     ball.direction_x = colliding_player.position * -1
     
 def game_mode_callback(game_mode):    
-    '''
+    """
     Called when a game mode is selected
     
     Parameters:
         game_mode: The selected game mode
-    '''
+    """
     if game_mode == MODE_ONE_PLAYER:
         player_one.is_ai = False
         player_two.is_ai = True
@@ -191,13 +193,13 @@ def game_mode_callback(game_mode):
 
 
 def game_loop_callback(events: List, dt: float):
-    '''
+    """
     Called for each iteration of the game loop
 
     Parameters:
         events: The pygame events list for this loop iteration
         dt: The delta time since the last loop iteration. This is for framerate independance.
-    '''
+    """
     for event in events:
             
         # Control the player paddle
@@ -271,6 +273,27 @@ BALL_MIN_SPEED = 2 * 30
 MODE_ONE_PLAYER = 1
 MODE_TWO_PLAYER = 2
 MODE_AI_VS_AI = 3
+
+# Script Args
+
+config_file = ''
+show_window = False
+debug = False
+opts, args = getopt.getopt(sys.argv[1:],"hi:wd",["conf="])
+for opt, arg in opts:
+    if opt == '-h':
+        print ('longpong.py [-w] [-d] -c CONFIG_FILE')
+        sys.exit()
+    elif opt in ('-c', '--conf'):
+        #TODO: Get the display configuration and GPIO/Input info from a config file
+        config_file = arg
+    elif opt == '-w':
+        show_window = True
+    elif opt == '-d':
+        debug = True
+
+if not show_window:
+    os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 game = MultiverseGame("Long Pong", 120, UPSCALE_FACTOR, game_mode_callback, game_loop_callback, reset_game_callback)
 game.configure_display()
