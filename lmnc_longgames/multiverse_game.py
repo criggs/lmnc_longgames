@@ -38,7 +38,7 @@ class MultiverseGame:
         pygame.init()
         pygame.display.set_caption(game_title)
         self.clock = pygame.time.Clock()
-        self.font = pygame.font.Font("lmnc_longgame/Amble-Bold.ttf", FONT_SIZE * upscale_factor)
+        self.font = pygame.font.Font("lmnc_longgames/Amble-Bold.ttf", FONT_SIZE * upscale_factor)
         self.game_title = game_title
         self.fps = fps
         self.width = 0
@@ -105,10 +105,10 @@ class MultiverseGame:
         self.menu_select_state = True
         self.pygame_screen.fill(BLACK)
 
-    '''
+    """
     Runs the game loop.
     
-    '''
+    """
     def run(self):
         self.running = True
         prev_time = time.time()
@@ -149,9 +149,9 @@ class MultiverseGame:
         # Quit the game
         pygame.quit()
 
-    '''
+    """
     Game mode selection menu
-    '''
+    """
     def menu_loop(self, events):
         # Check for menu selection
         for event in events:
@@ -189,10 +189,13 @@ class MultiverseGame:
             mode3_text, (center_screen - mode3_text.get_width() // 2, 35 * self.upscale_factor))
 
     def display_countdown(self):
+        print("Starting countdown...")
         for i in range(3, 0, -1):
+            print(i)
             self.pygame_screen.fill(BLACK)
             countdown_text = self.font.render(str(i), True, WHITE)
             self.pygame_screen.blit(countdown_text, (self.width // 4 - countdown_text.get_width() // 2, self.height // 2 - countdown_text.get_height() // 2))
             self.pygame_screen.blit(countdown_text, (3 * self.width // 4 - countdown_text.get_width() // 2, self.height // 2 - countdown_text.get_height() // 2))
             self.flip_display()
             pygame.time.wait(1000)
+        print("GO!")
