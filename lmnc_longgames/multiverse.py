@@ -18,7 +18,12 @@ class Display:
         self.y = y
 
     def setup(self):
-        self.port = serial.Serial(self.path)
+        try:
+            self.port = serial.Serial(self.path)
+        except Exception as e:
+            print(f"Exception while setting up display at {self.x} {self.y}")
+            print(e)
+            
 
     def write(self, buffer):
         if self.port is None:
