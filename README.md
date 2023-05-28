@@ -17,9 +17,9 @@ Make sure the following python libraries are installed:
 
 ## Running Long Pong
 
-`python3 lmnc_longgames/longpong.py -w`
+`scripts/longpong.sh`
 
-### Arguments
+### longpong.py Arguments
 ```
 -h                 Help
 -c <CONFIG>        Configruation File
