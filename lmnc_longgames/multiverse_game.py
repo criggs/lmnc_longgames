@@ -44,7 +44,7 @@ class MultiverseGame:
         self.width = 0
         self.height = 0
         self.upscale_factor = upscale_factor
-        self.multiverse_diplay = None
+        self.multiverse_display = None
         self.pygame_screen = None
         self.dt = 0
         self.running = False
@@ -60,31 +60,31 @@ class MultiverseGame:
 
     def configure_display(self):
         #TODO Test the displays, make this configurable
-        # self.multiverse_diplay = Multiverse(
-        #     Display("/dev/serial/by-id/_01", 53, 11, 0, 0),
-        #     Display("/dev/serial/by-id/_02", 53, 11, 0, 11),
-        #     Display("/dev/serial/by-id/_03", 53, 11, 0, 22),
-        #     Display("/dev/serial/by-id/_04", 53, 11, 0, 33),
-        #     Display("/dev/serial/by-id/_05", 53, 11, 0, 44),
-        #     Display("/dev/serial/by-id/_06", 53, 11, 0, 55),
-        #     Display("/dev/serial/by-id/_07", 53, 11, 0, 66),
-        #     Display("/dev/serial/by-id/_08", 53, 11, 0, 77),
-        #     Display("/dev/serial/by-id/_09", 53, 11, 0, 88),
-        #     Display("/dev/serial/by-id/_10", 53, 11, 0, 99),
-        #     Display("/dev/serial/by-id/_11", 53, 11, 0, 110),
-        #     Display("/dev/serial/by-id/_12", 53, 11, 0, 121),
-        #     Display("/dev/serial/by-id/_13", 53, 11, 0, 132),
-        #     Display("/dev/serial/by-id/_14", 53, 11, 0, 143),
-        #     Display("/dev/serial/by-id/_15", 53, 11, 0, 154),
-        #     Display("/dev/serial/by-id/_16", 53, 11, 0, 165),
-        #     Display("/dev/serial/by-id/_17", 53, 11, 0, 176),
-        #     Display("/dev/serial/by-id/_18", 53, 11, 0, 187),
-        #     Display("/dev/serial/by-id/_19", 53, 11, 0, 198),
-        #     Display("/dev/serial/by-id/_20", 53, 11, 0, 209),
-        #     Display("/dev/serial/by-id/_21", 53, 11, 0, 220)
-        # )
-        # self.multiverse_diplay.setup()
-        self.width = 22 * 11 * self.upscale_factor #len(self.multiverse_diplay.displays) * 11 * self.upscale_factor
+        self.multiverse_display = Multiverse(
+            Display("/dev/serial/by-id/_01", 53, 11, 0, 0),
+            Display("/dev/serial/by-id/_02", 53, 11, 0, 11),
+            Display("/dev/serial/by-id/_03", 53, 11, 0, 22),
+            Display("/dev/serial/by-id/_04", 53, 11, 0, 33),
+            Display("/dev/serial/by-id/_05", 53, 11, 0, 44),
+            Display("/dev/serial/by-id/_06", 53, 11, 0, 55),
+            Display("/dev/serial/by-id/_07", 53, 11, 0, 66),
+            # Display("/dev/serial/by-id/_08", 53, 11, 0, 77),
+            # Display("/dev/serial/by-id/_09", 53, 11, 0, 88),
+            # Display("/dev/serial/by-id/_10", 53, 11, 0, 99),
+            # Display("/dev/serial/by-id/_11", 53, 11, 0, 110),
+            # Display("/dev/serial/by-id/_12", 53, 11, 0, 121),
+            # Display("/dev/serial/by-id/_13", 53, 11, 0, 132),
+            # Display("/dev/serial/by-id/_14", 53, 11, 0, 143),
+            # Display("/dev/serial/by-id/_15", 53, 11, 0, 154),
+            # Display("/dev/serial/by-id/_16", 53, 11, 0, 165),
+            # Display("/dev/serial/by-id/_17", 53, 11, 0, 176),
+            # Display("/dev/serial/by-id/_18", 53, 11, 0, 187),
+            # Display("/dev/serial/by-id/_19", 53, 11, 0, 198),
+            # Display("/dev/serial/by-id/_20", 53, 11, 0, 209),
+            # Display("/dev/serial/by-id/_21", 53, 11, 0, 220)
+        )
+        self.multiverse_display.setup()
+        self.width = len(self.multiverse_display.displays) * 11 * self.upscale_factor
         self.height = 53 * self.upscale_factor
         print(f'Upscaled Width: {self.width} Upscaled Height: {self.height}')
         self.pygame_screen = pygame.display.set_mode((self.width, self.height))
@@ -95,7 +95,10 @@ class MultiverseGame:
         framegrab = pygame.surfarray.array2d(self.pygame_screen)
         downsample = numpy.array(framegrab)[::self.upscale_factor, ::self.upscale_factor]
         # Update the displays from the buffer
-        # display.update(downsample)
+        
+        # The display will be inverted without this
+        downsample = numpy.flipud(downsample)
+        self.multiverse_display.update(downsample)
 
     def stop(self):
         self.running = False
