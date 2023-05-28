@@ -41,7 +41,7 @@ class Player:
     @y.setter
     def y(self, value):
         self._y = value
-        self._rect.y = value
+        self._rect.y = int(value)
     
     # Side of the board the player is on
     @property
@@ -80,7 +80,7 @@ class Ball:
     @x.setter
     def x(self, value):
         self._x = value
-        self._rect.x = value
+        self._rect.x = int(value)
         
     @property
     def y(self):
@@ -89,7 +89,7 @@ class Ball:
     @y.setter
     def y(self, value):
         self._y = value
-        self._rect.y = value
+        self._rect.y = int(value)
     
     def reset(self):
         self._rect.center = (game.width // 2, game.height // 2)
@@ -281,7 +281,7 @@ MODE_AI_VS_AI = 3
 # Script Args
 
 config_file = ''
-show_window = True
+show_window = False
 debug = False
 opts, args = getopt.getopt(sys.argv[1:],"hi:wd",["conf="])
 for opt, arg in opts:
@@ -303,8 +303,8 @@ game = MultiverseGame("Long Pong", 120, UPSCALE_FACTOR, game_mode_callback, game
 game.configure_display()
 screen = game.pygame_screen
 
-
-font = pygame.font.Font("lmnc_longgames/Amble-Bold.ttf", FONT_SIZE)
+script_path = os.path.realpath(os.path.dirname(__file__))
+font = pygame.font.Font(f"{script_path}/Amble-Bold.ttf", FONT_SIZE)
 
 # Create players
 player_one = Player(pygame.Rect(0, game.height // 2 - PADDLE_HEIGHT // 2, PADDLE_WIDTH, PADDLE_HEIGHT))

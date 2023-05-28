@@ -5,11 +5,17 @@ description = ""
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
 packages = [{include = "lmnc_longgames"}]
+include = [
+    "README.md",
+    "requirements.txt",
+    {path = "files", format = "sdist"},
+    {path = "scripts", format = "sdist"}
+]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-numpy = "^1.24.3"
-pygame = "^2.4.0"
+numpy = "1.19.5"
+pygame = "1.9.6"
 pyserial = "^3.5"
 
 
