@@ -1,4 +1,12 @@
 import sys, os
+
+try:
+    import RPi.GPIO as gpio
+    print("Running on a Raspberry PI")
+except (ImportError, RuntimeError):
+    print("Not running on a Raspberry PI. Setting mock GPIO Zero Pin Factory.")
+    os.environ["GPIOZERO_PIN_FACTORY"] = "mock"
+
 from threading import Thread
 import getopt
 from typing import List
