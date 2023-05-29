@@ -3,6 +3,7 @@ import time
 from typing import List
 import pygame
 import numpy
+from config import LongGameConfig
 from multiverse import Multiverse, Display
 
 BLACK = (0, 0, 0)
@@ -55,6 +56,7 @@ class MultiverseGame:
         self.running = False
         self.menu_select_state = True
         self.game_mode = 1
+        self.initial_configure_called = False
         
         print(f'Initializing game {self.game_title}')
         print(f'fps: {fps}')
@@ -80,32 +82,12 @@ class MultiverseGame:
         pass
 
     def configure_display(self, displays: List[Display] = []):
-        #TODO Test the displays, make this configurable
-        if displays is None or not len(displays):
-            displays = [
-                Display("/dev/serial/by-id/usb-Raspberry_Pi_Picoprobe_E66118604B503C27-if00", 53, 11, 0, 0),
-                Display("/dev/serial/by-id/usb-Raspberry_Pi_Picoprobe_XXXXXXXXXXXXXXXX-if00", 53, 11, 0, 11),
-                Display("/dev/serial/by-id/usb-Raspberry_Pi_Picoprobe_XXXXXXXXXXXXXXXX-if00", 53, 11, 0, 22),
-                Display("/dev/serial/by-id/usb-Raspberry_Pi_Picoprobe_XXXXXXXXXXXXXXXX-if00", 53, 11, 0, 33),
-                Display("/dev/serial/by-id/usb-Raspberry_Pi_Picoprobe_XXXXXXXXXXXXXXXX-if00", 53, 11, 0, 44),
-                Display("/dev/serial/by-id/usb-Raspberry_Pi_Picoprobe_XXXXXXXXXXXXXXXX-if00", 53, 11, 0, 55),
-                Display("/dev/serial/by-id/usb-Raspberry_Pi_Picoprobe_XXXXXXXXXXXXXXXX-if00", 53, 11, 0, 66),
-                # Display("/dev/serial/by-id/usb-Raspberry_Pi_Picoprobe_XXXXXXXXXXXXXXXX-if00", 53, 11, 0, 77),
-                # Display("/dev/serial/by-id/usb-Raspberry_Pi_Picoprobe_XXXXXXXXXXXXXXXX-if00", 53, 11, 0, 88),
-                # Display("/dev/serial/by-id/usb-Raspberry_Pi_Picoprobe_XXXXXXXXXXXXXXXX-if00", 53, 11, 0, 99),
-                # Display("/dev/serial/by-id/usb-Raspberry_Pi_Picoprobe_XXXXXXXXXXXXXXXX-if00", 53, 11, 0, 110),
-                # Display("/dev/serial/by-id/usb-Raspberry_Pi_Picoprobe_XXXXXXXXXXXXXXXX-if00", 53, 11, 0, 121),
-                # Display("/dev/serial/by-id/usb-Raspberry_Pi_Picoprobe_XXXXXXXXXXXXXXXX-if00", 53, 11, 0, 132),
-                # Display("/dev/serial/by-id/usb-Raspberry_Pi_Picoprobe_XXXXXXXXXXXXXXXX-if00", 53, 11, 0, 143),
-                # Display("/dev/serial/by-id/usb-Raspberry_Pi_Picoprobe_XXXXXXXXXXXXXXXX-if00", 53, 11, 0, 154),
-                # Display("/dev/serial/by-id/usb-Raspberry_Pi_Picoprobe_XXXXXXXXXXXXXXXX-if00", 53, 11, 0, 165),
-                # Display("/dev/serial/by-id/usb-Raspberry_Pi_Picoprobe_XXXXXXXXXXXXXXXX-if00", 53, 11, 0, 176),
-                # Display("/dev/serial/by-id/usb-Raspberry_Pi_Picoprobe_XXXXXXXXXXXXXXXX-if00", 53, 11, 0, 187),
-                # Display("/dev/serial/by-id/usb-Raspberry_Pi_Picoprobe_XXXXXXXXXXXXXXXX-if00", 53, 11, 0, 198),
-                # Display("/dev/serial/by-id/usb-Raspberry_Pi_Picoprobe_XXXXXXXXXXXXXXXX-if00", 53, 11, 0, 209),
-                # Display("/dev/serial/by-id/usb-Raspberry_Pi_Picoprobe_XXXXXXXXXXXXXXXX-if00", 53, 11, 0, 220)
-            ]
         
+        if not len(displays):
+            #Load the defaults from the config
+            config = LongGameConfig()
+            displays = [Display(f'{file}', 53, 11, 0, 11 * i) for i, file in enumerate(config.config['displays']['main']['devices'] )]
+            
         self.multiverse_display = Multiverse(
             *displays
         )
@@ -113,7 +95,10 @@ class MultiverseGame:
         self.width = len(self.multiverse_display.displays) * 11 * self.upscale_factor
         self.height = 53 * self.upscale_factor
         print(f'Upscaled Width: {self.width} Upscaled Height: {self.height}')
-        self.pygame_screen = pygame.display.set_mode((self.width, self.height))
+        
+        if not self.initial_configure_called:
+            self.pygame_screen = pygame.display.set_mode((self.width, self.height))
+            self.initial_configure_called = True
 
     def flip_display(self):
         pygame.display.flip()
