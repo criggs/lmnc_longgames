@@ -294,7 +294,7 @@ class LongPongGame(MultiverseGame):
         self.player_one.reset()
         self.player_two.reset()
 
-    def fire_controller_input_event(self, event_id: int, counter: int):
+    def fire_controller_input_event(self, event_id: int):
         event = pygame.event.Event(event_id)
         pygame.event.post(event)
 
@@ -348,12 +348,8 @@ def main():
     p1_controller = RotaryEncoderController(longpong.fire_controller_input_event, P1_UP, P1_DOWN)
     game_thread = Thread(target=longpong.run, args=[])
 
-
-    p1_controller.start()
     game_thread.start()
-    
     game_thread.join()
-    p1_controller.stop()
 
 
 if __name__ == "__main__":
