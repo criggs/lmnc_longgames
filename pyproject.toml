@@ -17,6 +17,7 @@ python = "^3.9"
 numpy = "1.19.5"
 pygame = "1.9.6"
 pyserial = "^3.5"
+gpiozero = "^1.6.2"
 
 
 [build-system]

@@ -1,60 +1,44 @@
 from typing import Callable
-from RPi import GPIO
+from gpiozero import RotaryEncoder, Button
 from time import sleep
-from threading import Thread
 
 class RotaryEncoderController:
-    def __init__(self, event_callback: Callable[[int,int], None], positive_event_id: int = 1, negative_event_id: int = -1, clk: int = 22, dt: int = 27, switch: int = 17):
-        self.clk = clk
-        self.dt = dt
-        self.switch = switch
+    def __init__(self, 
+                 event_callback: Callable[[int,int], None], 
+                 positive_event_id: int = 1, 
+                 negative_event_id: int = -1, 
+                 clk_pin: int = 22, 
+                 dt_pin: int = 27, 
+                 button_pin: int = 17):
+        self.clk_pin = clk_pin
+        self.dt_pin = dt_pin
+        self.button_pin = button_pin
         self.event_callback = event_callback
         self.positive_event_id = positive_event_id
         self.negative_event_id = negative_event_id
-
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(clk, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-        GPIO.setup(dt, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+        self.rotary_encoder = RotaryEncoder(self.clk_pin, self.dt_pin, max_steps=0)
+        self.rotary_encoder.when_rotated_clockwise = self.rotated_cw
+        self.rotary_encoder.when_rotated_counter_clockwise = self.rotated_ccw
+        self.button = Button(button_pin)
 
         self.running = False
 
-    def start(self):
-        self.running = True
-        self.counter = 0
-        self.clkLastState = GPIO.input(self.clk)
-        self.controller_thread = Thread(target=self.run, args=[])
-        self.controller_thread.start()
+    def rotated_cw(self):
+        self.event_callback(self.positive_event_id)
 
-    def stop(self):
-        self.running = False
-        self.controller_thread.join()
-
-    def run(self):
-        try:
-
-            while self.running:
-                self.clkState = GPIO.input(self.clk)
-                self.dtState = GPIO.input(self.dt)
-                if self.clkState != self.clkLastState:
-                    if self.dtState != self.clkState:
-                        self.counter += 1
-                        self.event_callback(self.positive_event_id, self.counter)
-                    else:
-                        self.counter -= 1
-                        self.event_callback(self.negative_event_id, self.counter)
-                self.clkLastState = self.clkState
-                sleep(0.001)
-        finally:
-            GPIO.cleanup()
+    def rotated_ccw(self):
+        self.event_callback(self.negative_event_id)
 
 
 def main():
-    def callback(event_id, counter):
-        print(f'{"increased to " if event_id > 0 else "decreased to "} {counter}')
+    def callback(event_id):
+        print(f'{"increased" if event_id > 0 else "decreased"} encoder')
 
     controller = RotaryEncoderController(callback)
-    controller.start()
-    controller.controller_thread.join()
+    while True:
+        print(controller.rotary_encoder.steps)
+        sleep(1)
+        pass
 
 if __name__ == "__main__":
     main()
