@@ -1,4 +1,4 @@
-import os, time, threading
+import os, time, threading, sys
 from typing import List
 import pygame
 from multiverse_game import MultiverseGame
@@ -67,9 +67,12 @@ class SetupConfigGame(MultiverseGame):
 def main():
     game = SetupConfigGame()
     input_thread = threading.Thread(target=game.prompt_for_display_order, args=[])
-    # starting thread 1
+    game_thread = threading.Thread(target=game.run, args=[])
+
+    game_thread.start()
     input_thread.start()
-    game.run()
+    game_thread.join()
+    #TODO: Signal to interrupt input if the game was quit?
     input_thread.join()
 
 

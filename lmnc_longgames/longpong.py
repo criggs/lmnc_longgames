@@ -1,10 +1,12 @@
 import sys, os
+from threading import Thread
 import getopt
 from typing import List
 import pygame
 import random
 import math
 from multiverse_game import MultiverseGame
+from rotary_encoder_controller import RotaryEncoderController
 
 # This code is messy, it will be cleaned up at some point.....
 #
@@ -72,6 +74,10 @@ class Player:
             #Only use the slower ai speed if one player is human
             speed = AI_PADDLE_SPEED * self.game.upscale_factor if self.game.game_mode == MODE_ONE_PLAYER else speed
         self.y += speed * dt * self.direction
+        self.y = max(min(self.y, self.game.height - self.height), 0)
+
+    def move_paddle(self, steps: float):
+        self.y += steps * self.game.upscale_factor
         self.y = max(min(self.y, self.game.height - self.height), 0)
 
 class Ball:
@@ -245,6 +251,10 @@ class LongPongGame(MultiverseGame):
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
                         self.player_one.direction = 0
+                if event.type == P1_UP:
+                    self.player_one.move_paddle(-1 * PLAYER_PADDLE_MOVE_STEPS)
+                if event.type == P1_DOWN:
+                    self.player_one.move_paddle(PLAYER_PADDLE_MOVE_STEPS)
             
             #Player Two
             if self.game_mode == MODE_TWO_PLAYER: 
@@ -256,6 +266,10 @@ class LongPongGame(MultiverseGame):
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_w or event.key == pygame.K_s:
                         self.player_two.direction = 0
+                if event.type == P2_UP:
+                    self.player_two.move_paddle(-1 * PLAYER_PADDLE_MOVE_STEPS)
+                if event.type == P2_DOWN:
+                    self.player_two.move_paddle(PLAYER_PADDLE_MOVE_STEPS)
             
         # Update game elements
         self.player_one.update_paddle(dt)
@@ -280,6 +294,9 @@ class LongPongGame(MultiverseGame):
         self.player_one.reset()
         self.player_two.reset()
 
+    def fire_controller_input_event(self, event_id: int, counter: int):
+        event = pygame.event.Event(event_id)
+        pygame.event.post(event)
 
 # Setup and run the game
 
@@ -287,9 +304,16 @@ class LongPongGame(MultiverseGame):
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 
-PLAYER_PADDLE_SPEED = 3 * 30
+PLAYER_PADDLE_MOVE_STEPS = 3
+
+PLAYER_PADDLE_SPEED = PLAYER_PADDLE_MOVE_STEPS * 30
 AI_PADDLE_SPEED = 2 * 30
 
+P1_UP = pygame.USEREVENT + 1 
+P1_DOWN = pygame.USEREVENT + 2
+
+P2_UP = pygame.USEREVENT + 2
+P2_DOWN = pygame.USEREVENT + 3
 
 MODE_ONE_PLAYER = 1
 MODE_TWO_PLAYER = 2
@@ -320,7 +344,16 @@ def main():
         os.environ["SDL_VIDEODRIVER"] = "dummy"
 
     longpong = LongPongGame(upscale_factor)
-    longpong.run()
+
+    p1_controller = RotaryEncoderController(longpong.fire_controller_input_event, P1_UP, P1_DOWN)
+    game_thread = Thread(target=longpong.run, args=[])
+
+
+    p1_controller.start()
+    game_thread.start()
+    
+    game_thread.join()
+    p1_controller.stop()
 
 
 if __name__ == "__main__":
