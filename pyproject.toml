@@ -8,7 +8,7 @@ packages = [{include = "lmnc_longgames"}]
 include = [
     "README.md",
     "requirements.txt",
-    {path = "files", format = "sdist"},
+    {path = "install_files", format = "sdist"},
     {path = "scripts", format = "sdist"}
 ]
 

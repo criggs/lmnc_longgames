@@ -3,6 +3,7 @@ from typing import List
 import pygame
 from multiverse_game import MultiverseGame
 from multiverse import Display
+from config import LongGameConfig
 
 BLACK = (0, 0, 0)
 
@@ -13,9 +14,14 @@ class SetupConfigGame(MultiverseGame):
         super().__init__("Configure", 120, upscale_factor)
         self.menu_select_state = False
         # Put a number on every serial device detected
-        serial_dir = r'/dev/serial/by-id'
-        #found_devices = os.listdir(serial_dir)
-        self.found_devices = [1,2,3,4,5,6,7,8,9]
+        try:
+            serial_dir = r'/dev/serial/by-id'
+            self.found_devices = [f'{serial_dir}/{file}' for file in os.listdir(serial_dir)]
+        except FileNotFoundError as e:
+            print(f'Error getting serial devices: {e}')
+            print('Check your serial configuration, and make sure udev rules are configured correctly (i.e. 60-serial.rules)')
+            sys.exit(-1)
+        #self.found_devices = [f'{serial_dir}/{file}' for file in [1,2,3,4,5,6,7,8,9]]
         if not len(self.found_devices):
             print("No serial devices found!")
             return
@@ -25,8 +31,18 @@ class SetupConfigGame(MultiverseGame):
         for file in self.found_devices:
             print(file)
         print("")
-
-        displays = [Display(f'{serial_dir}/{file}', 53, 11, 0, 11 * i) for i, file in enumerate(self.found_devices)]
+        self.reconfigure_displays()
+    
+    def reconfigure_displays(self):
+        
+        # Delete the old displays
+        if self.multiverse_display:
+            old_displays = self.multiverse_display.displays
+            for old_display in old_displays:
+                old_display.__del__()
+        
+        # Create new displays
+        displays = [Display(f'{file}', 53, 11, 0, 11 * i) for i, file in enumerate(self.found_devices)]
         self.configure_display(displays)
 
 
@@ -52,6 +68,10 @@ class SetupConfigGame(MultiverseGame):
             val = input("Is the order from left (lowest) to right (highest) correct (y/n)? ")
             if val.lower().startswith("y"):
                 print("Great, saving config")
+                
+                config = LongGameConfig()
+                config.config['displays']['main']['devices'] = self.found_devices
+                config.write()
                 getting_input = False
                 self.stop()
             else:
@@ -59,7 +79,9 @@ class SetupConfigGame(MultiverseGame):
                 val = input("From left to right, input the numbers that you see on each display, separated by commas: ")
                 new_order = [x.strip() for x in val.split(',')]
                 print(new_order)
-                #TODO Actually recalculate the order and update the displayed screens/numbers
+                
+                self.found_devices = [self.found_devices[int(i)] for i in new_order]
+                self.reconfigure_displays()
 
 
     # Generate a list of IDs for the config in the correct order
