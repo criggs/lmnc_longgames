@@ -32,10 +32,7 @@ class MultiverseGame:
     def __init__(self, 
                  game_title: str, 
                  fps: int, 
-                 upscale_factor: int, 
-                 game_mode_callback: Callable[[int],None],
-                 game_loop_callback: Callable[[List,float],None], 
-                 reset_game_callback: Callable[[],None]
+                 upscale_factor: int
             ) -> None:
         pygame.init()
         pygame.display.set_caption(game_title)
@@ -53,14 +50,20 @@ class MultiverseGame:
         self.dt = 0
         self.running = False
         self.menu_select_state = True
-        self.game_mode_callback = game_mode_callback
-        self.game_loop_callback = game_loop_callback
-        self.reset_game_callback = reset_game_callback
         self.game_mode = 1
         
         print(f'Initializing game {self.game_title}')
         print(f'fps: {fps}')
         print(f'upscale_factor: {upscale_factor}')
+
+    def game_mode_callback(self, game_mode: int):
+        pass
+
+    def game_loop_callback(self, events, dt):
+        pass
+
+    def reset_game_callback(self):
+        pass
 
     def configure_display(self, displays: List[Display] = []):
         #TODO Test the displays, make this configurable

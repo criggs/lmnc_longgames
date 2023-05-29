@@ -34,7 +34,6 @@ class Player:
         self.score: int = 0
         self._y = rect.y
         self.game = game
-        self.mv_game = game.mv_game
         
     @property
     def y(self):
@@ -57,23 +56,31 @@ class Player:
         self.speed = 0
         self.score = 0
         self.direction = 0
+
+    @property
+    def width(self):
+        return self._rect.w
+    
+    @property
+    def height(self):
+        return self._rect.h
         
     def update_paddle(self, dt: float):
-        speed = PLAYER_PADDLE_SPEED * self.mv_game.upscale_factor
+        speed = PLAYER_PADDLE_SPEED * self.game.upscale_factor
         if self.is_ai:
             self.game.update_for_ai(self)
             #Only use the slower ai speed if one player is human
-            speed = AI_PADDLE_SPEED * self.mv_game.upscale_factor if self.mv_game.game_mode == MODE_ONE_PLAYER else speed
+            speed = AI_PADDLE_SPEED * self.game.upscale_factor if self.game.game_mode == MODE_ONE_PLAYER else speed
         self.y += speed * dt * self.direction
-        self.y = max(min(self.y, self.mv_game.height - PADDLE_HEIGHT), 0)
+        self.y = max(min(self.y, self.game.height - self.height), 0)
 
 class Ball:
-    def __init__(self, radius: int, mv_game: MultiverseGame) -> None:
+    def __init__(self, radius: int, game: MultiverseGame) -> None:
         self.radius = radius
         self.direction_y = -1
         self.direction_x = 1
-        self.mv_game = mv_game
-        self._rect = pygame.Rect(self.mv_game.width // 2 - self.radius // 2, self.mv_game.height // 2 - self.radius // 2, self.radius, self.radius)
+        self.game = game
+        self._rect = pygame.Rect(self.game.width // 2 - self.radius // 2, self.game.height // 2 - self.radius // 2, self.radius, self.radius)
         self.reset()
         
     @property
@@ -95,7 +102,7 @@ class Ball:
         self._rect.y = int(value)
     
     def reset(self):
-        self._rect.center = (self.mv_game.width // 2, self.mv_game.height // 2)
+        self._rect.center = (self.game.width // 2, self.game.height // 2)
         self._x = self._rect.x
         self._y = self._rect.y
         self.angle = random.uniform(-math.pi / 4, math.pi / 4)
@@ -109,40 +116,43 @@ class Ball:
     def speed_y(self):
         return self.speed * math.sin(self.angle) * self.direction_y
 
-class LongPongGame:
-    def __init__(self):
-        self.mv_game = MultiverseGame("Long Pong", 120, UPSCALE_FACTOR, self.game_mode_callback, self.game_loop_callback, self.reset_game_callback)
-        self.mv_game.configure_display()
-        self.screen = self.mv_game.pygame_screen
+class LongPongGame(MultiverseGame):
+    def __init__(self, upscale_factor):
+        super().__init__("Long Pong", 120, upscale_factor)
+        self.configure_display()
+        self.screen = self.pygame_screen
 
         script_path = os.path.realpath(os.path.dirname(__file__))
         self.font = pygame.font.Font(f"{script_path}/Amble-Bold.ttf", FONT_SIZE)
 
+
+
+        paddle_width = 2 * self.upscale_factor
+        paddle_height = 10 * self.upscale_factor
+
         # Create players
-        self.player_one = Player(pygame.Rect(0, self.mv_game.height // 2 - PADDLE_HEIGHT // 2, PADDLE_WIDTH, PADDLE_HEIGHT), self)
-        self.player_two = Player(pygame.Rect(self.mv_game.width - PADDLE_WIDTH, self.mv_game.height // 2 - PADDLE_HEIGHT // 2, PADDLE_WIDTH, PADDLE_HEIGHT), self)
+        self.player_one = Player(pygame.Rect(0, self.height // 2 - paddle_height // 2, paddle_width, paddle_height), self)
+        self.player_two = Player(pygame.Rect(self.width - paddle_width, self.height // 2 - paddle_height // 2, paddle_width, paddle_height), self)
 
         # Create ball
-        self.ball = Ball(2 * UPSCALE_FACTOR, self.mv_game)
-
-    def run(self):
-        self.mv_game.run()
+        ball_radius = 2 * self.upscale_factor
+        self.ball = Ball(ball_radius, self)
 
     # Function to update the score on the screen
     def draw_score(self):
         text = self.font.render(f"{self.player_one.score}    {self.player_two.score}", True, FONT_COLOR)
-        text_rect = text.get_rect(center=(self.mv_game.width // 2, FONT_SIZE))
+        text_rect = text.get_rect(center=(self.width // 2, FONT_SIZE))
         self.screen.blit(text, text_rect)
 
     def update_for_ai(self, ai_player: Player):
-        if self.ball.direction_x != ai_player.position or abs(self.ball._rect.centerx - ai_player._rect.centerx) > self.mv_game.width // 2:
+        if self.ball.direction_x != ai_player.position or abs(self.ball._rect.centerx - ai_player._rect.centerx) > self.width // 2:
             ai_player.direction = 0
             return
         
         # AI Player logic
-        if ai_player._rect.centery < self.ball._rect.centery - PADDLE_HEIGHT // 2:
+        if ai_player._rect.centery < self.ball._rect.centery - ai_player.height // 2:
             ai_player.direction = 1
-        elif ai_player._rect.centery > self.ball._rect.centery + PADDLE_HEIGHT // 2:
+        elif ai_player._rect.centery > self.ball._rect.centery + ai_player.height // 2:
             ai_player.direction = -1
         else:
             ai_player.direction = 0
@@ -158,10 +168,10 @@ class LongPongGame:
         self.ball.y += self.ball.speed_y * dt
 
         # Detect Left Paddle Collision
-        left_collision = self.ball._rect.left <= PADDLE_WIDTH and (abs(self.ball._rect.centery - self.player_one._rect.centery) <= PADDLE_HEIGHT//2)
+        left_collision = self.ball._rect.left <= self.player_one.width and (abs(self.ball._rect.centery - self.player_one._rect.centery) <= self.player_one.height//2)
         
         # Detect Right Paddle Collision
-        right_collision = self.ball._rect.right >= self.mv_game.width - PADDLE_WIDTH and (abs(self.ball._rect.centery - self.player_two._rect.centery) <= PADDLE_HEIGHT//2)
+        right_collision = self.ball._rect.right >= self.width - self.player_two.width and (abs(self.ball._rect.centery - self.player_two._rect.centery) <= self.player_two.height//2)
 
         # Check collision with paddles
         if left_collision:
@@ -171,25 +181,25 @@ class LongPongGame:
             self.update_ball_speed_from_collision(self.player_two)
 
         # Check collision with walls
-        if self.ball._rect.top <= 0 or self.ball._rect.bottom >= self.mv_game.height:
+        if self.ball._rect.top <= 0 or self.ball._rect.bottom >= self.height:
             self.ball.direction_y = self.ball.direction_y * -1
             
         # Check if the ball went out of bounds
         if self.ball._rect.right <= 0:
             self.score_and_reset(self.player_two)
-        elif self.ball._rect.left >= self.mv_game.width:
+        elif self.ball._rect.left >= self.width:
             self.score_and_reset(self.player_one)
 
     def update_ball_speed_from_collision(self, colliding_player: Player):
         delta_y = self.ball._rect.centery - colliding_player._rect.centery
-        self.ball.angle = math.pi / 4 * (delta_y / (PADDLE_HEIGHT / 2))
+        self.ball.angle = math.pi / 4 * (delta_y / (colliding_player.height / 2))
 
         # Increase ball speed if paddle is moving in the same direction
         if colliding_player.direction * self.ball.speed_y > 0:
-            self.ball.speed = min(self.ball.speed * 1.2, BALL_MAX_SPEED * self.mv_game.upscale_factor)
+            self.ball.speed = min(self.ball.speed * 1.2, BALL_MAX_SPEED * self.upscale_factor)
         # Decrease ball speed if paddle is moving in the opposite direction
         elif colliding_player.direction * self.ball.speed_y < 0:
-            self.ball.speed = max(self.ball.speed/1.2, BALL_MIN_SPEED * self.mv_game.upscale_factor)
+            self.ball.speed = max(self.ball.speed/1.2, BALL_MIN_SPEED * self.upscale_factor)
         # Reverse the direction of travel
         self.ball.direction_x = colliding_player.position * -1
         
@@ -202,10 +212,10 @@ class LongPongGame:
         """
         print(f'Playing game mode {game_mode}')
         self.reset_game_callback()
-        if self.mv_game.game_mode == MODE_ONE_PLAYER:
+        if self.game_mode == MODE_ONE_PLAYER:
             self.player_one.is_ai = False
             self.player_two.is_ai = True
-        elif self.mv_game.game_mode == MODE_TWO_PLAYER:
+        elif self.game_mode == MODE_TWO_PLAYER:
             self.player_one.is_ai = False
             self.player_two.is_ai = False
         else:
@@ -228,7 +238,7 @@ class LongPongGame:
             # Control the player paddle
             
             #Player One
-            if self.mv_game.game_mode != MODE_AI_VS_AI: 
+            if self.game_mode != MODE_AI_VS_AI: 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_UP:
                         self.player_one.direction = -1
@@ -239,7 +249,7 @@ class LongPongGame:
                         self.player_one.direction = 0
             
             #Player Two
-            if self.mv_game.game_mode == MODE_TWO_PLAYER: 
+            if self.game_mode == MODE_TWO_PLAYER: 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_w:
                         self.player_two.direction = -1
@@ -262,7 +272,7 @@ class LongPongGame:
         pygame.draw.rect(self.screen, WHITE, self.player_two._rect)
         pygame.draw.ellipse(self.screen, WHITE, self.ball._rect)
         
-        pygame.draw.line(self.screen, WHITE, (self.mv_game.width // 2, 0), (self.mv_game.width // 2, self.mv_game.height), UPSCALE_FACTOR)
+        pygame.draw.line(self.screen, WHITE, (self.width // 2, 0), (self.width // 2, self.height), UPSCALE_FACTOR)
 
         # Draw score
         self.draw_score()
@@ -283,9 +293,6 @@ WHITE = (255, 255, 255)
 FONT_SIZE = 11 * UPSCALE_FACTOR
 FONT_COLOR = WHITE
 
-BALL_RADIUS = 2 * UPSCALE_FACTOR
-PADDLE_WIDTH = 2 * UPSCALE_FACTOR
-PADDLE_HEIGHT = 10 * UPSCALE_FACTOR
 
 PLAYER_PADDLE_SPEED = 3 * 30
 AI_PADDLE_SPEED = 2 * 30
@@ -320,7 +327,7 @@ def main():
     if not show_window:
         os.environ["SDL_VIDEODRIVER"] = "dummy"
 
-    longpong = LongPongGame()
+    longpong = LongPongGame(UPSCALE_FACTOR)
     longpong.run()
 
 
