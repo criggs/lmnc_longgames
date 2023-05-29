@@ -75,6 +75,10 @@ class Player:
         self.y = max(min(self.y, self.game.height - self.height), 0)
 
 class Ball:
+
+    max_speed = 10 * 30
+    min_speed = 2 * 30
+
     def __init__(self, radius: int, game: MultiverseGame) -> None:
         self.radius = radius
         self.direction_y = -1
@@ -106,7 +110,7 @@ class Ball:
         self._x = self._rect.x
         self._y = self._rect.y
         self.angle = random.uniform(-math.pi / 4, math.pi / 4)
-        self.speed =  ((BALL_MAX_SPEED - BALL_MIN_SPEED)/2) + BALL_MIN_SPEED
+        self.speed =  ((self.max_speed - self.min_speed)/2) + self.min_speed
     
     @property
     def speed_x(self):
@@ -122,11 +126,6 @@ class LongPongGame(MultiverseGame):
         self.configure_display()
         self.screen = self.pygame_screen
 
-        script_path = os.path.realpath(os.path.dirname(__file__))
-        self.font = pygame.font.Font(f"{script_path}/Amble-Bold.ttf", FONT_SIZE)
-
-
-
         paddle_width = 2 * self.upscale_factor
         paddle_height = 10 * self.upscale_factor
 
@@ -140,8 +139,8 @@ class LongPongGame(MultiverseGame):
 
     # Function to update the score on the screen
     def draw_score(self):
-        text = self.font.render(f"{self.player_one.score}    {self.player_two.score}", True, FONT_COLOR)
-        text_rect = text.get_rect(center=(self.width // 2, FONT_SIZE))
+        text = self.font.render(f"{self.player_one.score}    {self.player_two.score}", True, WHITE)
+        text_rect = text.get_rect(center=(self.width // 2, 10 * self.upscale_factor))
         self.screen.blit(text, text_rect)
 
     def update_for_ai(self, ai_player: Player):
@@ -196,10 +195,10 @@ class LongPongGame(MultiverseGame):
 
         # Increase ball speed if paddle is moving in the same direction
         if colliding_player.direction * self.ball.speed_y > 0:
-            self.ball.speed = min(self.ball.speed * 1.2, BALL_MAX_SPEED * self.upscale_factor)
+            self.ball.speed = min(self.ball.speed * 1.2, self.ball.max_speed * self.upscale_factor)
         # Decrease ball speed if paddle is moving in the opposite direction
         elif colliding_player.direction * self.ball.speed_y < 0:
-            self.ball.speed = max(self.ball.speed/1.2, BALL_MIN_SPEED * self.upscale_factor)
+            self.ball.speed = max(self.ball.speed/1.2, self.ball.min_speed * self.upscale_factor)
         # Reverse the direction of travel
         self.ball.direction_x = colliding_player.position * -1
         
@@ -221,7 +220,6 @@ class LongPongGame(MultiverseGame):
         else:
             self.player_one.is_ai = True
             self.player_two.is_ai = True
-
 
 
     def game_loop_callback(self, events: List, dt: float):
@@ -272,7 +270,7 @@ class LongPongGame(MultiverseGame):
         pygame.draw.rect(self.screen, WHITE, self.player_two._rect)
         pygame.draw.ellipse(self.screen, WHITE, self.ball._rect)
         
-        pygame.draw.line(self.screen, WHITE, (self.width // 2, 0), (self.width // 2, self.height), UPSCALE_FACTOR)
+        pygame.draw.line(self.screen, WHITE, (self.width // 2, 0), (self.width // 2, self.height), self.upscale_factor)
 
         # Draw score
         self.draw_score()
@@ -285,20 +283,13 @@ class LongPongGame(MultiverseGame):
 
 # Setup and run the game
 
-# Contants/Configuration
-UPSCALE_FACTOR = 5
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
-FONT_SIZE = 11 * UPSCALE_FACTOR
-FONT_COLOR = WHITE
-
 
 PLAYER_PADDLE_SPEED = 3 * 30
 AI_PADDLE_SPEED = 2 * 30
 
-BALL_MAX_SPEED = 10 * 30
-BALL_MIN_SPEED = 2 * 30
 
 MODE_ONE_PLAYER = 1
 MODE_TWO_PLAYER = 2
@@ -307,7 +298,8 @@ MODE_AI_VS_AI = 3
     # Generate a list of IDs for the config in the correct order
 
 def main():
-    # Script Args
+    # Contants/Configuration
+    upscale_factor = 6
     config_file = ''
     show_window = False
     debug = False
@@ -327,7 +319,7 @@ def main():
     if not show_window:
         os.environ["SDL_VIDEODRIVER"] = "dummy"
 
-    longpong = LongPongGame(UPSCALE_FACTOR)
+    longpong = LongPongGame(upscale_factor)
     longpong.run()
 
 
