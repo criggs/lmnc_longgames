@@ -1,5 +1,6 @@
 import os
 import time
+import threading
 from typing import List
 import pygame
 import numpy
@@ -53,7 +54,7 @@ class MultiverseGame:
         self.multiverse_display = None
         self.pygame_screen = None
         self.dt = 0
-        self.running = False
+        self.exit_flag = threading.Event()
         self.menu_select_state = True
         self.game_mode = 1
         self.initial_configure_called = False
@@ -92,6 +93,7 @@ class MultiverseGame:
             *displays
         )
         self.multiverse_display.setup()
+        self.multiverse_display.start() # Starts the execution thread for the buffer
         self.width = len(self.multiverse_display.displays) * 11 * self.upscale_factor
         self.height = 53 * self.upscale_factor
         print(f'Upscaled Width: {self.width} Upscaled Height: {self.height}')
@@ -112,7 +114,8 @@ class MultiverseGame:
         #TODO fix possible race conditions when stopping in the middle of a loop function
         self.pygame_screen.fill(BLACK)
         self.flip_display()
-        self.running = False
+        self.exit_flag.set()
+        self.multiverse_display.stop()
         pygame.quit()
 
     def reset(self):
@@ -126,10 +129,10 @@ class MultiverseGame:
     
     """
     def run(self):
-        self.running = True
+        self.exit_flag.clear()
         prev_time = time.time()
 
-        while self.running:
+        while not self.exit_flag.wait(0.001):
             now = time.time()
             self.dt = now - prev_time
             prev_time = now
@@ -141,10 +144,10 @@ class MultiverseGame:
             # Check for quit
             for event in events:
                 if event.type == pygame.QUIT:
-                    self.running = False
+                    self.exit_flag.set()
                     continue
                 if event.type == pygame.KEYUP and event.key == pygame.K_q:
-                    self.running = False
+                    self.exit_flag.set()
                     continue
                 if event.type == pygame.KEYUP and event.key == pygame.K_r:
                     self.reset()
@@ -163,8 +166,8 @@ class MultiverseGame:
             # Set the frame rate
             self.clock.tick(self.fps)
 
-        # Quit the game
-        pygame.quit()
+        print("Ended multiverse game run loop")
+        self.stop()
 
     """
     Game mode selection menu
