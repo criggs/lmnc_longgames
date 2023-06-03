@@ -36,10 +36,10 @@ class SetupConfigGame(MultiverseGame):
     def reconfigure_displays(self):
         
         # Delete the old displays
-        if self.multiverse_display:
-            old_displays = self.multiverse_display.displays
-            for old_display in old_displays:
-                old_display.__del__()
+        # if self.multiverse_display:
+        #     old_displays = self.multiverse_display.displays
+        #     for old_display in old_displays:
+        #         old_display.__del__()
         
         # Create new displays
         displays = [Display(f'{file}', 53, 11, 0, 11 * i) for i, file in enumerate(self.found_devices)]
@@ -56,7 +56,7 @@ class SetupConfigGame(MultiverseGame):
     def display_number(self, screen_number:int):
         script_path = os.path.realpath(os.path.dirname(__file__))
         font = pygame.font.Font(f"{script_path}/Amble-Bold.ttf", 10 * self.upscale_factor)
-        text = font.render(f"{screen_number}", True, (255, 255, 255))
+        text = font.render(f"{screen_number}", False, (255, 255, 255))
         text = pygame.transform.rotate(text, -90)
 
         self.pygame_screen.blit(text, [((screen_number * 11)) * self.upscale_factor, 10 * self.upscale_factor])

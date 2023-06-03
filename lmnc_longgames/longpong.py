@@ -16,22 +16,39 @@ import math
 from multiverse_game import MultiverseGame
 from rotary_encoder_controller import RotaryEncoderController
 
-# This code is messy, it will be cleaned up at some point.....
-#
-# Python Dependencies: pygame, numpy, pyserial, multiverse (from https://github.com/Gadgetoid/gu-multiverse)
-# 
-# 3 Game Modes:
-#   - One Player
-#   - Two Player
-#   - AI vs AI
-#
-# Controls:
-#  - Player One: Up/Down
-#  - Player Two: w/s
-#  - q: Quit
-#  - r: Reset Game, back to menu
+"""
+This code is messy, it will be cleaned up at some point.....
 
-# Helper Classes
+Python Dependencies: pygame, numpy, pyserial, multiverse (from https://github.com/Gadgetoid/gu-multiverse)
+
+3 Game Modes:
+  - One Player
+  - Two Player
+  - AI vs AI
+
+Controls:
+ - Player One: Up/Down
+ - Player Two: w/s
+ - q: Quit
+ - r: Reset Game, back to menu
+
+
+TODO:
+* Fix race conditions/screen lockups on unsafe shutdown
+* Add option for 'hidden' lines between screens and implement it
+* Fix screen issues with headless mode
+* Find a better font that works well without scaling
+* Move the following to a config file:
+    * pin configuration
+    * speed/step size
+    * scaling amount
+* Add CV-based controller inputs
+* Fix bug with colision logic on bottom and top of screen
+* Fix bug with direction change when not hitting a paddle 'corner'
+* Refactor paddle code out from the player class
+* Update README.md
+"""
+
 class Player:
     def __init__(self, rect: pygame.Rect, game) -> None:
         #Paddle
@@ -153,7 +170,7 @@ class LongPongGame(MultiverseGame):
 
     # Function to update the score on the screen
     def draw_score(self):
-        text = self.font.render(f"{self.player_one.score}    {self.player_two.score}", True, WHITE)
+        text = self.font.render(f"{self.player_one.score}    {self.player_two.score}", False, WHITE)
         text_rect = text.get_rect(center=(self.width // 2, 10 * self.upscale_factor))
         self.screen.blit(text, text_rect)
 
@@ -290,7 +307,7 @@ class LongPongGame(MultiverseGame):
         # Draw paddles and ball
         pygame.draw.rect(self.screen, WHITE, self.player_one._rect)
         pygame.draw.rect(self.screen, WHITE, self.player_two._rect)
-        pygame.draw.ellipse(self.screen, WHITE, self.ball._rect)
+        pygame.draw.rect(self.screen, WHITE, self.ball._rect)
         
         pygame.draw.line(self.screen, WHITE, (self.width // 2, 0), (self.width // 2, self.height), self.upscale_factor)
 
@@ -320,28 +337,24 @@ AI_PADDLE_SPEED = 2 * 30
 P1_UP = pygame.USEREVENT + 1 
 P1_DOWN = pygame.USEREVENT + 2
 
-P2_UP = pygame.USEREVENT + 2
-P2_DOWN = pygame.USEREVENT + 3
+P2_UP = pygame.USEREVENT + 3
+P2_DOWN = pygame.USEREVENT + 4
 
 MODE_ONE_PLAYER = 1
 MODE_TWO_PLAYER = 2
 MODE_AI_VS_AI = 3
 
-    # Generate a list of IDs for the config in the correct order
 
 def main():
     # Contants/Configuration
-    upscale_factor = 6
-    config_file = ''
+    upscale_factor = 5
     show_window = False
     debug = False
     opts, args = getopt.getopt(sys.argv[1:],"hi:wd",["conf="])
     for opt, arg in opts:
         if opt == '-h':
-            print ('longpong.py [-w] [-d] -c CONFIG_FILE')
+            print ('longpong.py [-w] [-d]')
             sys.exit()
-        elif opt in ('-c', '--conf'):
-            #TODO: Get the display configuration and GPIO/Input info from a config file
             config_file = arg
         elif opt == '-w':
             show_window = True
@@ -353,7 +366,21 @@ def main():
 
     longpong = LongPongGame(upscale_factor)
 
-    p1_controller = RotaryEncoderController(longpong.fire_controller_input_event, P1_UP, P1_DOWN)
+    #P1 Controller
+    RotaryEncoderController(longpong.fire_controller_input_event, 
+                                            positive_event_id=P1_UP, 
+                                            negative_event_id=P1_DOWN, 
+                                            clk_pin = 22, 
+                                            dt_pin = 27, 
+                                            button_pin = 17)
+    
+    #P2 Controller
+    RotaryEncoderController(longpong.fire_controller_input_event, 
+                                            positive_event_id=P2_UP, 
+                                            negative_event_id=P2_DOWN, 
+                                            clk_pin = 25, 
+                                            dt_pin = 24, 
+                                            button_pin = 23)
     game_thread = Thread(target=longpong.run, args=[])
 
     game_thread.start()

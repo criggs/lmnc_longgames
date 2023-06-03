@@ -5,11 +5,11 @@ from time import sleep
 class RotaryEncoderController:
     def __init__(self, 
                  event_callback: Callable[[int,int], None], 
+                 clk_pin: int, 
+                 dt_pin: int, 
+                 button_pin: int,
                  positive_event_id: int = 1, 
-                 negative_event_id: int = -1, 
-                 clk_pin: int = 22, 
-                 dt_pin: int = 27, 
-                 button_pin: int = 17):
+                 negative_event_id: int = -1):
         self.clk_pin = clk_pin
         self.dt_pin = dt_pin
         self.button_pin = button_pin
@@ -20,8 +20,6 @@ class RotaryEncoderController:
         self.rotary_encoder.when_rotated_clockwise = self.rotated_cw
         self.rotary_encoder.when_rotated_counter_clockwise = self.rotated_ccw
         self.button = Button(button_pin)
-
-        self.running = False
 
     def rotated_cw(self):
         self.event_callback(self.positive_event_id)
