@@ -24,6 +24,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import numpy
 import serial
 import threading
+import time
 
 
 # Class to represent a single Galactic Unicorn display
@@ -43,6 +44,8 @@ class Display:
     def setup(self):
         try:
             self.port = serial.Serial(self.path)
+        # Clear the display
+            self.port.write(numpy.zeros((self.w, self.h, self.BYTES_PER_PIXEL), dtype=numpy.uint8).tobytes())
         except Exception as e:
             print(f"Exception while setting up display at {self.x} {self.y}")
             print(e)
@@ -58,8 +61,13 @@ class Display:
             return
         self.port.flush()
 
+    def clear(self):
+        self.port.write(numpy.zeros((self.w, self.h, self.BYTES_PER_PIXEL), dtype=numpy.uint8).tobytes())
+        self.port.flush()
+
     def update(self, buffer):
-        threading.Thread(target=self.write, args=(buffer,)).start()
+        #threading.Thread(target=self.write, args=(buffer,)).start()
+        self.write(buffer)
 
     def __del__(self):
         if self.port is None:
@@ -73,6 +81,8 @@ class Display:
 class Multiverse:
     def __init__(self, *args):
         self.displays = list(args)
+        self.buffer = None
+        self.exit_flag = threading.Event()
 
     def setup(self):
         for display in self.displays:
@@ -82,8 +92,29 @@ class Multiverse:
         self.displays.append(display)
 
     def update(self, buffer):
-        for display in self.displays:
-            display.update(buffer)
+        self.buffer = buffer
 
-        for display in self.displays:
-            display.flush()
+    def run(self):
+        while not self.exit_flag.wait(timeout=0.01):
+            if self.buffer is None:
+                continue
+            for display in self.displays:
+                display.update(self.buffer)
+
+            for display in self.displays:
+                display.flush()
+            time.sleep(0.01)
+
+    def stop(self):
+        print("Stopping multiverse display thread")
+        self.running = False
+        self.exit_flag.set()
+        self.thread.join()
+
+    def start(self) -> threading.Thread:
+        print("Starting multiverse display thread")
+        self.exit_flag.clear()
+        self.thread = threading.Thread(target = self.run)
+        self.thread.start()
+        return self.thread
+ 
