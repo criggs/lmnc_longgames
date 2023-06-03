@@ -42,8 +42,7 @@ class SetupConfigGame(MultiverseGame):
         displays = []
         for i, file in enumerate(self.found_devices):
             print(f'{i}: {file}')
-            position = len(self.found_devices) - 1 - i
-            displays.append(Display(f'{file}', 53, 11, 0, 11 * position))
+            displays.append(Display(f'{file}', 53, 11, 0, 11 * i))
         print("")
         
         self.configure_display(displays)
@@ -61,7 +60,7 @@ class SetupConfigGame(MultiverseGame):
         
         for i, file in enumerate(self.found_devices):
             position = len(self.found_devices) - 1 - i
-            self.display_number(position)
+            self.display_number(i)
 
     def display_number(self, screen_number:int):
         script_path = os.path.realpath(os.path.dirname(__file__))
@@ -80,7 +79,7 @@ class SetupConfigGame(MultiverseGame):
                 print("Great, saving config")
                 
                 config = LongGameConfig()
-                config.config['displays']['main']['devices'] = self.found_devices[::-1]
+                config.config['displays']['main']['devices'] = self.found_devices
                 config.write()
                 getting_input = False
                 self.stop()
@@ -89,9 +88,10 @@ class SetupConfigGame(MultiverseGame):
                 val = input("From left to right, input the numbers that you see on each display, separated by commas: ")
                 new_order = [x.strip() for x in val.split(',')]
                 print(new_order)
-                
-                self.found_devices = [self.found_devices[int(i)] for i in new_order]
- 
+                new_order.reverse()
+                reversed_devices = self.found_devices[::-1]
+                self.found_devices = [reversed_devices[int(i)] for i in new_order]
+
                 self.reconfigure_displays()
 
 
