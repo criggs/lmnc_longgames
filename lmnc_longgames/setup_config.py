@@ -26,11 +26,6 @@ class SetupConfigGame(MultiverseGame):
             print("No serial devices found!")
             return
 
-        
-        print('Found the following serial devices:')
-        for file in self.found_devices:
-            print(file)
-        print("")
         self.reconfigure_displays()
     
     def reconfigure_displays(self):
@@ -42,16 +37,31 @@ class SetupConfigGame(MultiverseGame):
         #         old_display.__del__()
         
         # Create new displays
-        displays = [Display(f'{file}', 53, 11, 0, 11 * i) for i, file in enumerate(self.found_devices)]
+
+        print('Found the following serial devices:')
+        displays = []
+        for i, file in enumerate(self.found_devices):
+            print(f'{i}: {file}')
+            position = len(self.found_devices) - 1 - i
+            displays.append(Display(f'{file}', 53, 11, 0, 11 * position))
+        print("")
+        
         self.configure_display(displays)
 
 
     def game_loop_callback(self, events: List, dt: float):
 
         self.pygame_screen.fill(BLACK)
+
+        events = pygame.event.get()
+
+        for event in events:
+            if event.type == pygame.QUIT:
+                self.running = False
         
         for i, file in enumerate(self.found_devices):
-            self.display_number(i)
+            position = len(self.found_devices) - 1 - i
+            self.display_number(position)
 
     def display_number(self, screen_number:int):
         script_path = os.path.realpath(os.path.dirname(__file__))
@@ -70,7 +80,7 @@ class SetupConfigGame(MultiverseGame):
                 print("Great, saving config")
                 
                 config = LongGameConfig()
-                config.config['displays']['main']['devices'] = self.found_devices
+                config.config['displays']['main']['devices'] = self.found_devices[::-1]
                 config.write()
                 getting_input = False
                 self.stop()
@@ -81,6 +91,7 @@ class SetupConfigGame(MultiverseGame):
                 print(new_order)
                 
                 self.found_devices = [self.found_devices[int(i)] for i in new_order]
+ 
                 self.reconfigure_displays()
 
 

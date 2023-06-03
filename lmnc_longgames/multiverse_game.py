@@ -113,6 +113,7 @@ class MultiverseGame:
         self.pygame_screen.fill(BLACK)
         self.flip_display()
         self.running = False
+        pygame.quit()
 
     def reset(self):
         if self.reset_game_callback:
@@ -189,10 +190,10 @@ class MultiverseGame:
         # Fill the screen
         self.pygame_screen.fill(BLACK)
 
-        title_text = self.font.render("Select Game Mode", True, WHITE)
-        mode1_text = self.font.render("1. 1 Player", True, WHITE)
-        mode2_text = self.font.render("2. 2 Players", True, WHITE)
-        mode3_text = self.font.render("3. AI vs AI", True, WHITE)
+        title_text = self.font.render("Select Game Mode", False, WHITE)
+        mode1_text = self.font.render("1. 1 Player", False, WHITE)
+        mode2_text = self.font.render("2. 2 Players", False, WHITE)
+        mode3_text = self.font.render("3. AI vs AI", False, WHITE)
 
 
         center_screen = self.width // 2
@@ -209,7 +210,7 @@ class MultiverseGame:
         for i in range(3, 0, -1):
             print(i)
             self.pygame_screen.fill(BLACK)
-            countdown_text = self.font.render(str(i), True, WHITE)
+            countdown_text = self.font.render(str(i), False, WHITE)
             self.pygame_screen.blit(countdown_text, (self.width // 4 - countdown_text.get_width() // 2, self.height // 2 - countdown_text.get_height() // 2))
             self.pygame_screen.blit(countdown_text, (3 * self.width // 4 - countdown_text.get_width() // 2, self.height // 2 - countdown_text.get_height() // 2))
             self.flip_display()
