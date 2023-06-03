@@ -110,9 +110,9 @@ class MultiverseGame:
 
     def stop(self):
         #TODO fix possible race conditions when stopping in the middle of a loop function
-        self.running = False
         self.pygame_screen.fill(BLACK)
         self.flip_display()
+        self.running = False
 
     def reset(self):
         if self.reset_game_callback:
