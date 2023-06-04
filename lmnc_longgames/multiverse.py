@@ -107,7 +107,6 @@ class Multiverse:
 
     def stop(self):
         print("Stopping multiverse display thread")
-        self.running = False
         self.exit_flag.set()
         self.thread.join()
 
