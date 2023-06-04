@@ -52,10 +52,16 @@ class Display:
     def run(self):
         print(f"{self.x},{self.y}: Running....")
         while not self.exit_flag.wait(timeout=0.01):
-            if not self.is_setup:
-                self.setup()
-            self.write(self.display_buffer)
-        
+            try:
+                if not self.is_setup:
+                    self.setup()
+                self.write(self.display_buffer)
+                # Not sure if we need to do this, but lets make sure the input buffer doesn't fill up and block something
+                self.port.reset_input_buffer()
+            except Exception as e:
+                print(f"{self.x},{self.y}: Exception in run loop. Closing port to attempt re-attaching")
+                self._close()
+            
         print(f"{self.x},{self.y}: Running loop has finished")
         self.clear()
         self._close()
@@ -78,22 +84,27 @@ class Display:
     
     def setup(self):
         try:
-            self.port = serial.Serial(self.path, write_timeout=1)
+            self.port = serial.Serial(self.path, write_timeout=0.1)
             self.clear()
             self.is_setup = True
         except Exception as e:
             print(f"{self.x},{self.y}: Exception while setting up display")
             print(e)
-            
-    def write(self, buffer):
-        if buffer is not None:
-            self._write(buffer[self.y:self.y + self.h, self.x:self.x + self.w].tobytes())
 
-    def _write(self, display_buffer):
-        if display_buffer is None or self.port is None or not self.port.isOpen():
+    def write(self, display_buffer_bytes):
+        if display_buffer_bytes is None or self.port is None or not self.port.isOpen():
             return
         try:
-            self.port.write(display_buffer)
+            self.port.write(display_buffer_bytes)
+            self.port.flush()
+        except serial.SerialTimeoutException as e:
+            print(f"{self.x},{self.y}: Timeout while writing. Waiting to write: {self.port.out_waiting}. Waiting to read: {self.port.in_waiting}")
+            traceback.print_exc()
+            self._close()
+        except serial.SerialException as e:
+            print(f"{self.x},{self.y}: SerialException while writing.")
+            traceback.print_exc()
+            self._close()
         except Exception as e:
             print(f"{self.x},{self.y}: Error while writing")
             print(e)
@@ -101,16 +112,32 @@ class Display:
 
     def clear(self):
         print(f"{self.x},{self.y}: Clearing display")
-        self._write(numpy.zeros((self.w, self.h, self.BYTES_PER_PIXEL), dtype=numpy.uint8).tobytes())
+        self.write(numpy.zeros((self.w, self.h, self.BYTES_PER_PIXEL), dtype=numpy.uint8).tobytes())
 
     def _close(self):
         print(f"{self.x},{self.y}: Cleaning up and Closing port")
-        print(f"{self.x},{self.y}: Resetting input buffer")
-        self.port.reset_input_buffer()
-        print(f"{self.x},{self.y}: Resetting output buffer")
-        self.port.reset_output_buffer()
-        print(f"{self.x},{self.y}: Closing port")
-        self.port.close()
+        if self.port is not None and self.port.is_open:
+            try:
+                print(f"{self.x},{self.y}: Resetting input buffer")
+                self.port.reset_input_buffer()
+            except Exception as e:
+                print(f"{self.x},{self.y}: Exception while resetting input buffer.")
+                print(e)
+
+            try:
+                print(f"{self.x},{self.y}: Resetting output buffer")
+                self.port.reset_output_buffer()
+            except Exception as e:
+                print(f"{self.x},{self.y}: Exception while resetting input buffer.")
+                print(e)
+
+            try:
+                print(f"{self.x},{self.y}: Closing port")
+                self.port.close()
+            except Exception as e:
+                print(f"{self.x},{self.y}: Exception while closing port.")
+                print(e)
+        
         self.port = None
         self.is_setup = False
 
@@ -136,7 +163,9 @@ class Multiverse:
 
     def update(self, buffer):
         for display in self.displays:
-            display.update(buffer)
+            #Get the display's slice from the whole buffer
+            display_bytes = buffer[display.y:display.y + display.h, display.x:display.x + display.w].tobytes()
+            display.update(display_bytes)
 
     def stop(self):
         print("Stopping multiverse displays")

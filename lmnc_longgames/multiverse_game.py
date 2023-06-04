@@ -73,7 +73,7 @@ class MultiverseGame:
 
     def signal_handler(self, sig, frame):
         print('You pressed Ctrl+C!')
-        if self.exit_flag.set():
+        if self.exit_flag.is_set():
             print("Force closing")
             sys.exit(1)
         self.stop()
