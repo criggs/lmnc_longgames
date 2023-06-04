@@ -40,6 +40,8 @@ class Display:
         self.h = h
         self.x = x
         self.y = y
+        self.display_buffer = None
+        self.exit_flag = threading.Event()
 
     def setup(self):
         try:
@@ -50,9 +52,8 @@ class Display:
             print(f"Exception while setting up display at {self.x} {self.y}")
             print(e)
             
-
     def write(self, buffer):
-        if self.port is None:
+        if self.port is None or buffer is None:
             return
         self.port.write(buffer[self.y:self.y + self.h, self.x:self.x + self.w].tobytes())
 
@@ -67,7 +68,8 @@ class Display:
 
     def update(self, buffer):
         #threading.Thread(target=self.write, args=(buffer,)).start()
-        self.write(buffer)
+        #self.write(buffer)
+        self.display_buffer = buffer
 
     def __del__(self):
         if self.port is None:
@@ -76,12 +78,28 @@ class Display:
         self.port.write(numpy.zeros((self.w, self.h, self.BYTES_PER_PIXEL), dtype=numpy.uint8).tobytes())
         self.port.flush()
         self.port.close()
+        
+    def run(self):
+        while not self.exit_flag.wait(timeout=0.01):
+            self.write(self.display_buffer)
+            self.flush()
+
+    def stop(self):
+        print("Stopping display thread")
+        self.exit_flag.set()
+        self.thread.join()
+
+    def start(self) -> threading.Thread:
+        print("Starting display thread")
+        self.exit_flag.clear()
+        self.thread = threading.Thread(target = self.run)
+        self.thread.start()
+        return self.thread
 
 
 class Multiverse:
     def __init__(self, *args):
         self.displays = list(args)
-        self.buffer = None
         self.exit_flag = threading.Event()
 
     def setup(self):
@@ -92,28 +110,16 @@ class Multiverse:
         self.displays.append(display)
 
     def update(self, buffer):
-        self.buffer = buffer
-
-    def run(self):
-        while not self.exit_flag.wait(timeout=0.01):
-            if self.buffer is None:
-                continue
-            for display in self.displays:
-                display.update(self.buffer)
-
-            for display in self.displays:
-                display.flush()
-            time.sleep(0.01)
+        for display in self.displays:
+            display.update(buffer)
 
     def stop(self):
-        print("Stopping multiverse display thread")
-        self.exit_flag.set()
-        self.thread.join()
+        print("Stopping multiverse displays")
+        for d in self.displays:
+            d.stop()
 
     def start(self) -> threading.Thread:
-        print("Starting multiverse display thread")
-        self.exit_flag.clear()
-        self.thread = threading.Thread(target = self.run)
-        self.thread.start()
-        return self.thread
+        print("Starting multiverse displays")
+        for d in self.displays:
+            d.start()
  
