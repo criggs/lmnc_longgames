@@ -25,6 +25,7 @@ import numpy
 import serial
 import threading
 import time
+import traceback
 
 
 # Class to represent a single Galactic Unicorn display
@@ -42,69 +43,93 @@ class Display:
         self.y = y
         self.display_buffer = None
         self.exit_flag = threading.Event()
-
-    def setup(self):
-        try:
-            self.port = serial.Serial(self.path)
-        # Clear the display
-            self.port.write(numpy.zeros((self.w, self.h, self.BYTES_PER_PIXEL), dtype=numpy.uint8).tobytes())
-        except Exception as e:
-            print(f"Exception while setting up display at {self.x} {self.y}")
-            print(e)
-            
-    def write(self, buffer):
-        if self.port is None or buffer is None:
-            return
-        self.port.write(buffer[self.y:self.y + self.h, self.x:self.x + self.w].tobytes())
-
-    def flush(self):
-        if self.port is None:
-            return
-        self.port.flush()
-
-    def clear(self):
-        self.port.write(numpy.zeros((self.w, self.h, self.BYTES_PER_PIXEL), dtype=numpy.uint8).tobytes())
-        self.port.flush()
-
+        self.is_setup = False
+    
     def update(self, buffer):
         #threading.Thread(target=self.write, args=(buffer,)).start()
-        #self.write(buffer)
         self.display_buffer = buffer
 
-    def __del__(self):
-        if self.port is None:
-            return
-        # Clear the displays to black when the program bails
-        self.port.write(numpy.zeros((self.w, self.h, self.BYTES_PER_PIXEL), dtype=numpy.uint8).tobytes())
-        self.port.flush()
-        self.port.close()
-        
     def run(self):
+        print(f"{self.x},{self.y}: Running....")
         while not self.exit_flag.wait(timeout=0.01):
+            if not self.is_setup:
+                self.setup()
             self.write(self.display_buffer)
-            self.flush()
+        
+        print(f"{self.x},{self.y}: Running loop has finished")
+        self.clear()
+        self._close()
+        print(f"{self.x},{self.y}: Run is done")
 
     def stop(self):
-        print("Stopping display thread")
+        print(f"{self.x},{self.y}: Stopping display thread")
         self.exit_flag.set()
+
+    def join(self):
+        print(f"{self.x},{self.y}: Waiting for thread to stop")
         self.thread.join()
 
     def start(self) -> threading.Thread:
-        print("Starting display thread")
+        print(f"{self.x},{self.y}: Starting display thread")
         self.exit_flag.clear()
         self.thread = threading.Thread(target = self.run)
         self.thread.start()
         return self.thread
+    
+    def setup(self):
+        try:
+            self.port = serial.Serial(self.path, write_timeout=1)
+            self.clear()
+            self.is_setup = True
+        except Exception as e:
+            print(f"{self.x},{self.y}: Exception while setting up display")
+            print(e)
+            
+    def write(self, buffer):
+        if buffer is not None:
+            self._write(buffer[self.y:self.y + self.h, self.x:self.x + self.w].tobytes())
+
+    def _write(self, display_buffer):
+        if display_buffer is None or self.port is None or not self.port.isOpen():
+            return
+        try:
+            self.port.write(display_buffer)
+        except Exception as e:
+            print(f"{self.x},{self.y}: Error while writing")
+            print(e)
+            traceback.print_exc()
+
+    def clear(self):
+        print(f"{self.x},{self.y}: Clearing display")
+        self._write(numpy.zeros((self.w, self.h, self.BYTES_PER_PIXEL), dtype=numpy.uint8).tobytes())
+
+    def _close(self):
+        print(f"{self.x},{self.y}: Cleaning up and Closing port")
+        print(f"{self.x},{self.y}: Resetting input buffer")
+        self.port.reset_input_buffer()
+        print(f"{self.x},{self.y}: Resetting output buffer")
+        self.port.reset_output_buffer()
+        print(f"{self.x},{self.y}: Closing port")
+        self.port.close()
+        self.port = None
+        self.is_setup = False
+
+    def __del__(self):
+        if self.port is None or not self.port.isOpen():
+            return
+        try:
+            print(f"{self.x},{self.y}: __del__ cleaning up display")
+            self.exit_flag.set()
+            self._close()
+        except:
+            pass
+
 
 
 class Multiverse:
     def __init__(self, *args):
         self.displays = list(args)
         self.exit_flag = threading.Event()
-
-    def setup(self):
-        for display in self.displays:
-            display.setup()
 
     def add(self, display):
         self.displays.append(display)
@@ -117,9 +142,14 @@ class Multiverse:
         print("Stopping multiverse displays")
         for d in self.displays:
             d.stop()
+        print("Waiting for display threads to stop")
+        for d in self.displays:
+            d.join()
+        print("Multiverse display stop complete")
 
     def start(self) -> threading.Thread:
         print("Starting multiverse displays")
         for d in self.displays:
             d.start()
+        print("Multiverse display start complete")
  

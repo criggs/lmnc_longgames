@@ -10,7 +10,6 @@ config = LongGameConfig()
 displays = [Display(f'{file}', 53, 11, 0, 11 * i) for i, file in enumerate(config.config['displays']['main']['devices'] )]
 display = Multiverse(*displays)
 
-display.setup()
 display.start()
 
 # Full buffer size
@@ -19,7 +18,7 @@ HEIGHT = 53
 BYTES_PER_PIXEL = 4
 
 # Fire stuff
-FIRE_SPAWNS = 4
+FIRE_SPAWNS = len(displays) + 1
 DAMPING_FACTOR = 0.98
 HEAT = 4.0
 
@@ -68,6 +67,9 @@ event = threading.Event()
 
 def signal_handler(sig, frame):
     print('You pressed Ctrl+C!')
+    if event.is_set():
+        #This is the second Ctrl+c. Force close.
+        sys.exit(1)
     event.set()
 
 signal.signal(signal.SIGINT, signal_handler)
