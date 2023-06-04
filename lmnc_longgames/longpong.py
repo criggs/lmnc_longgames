@@ -152,8 +152,8 @@ class Ball:
         return self.speed * math.sin(self.angle) * self.direction_y
 
 class LongPongGame(MultiverseGame):
-    def __init__(self, upscale_factor):
-        super().__init__("Long Pong", 120, upscale_factor)
+    def __init__(self, upscale_factor, headless):
+        super().__init__("Long Pong", 120, upscale_factor, headless=headless)
         self.configure_display()
         self.screen = self.pygame_screen
 
@@ -361,10 +361,7 @@ def main():
         elif opt == '-d':
             debug = True
 
-    if not show_window:
-        os.environ["SDL_VIDEODRIVER"] = "dummy"
-
-    longpong = LongPongGame(upscale_factor)
+    longpong = LongPongGame(upscale_factor, headless = not show_window)
 
     #P1 Controller
     RotaryEncoderController(longpong.fire_controller_input_event, 
