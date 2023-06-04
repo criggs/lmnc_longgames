@@ -38,6 +38,9 @@ class SetupConfigGame(MultiverseGame):
         
         # Create new displays
 
+        if self.multiverse_display:
+            self.multiverse_display.stop()
+
         print('Found the following serial devices:')
         displays = []
         for i, file in enumerate(self.found_devices):

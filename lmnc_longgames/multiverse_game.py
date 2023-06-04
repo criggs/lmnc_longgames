@@ -103,9 +103,7 @@ class MultiverseGame:
             config = LongGameConfig()
             displays = [Display(f'{file}', 53, 11, 0, 11 * i) for i, file in enumerate(config.config['displays']['main']['devices'] )]
             
-        self.multiverse_display = Multiverse(
-            *displays
-        )
+        self.multiverse_display = Multiverse(*displays)
         self.multiverse_display.setup()
         self.multiverse_display.start() # Starts the execution thread for the buffer
         self.width = len(self.multiverse_display.displays) * 11 * self.upscale_factor
