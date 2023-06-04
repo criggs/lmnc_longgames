@@ -1,5 +1,7 @@
 import os
+import signal
 import time
+import sys
 import threading
 from typing import List
 import pygame
@@ -38,12 +40,15 @@ class MultiverseGame:
     def __init__(self, 
                  game_title: str, 
                  fps: int, 
-                 upscale_factor: int
+                 upscale_factor: int,
+                 headless: bool = False
             ) -> None:
+        if headless:
+            os.environ["SDL_VIDEODRIVER"] = "dummy"
         pygame.init()
         pygame.display.set_caption(game_title)
         self.clock = pygame.time.Clock()
-
+        self.headless = headless
         script_path = os.path.realpath(os.path.dirname(__file__))
         self.font = pygame.font.Font(f"{script_path}/Amble-Bold.ttf", FONT_SIZE * upscale_factor)
         self.game_title = game_title
@@ -62,6 +67,15 @@ class MultiverseGame:
         print(f'Initializing game {self.game_title}')
         print(f'fps: {fps}')
         print(f'upscale_factor: {upscale_factor}')
+
+        signal.signal(signal.SIGINT, self.signal_handler)
+
+
+    def signal_handler(self, sig, frame):
+        print('You pressed Ctrl+C!')
+        self.stop()
+        sys.exit(0)
+
 
     def game_mode_callback(self, game_mode: int):
         """
@@ -100,6 +114,11 @@ class MultiverseGame:
         
         if not self.initial_configure_called:
             self.pygame_screen = pygame.display.set_mode((self.width, self.height))
+            if self.headless:
+                # From: https://stackoverflow.com/a/14473777
+                # surface alone wouldn't work so I needed to add a rectangle
+                self.pygame_screen = pygame.Surface((self.width, self.height), pygame.SRCALPHA, 32)
+                pygame.draw.rect(self.pygame_screen, (0,0,0), (0, 0, self.width, self.height), 0)
             self.initial_configure_called = True
 
     def flip_display(self):
@@ -185,6 +204,11 @@ class MultiverseGame:
                 if event.key == pygame.K_3:
                     self.game_mode = 3
                     self.menu_select_state = False
+
+        if self.headless:
+            self.game_mode = 3
+            self.menu_select_state = False
+            print("Hack to select AI mode, until the menu has a way to headlessly select a game mode")
 
         if not self.menu_select_state:
             self.game_mode_callback(self.game_mode)
