@@ -205,13 +205,13 @@ class LongPongGame(MultiverseGame):
 
         # Check collision with paddles
         if left_collision:
-            self.update_ball_speed_from_collision(self.player_one)
+            self.update_ball_from_collision(self.player_one)
 
         elif right_collision:
-            self.update_ball_speed_from_collision(self.player_two)
+            self.update_ball_from_collision(self.player_two)
 
         # Check collision with walls
-        if self.ball._rect.top <= 0 or self.ball._rect.bottom >= self.height:
+        if self.ball._rect.top <= 0 or self.ball._rect.bottom >= (self.height - 1):
             self.ball.direction_y = self.ball.direction_y * -1
             
         # Check if the ball went out of bounds
@@ -220,18 +220,22 @@ class LongPongGame(MultiverseGame):
         elif self.ball._rect.left >= self.width:
             self.score_and_reset(self.player_one)
 
-    def update_ball_speed_from_collision(self, colliding_player: Player):
-        delta_y = self.ball._rect.centery - colliding_player._rect.centery
-        self.ball.angle = math.pi / 4 * (delta_y / (colliding_player.height / 2))
+    def update_ball_from_collision(self, colliding_paddle: Player):
+        delta_y = abs(self.ball._rect.centery - colliding_paddle._rect.centery)
+        self.ball.angle = math.pi / 4 * (delta_y / (colliding_paddle.height / 2))
+
+        #keep ball from getting stuck in a stalemate
+        if self.ball.angle < 0.01:
+            self.ball.angle = 0.02
 
         # Increase ball speed if paddle is moving in the same direction
-        if colliding_player.direction * self.ball.speed_y > 0:
+        if colliding_paddle.direction * self.ball.speed_y > 0:
             self.ball.speed = min(self.ball.speed * 1.2, self.ball.max_speed * self.upscale_factor)
         # Decrease ball speed if paddle is moving in the opposite direction
-        elif colliding_player.direction * self.ball.speed_y < 0:
+        elif colliding_paddle.direction * self.ball.speed_y < 0:
             self.ball.speed = max(self.ball.speed/1.2, self.ball.min_speed * self.upscale_factor)
         # Reverse the direction of travel
-        self.ball.direction_x = colliding_player.position * -1
+        self.ball.direction_x = colliding_paddle.position * -1
         
     def game_mode_callback(self, game_mode):    
         """
@@ -350,12 +354,11 @@ def main():
     upscale_factor = 5
     show_window = False
     debug = False
-    opts, args = getopt.getopt(sys.argv[1:],"hi:wd",["conf="])
+    opts, args = getopt.getopt(sys.argv[1:],"hwd",[])
     for opt, arg in opts:
         if opt == '-h':
             print ('longpong.py [-w] [-d]')
             sys.exit()
-            config_file = arg
         elif opt == '-w':
             show_window = True
         elif opt == '-d':
