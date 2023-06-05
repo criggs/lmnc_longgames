@@ -57,7 +57,8 @@ class Display:
                     self.setup()
                 self.write(self.display_buffer)
                 # Not sure if we need to do this, but lets make sure the input buffer doesn't fill up and block something
-                self.port.reset_input_buffer()
+                if self.port is not None and self.port.isOpen():
+                    self.port.reset_input_buffer()
             except Exception as e:
                 print(f"{self.x},{self.y}: Exception in run loop. Closing port to attempt re-attaching")
                 self._close()
@@ -83,8 +84,11 @@ class Display:
         return self.thread
     
     def setup(self):
+        print(f"{self.x},{self.y}: Setting up display")
         try:
+            print(f"{self.x},{self.y}: Creating serial port")
             self.port = serial.Serial(self.path, write_timeout=0.1)
+            print(f"{self.x},{self.y}: Clearing display")
             self.clear()
             self.is_setup = True
         except Exception as e:
@@ -116,7 +120,7 @@ class Display:
 
     def _close(self):
         print(f"{self.x},{self.y}: Cleaning up and Closing port")
-        if self.port is not None and self.port.is_open:
+        if self.port is not None and self.port.isOpen():
             try:
                 print(f"{self.x},{self.y}: Resetting input buffer")
                 self.port.reset_input_buffer()
@@ -137,7 +141,7 @@ class Display:
             except Exception as e:
                 print(f"{self.x},{self.y}: Exception while closing port.")
                 print(e)
-        
+        print(f"{self.x},{self.y}: Unsetting port")
         self.port = None
         self.is_setup = False
 

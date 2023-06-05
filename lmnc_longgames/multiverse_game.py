@@ -113,16 +113,17 @@ class MultiverseGame:
         print(f'Upscaled Width: {self.width} Upscaled Height: {self.height}')
         
         if not self.initial_configure_called:
-            self.pygame_screen = pygame.display.set_mode((self.width, self.height))
+            self.pygame_screen = pygame.display.set_mode((self.width, self.height), depth=24)
             if self.headless:
                 # From: https://stackoverflow.com/a/14473777
                 # surface alone wouldn't work so I needed to add a rectangle
-                self.pygame_screen = pygame.Surface((self.width, self.height), pygame.SRCALPHA, 32)
+                #self.pygame_screen = pygame.Surface((self.width, self.height), pygame.SRCALPHA, 32)
                 pygame.draw.rect(self.pygame_screen, (0,0,0), (0, 0, self.width, self.height), 0)
             self.initial_configure_called = True
 
     def flip_display(self):
         pygame.display.flip()
+        #This is a copy of the pixels into a new array
         framegrab = pygame.surfarray.array2d(self.pygame_screen)
         downsample = numpy.array(framegrab)[::self.upscale_factor, ::self.upscale_factor]
         # We need to reorder the rows for the correct origin/pixel position on the individual displays
