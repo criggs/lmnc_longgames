@@ -107,8 +107,8 @@ class Player:
 
 class Ball:
 
-    max_speed = 10 * 30
-    min_speed = 2 * 30
+    max_speed = 100
+    min_speed = 15
 
     def __init__(self, radius: int, game: MultiverseGame) -> None:
         self.radius = radius
@@ -194,8 +194,8 @@ class LongPongGame(MultiverseGame):
 
     # Function to update the ball's position
     def update_ball(self, dt: float):
-        self.ball.x += self.ball.speed_x * dt
-        self.ball.y += self.ball.speed_y * dt
+        self.ball.x += self.ball.speed_x * dt * self.upscale_factor
+        self.ball.y += self.ball.speed_y * dt * self.upscale_factor
 
         # Detect Left Paddle Collision
         left_collision = self.ball._rect.left <= self.player_one.width and (abs(self.ball._rect.centery - self.player_one._rect.centery) <= self.player_one.height//2)
@@ -230,10 +230,10 @@ class LongPongGame(MultiverseGame):
 
         # Increase ball speed if paddle is moving in the same direction
         if colliding_paddle.direction * self.ball.speed_y > 0:
-            self.ball.speed = min(self.ball.speed * 1.2, self.ball.max_speed * self.upscale_factor)
+            self.ball.speed = min(self.ball.speed * 1.2, self.ball.max_speed)
         # Decrease ball speed if paddle is moving in the opposite direction
         elif colliding_paddle.direction * self.ball.speed_y < 0:
-            self.ball.speed = max(self.ball.speed/1.2, self.ball.min_speed * self.upscale_factor)
+            self.ball.speed = max(self.ball.speed/1.2, self.ball.min_speed)
         # Reverse the direction of travel
         self.ball.direction_x = colliding_paddle.position * -1
         
@@ -351,7 +351,6 @@ MODE_AI_VS_AI = 3
 
 def main():
     # Contants/Configuration
-    upscale_factor = 5
     show_window = False
     debug = False
     opts, args = getopt.getopt(sys.argv[1:],"hwd",[])
@@ -363,6 +362,8 @@ def main():
             show_window = True
         elif opt == '-d':
             debug = True
+    
+    upscale_factor = 5 if show_window else 1
 
     longpong = LongPongGame(upscale_factor, headless = not show_window)
 
