@@ -210,9 +210,13 @@ class LongPongGame(MultiverseGame):
         elif right_collision:
             self.update_ball_from_collision(self.player_two)
 
-        # Check collision with walls
-        if self.ball._rect.top <= 0 or self.ball._rect.bottom >= (self.height - 1):
-            self.ball.direction_y = self.ball.direction_y * -1
+        # Check collision with top
+        if self.ball._rect.top <= 0:
+            self.ball.direction_y = 1
+            
+        # Check collision with bottom
+        if self.ball._rect.bottom >= (self.height - 1):
+            self.ball.direction_y = -1
             
         # Check if the ball went out of bounds
         if self.ball._rect.right <= 0:
