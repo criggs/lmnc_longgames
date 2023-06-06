@@ -15,6 +15,7 @@ import random
 import math
 from multiverse_game import MultiverseGame
 from rotary_encoder_controller import RotaryEncoderController
+from screen_power_reset import ScreenPowerReset
 
 """
 This code is messy, it will be cleaned up at some point.....
@@ -378,7 +379,6 @@ def main():
                                             clk_pin = 22, 
                                             dt_pin = 27, 
                                             button_pin = 17)
-    
     #P2 Controller
     RotaryEncoderController(longpong.fire_controller_input_event, 
                                             positive_event_id=P2_UP, 
@@ -386,6 +386,7 @@ def main():
                                             clk_pin = 25, 
                                             dt_pin = 24, 
                                             button_pin = 23)
+    ScreenPowerReset(reset_pin=26, button_pin=16)
     game_thread = Thread(target=longpong.run, args=[])
 
     game_thread.start()
