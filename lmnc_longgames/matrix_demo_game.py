@@ -39,7 +39,7 @@ BYTES_PER_PIXEL = 4
 
 class MatrixDemoGame(MultiverseGame):
     def __init__(self, upscale_factor, headless):
-        super().__init__("Matrix", 120, upscale_factor, headless=headless)
+        super().__init__("Matrix", 60, upscale_factor, headless=headless)
         self.configure_display()
         self.screen = self.pygame_screen
 
@@ -55,10 +55,10 @@ class MatrixDemoGame(MultiverseGame):
                 [  0,  30,   0],
                 [  0, 160,   0],
                 [  0, 255,   0],
-                [ 30, 255,   0],
-                [100, 255,   0],
-                [200, 255,   0],
-                [245, 255,   0],
+                [  4,  31,   0],
+                [40, 102,   0],
+                [156, 199,   0],
+                [235, 245,   0],
                 [255, 255,   0],
                 [255, 255,   0]
         ], dtype=numpy.uint8)
@@ -83,7 +83,7 @@ class MatrixDemoGame(MultiverseGame):
         """
         for event in events:
             pass
-
+        
         # Update the fire
         self.update()
 
