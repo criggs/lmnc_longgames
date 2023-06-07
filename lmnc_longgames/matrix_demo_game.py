@@ -37,9 +37,9 @@ Controls:
 
 BYTES_PER_PIXEL = 4
 
-class FireGame(MultiverseGame):
+class MatrixDemoGame(MultiverseGame):
     def __init__(self, upscale_factor, headless):
-        super().__init__("Fire!!!", 120, upscale_factor, headless=headless)
+        super().__init__("Matrix", 120, upscale_factor, headless=headless)
         self.configure_display()
         self.screen = self.pygame_screen
 
@@ -50,16 +50,20 @@ class FireGame(MultiverseGame):
 
         # Palette conversion, this is actually pretty nifty
         self.palette = numpy.array([
-            [0, 0, 0],
-            [20, 20, 20],
-            [180, 30, 0],
-            [220, 160, 0],
-            [255, 255, 180]
+                [  0,   0,   0],
+                [  0,  20,   0],
+                [  0,  30,   0],
+                [  0, 160,   0],
+                [  0, 255,   0],
+                [ 30, 255,   0],
+                [100, 255,   0],
+                [200, 255,   0],
+                [245, 255,   0],
+                [255, 255,   0],
+                [255, 255,   0]
         ], dtype=numpy.uint8)
         # FIIIREREEEEEEE
-        print(f"h: {self.height}, w: {self.width}")
-        self.heat = numpy.zeros((self.height, self.width), dtype=numpy.float32)
-
+        self.matrix = numpy.zeros((self.height, self.width), dtype=numpy.float32)
    
     def game_mode_callback(self, game_mode):    
         """
@@ -84,7 +88,7 @@ class FireGame(MultiverseGame):
         self.update()
 
         # Convert the fire buffer to RGB 888X (uint32 as four bytes)
-        buf = self.heat.clip(0.0, 1.0) * 4
+        buf = self.matrix.clip(0.0, 1.0) * (len(self.palette) - 1)
         buf = numpy.rot90(buf)
         buf = buf.astype(numpy.uint8)
         buf = self.palette[buf]
@@ -101,33 +105,18 @@ class FireGame(MultiverseGame):
         event = pygame.event.Event(event_id)
         pygame.event.post(event)
 
-# Setup and run the game
-
-
-
-
-    # UPDATE THE FIIIIIIIIIIIIREEEEEEEEEEEEEEEEEEEEEEEEEE
     def update(self):
-        # Clear the bottom two rows (off screen)
-        self.heat[self.height - 1][:] = 0.0
-        self.heat[self.height - 2][:] = 0.0
+        self.matrix[:] *= 0.65
 
-        # Add random fire spawns
-        for c in range(self.fire_spawns):
-            x = random.randint(0, self.width - 4) + 2
-            self.heat[self.height - 1][x - 1:x + 1] = self.heat_amount / 2.0
-            self.heat[self.height - 2][x - 1:x + 1] = self.heat_amount
+        for _ in range(10):
+            x = random.randint(0, self.width - 1)
+            y = random.randint(0, self.height // 2)
+            self.matrix[y][x] = random.randint(128, 255) / 255.0
 
-        # Propagate the fire upwards
-        a = numpy.roll(self.heat, -1, axis=0)  # y + 1, x
-        b = numpy.roll(self.heat, -2, axis=0)  # y + 2, x
-        c = numpy.roll(self.heat, -1, axis=0)  # y + 1
-        d = numpy.roll(c, 1, axis=1)      # y + 1, x + 1
-        e = numpy.roll(c, -1, axis=1)     # y + 1, x - 1
-
-        # Average over 5 adjacent pixels and apply damping
-        self.heat[:] += a + b + d + e
-        self.heat[:] *= self.damping_factor / 5.0
+        # Propagate downwards
+        old = self.matrix * 0.5
+        self.matrix[:] = numpy.roll(self.matrix, 1, axis=0)
+        self.matrix[:] += old
 
 def main():
     # Contants/Configuration
@@ -145,7 +134,7 @@ def main():
     
     upscale_factor = 1 if show_window else 1
 
-    game = FireGame(upscale_factor, headless = not show_window)
+    game = MatrixDemoGame(upscale_factor, headless = not show_window)
 
     ScreenPowerReset(reset_pin=26, button_pin=16)
     game_thread = Thread(target=game.run, args=[])

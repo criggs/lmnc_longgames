@@ -114,7 +114,7 @@ class MultiverseGame:
         print(f'Upscaled Width: {self.width} Upscaled Height: {self.height}')
         
         if not self.initial_configure_called:
-            self.pygame_screen = pygame.display.set_mode((self.width, self.height), depth=24)
+            self.pygame_screen = pygame.display.set_mode((self.width, self.height), depth=32)
             if self.headless:
                 # From: https://stackoverflow.com/a/14473777
                 # surface alone wouldn't work so I needed to add a rectangle
