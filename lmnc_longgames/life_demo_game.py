@@ -25,7 +25,7 @@ from screen_power_reset import ScreenPowerReset
 
 class LifeDemoGame(MultiverseGame):
     def __init__(self, upscale_factor, headless):
-        super().__init__("Conway's Game of Life", 120, upscale_factor, headless=headless)
+        super().__init__("Conway's Game of Life", 60, upscale_factor, headless=headless)
         self.configure_display()
         self.screen = self.pygame_screen
         

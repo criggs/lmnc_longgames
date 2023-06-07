@@ -25,7 +25,7 @@ BYTES_PER_PIXEL = 4
 
 class FireDemoGame(MultiverseGame):
     def __init__(self, upscale_factor, headless):
-        super().__init__("Fire!!!", 120, upscale_factor, headless=headless)
+        super().__init__("Fire!!!", 80, upscale_factor, headless=headless)
         self.configure_display()
         self.screen = self.pygame_screen
 
