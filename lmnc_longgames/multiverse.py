@@ -26,7 +26,7 @@ import serial
 import threading
 import time
 import traceback
-
+import logging
 
 # Class to represent a single Galactic Unicorn display
 # handy place to store the serial port opening and such
@@ -34,13 +34,14 @@ class Display:
     # Just in case we get fancy and use RGB565 or RGB332
     BYTES_PER_PIXEL = 4
 
-    def __init__(self, port, w, h, x, y):
+    def __init__(self, port, w, h, x, y, dummy = False):
         self.path = port
         self.port = None
         self.w = w
         self.h = h
         self.x = x
         self.y = y
+        self.dummy = dummy
         self.display_buffer = None
         self.exit_flag = threading.Event()
         self.is_setup = False
@@ -50,8 +51,12 @@ class Display:
         self.display_buffer = buffer
 
     def run(self):
-        print(f"{self.x},{self.y}: Running....")
+        
+        logging.debug(f"{self.x},{self.y}: Running....")
         while not self.exit_flag.wait(timeout=0.01):
+            if self.dummy:
+                # Nothing to do here, move along
+                continue
             try:
                 if not self.is_setup:
                     self.setup()
@@ -60,88 +65,91 @@ class Display:
                 if self.port is not None and self.port.isOpen():
                     self.port.reset_input_buffer()
             except Exception as e:
-                print(f"{self.x},{self.y}: Exception in run loop. Closing port to attempt re-attaching")
+                logging.debug(f"{self.x},{self.y}: Exception in run loop. Closing port to attempt re-attaching")
                 self._close()
             
-        print(f"{self.x},{self.y}: Running loop has finished")
+        logging.debug(f"{self.x},{self.y}: Running loop has finished")
         self.clear()
         self._close()
-        print(f"{self.x},{self.y}: Run is done")
+        logging.debug(f"{self.x},{self.y}: Run is done")
 
     def stop(self):
-        print(f"{self.x},{self.y}: Stopping display thread")
+        logging.debug(f"{self.x},{self.y}: Stopping display thread")
         self.exit_flag.set()
 
     def join(self):
-        print(f"{self.x},{self.y}: Waiting for thread to stop")
+        logging.debug(f"{self.x},{self.y}: Waiting for thread to stop")
         self.thread.join()
 
     def start(self) -> threading.Thread:
-        print(f"{self.x},{self.y}: Starting display thread")
+        logging.debug(f"{self.x},{self.y}: Starting display thread")
         self.exit_flag.clear()
         self.thread = threading.Thread(target = self.run)
         self.thread.start()
         return self.thread
     
     def setup(self):
-        print(f"{self.x},{self.y}: Setting up display")
+        logging.debug(f"{self.x},{self.y}: Setting up display")
+        if self.dummy:
+            self.is_setup
+            return
         try:
-            print(f"{self.x},{self.y}: Creating serial port")
+            logging.debug(f"{self.x},{self.y}: Creating serial port")
             self.port = serial.Serial(self.path, write_timeout=0.1)
-            print(f"{self.x},{self.y}: Clearing display")
+            logging.debug(f"{self.x},{self.y}: Clearing display")
             self.clear()
             self.is_setup = True
         except Exception as e:
-            print(f"{self.x},{self.y}: Exception while setting up display")
-            print(e)
+            logging.debug(f"{self.x},{self.y}: Exception while setting up display", e)
 
     def write(self, display_buffer_bytes):
+        if self.dummy:
+            return
         if display_buffer_bytes is None or self.port is None or not self.port.isOpen():
             return
         try:
             self.port.write(display_buffer_bytes)
             self.port.flush()
         except serial.SerialTimeoutException as e:
-            print(f"{self.x},{self.y}: Timeout while writing. Waiting to write: {self.port.out_waiting}. Waiting to read: {self.port.in_waiting}")
-            traceback.print_exc()
+            logging.debug(f"{self.x},{self.y}: Timeout while writing. Waiting to write: {self.port.out_waiting}. Waiting to read: {self.port.in_waiting}")
+            logging.debug(e)
             self._close()
         except serial.SerialException as e:
-            print(f"{self.x},{self.y}: SerialException while writing.")
-            traceback.print_exc()
+            logging.debug(f"{self.x},{self.y}: SerialException while writing.")
+            logging.debug(e)
             self._close()
         except Exception as e:
-            print(f"{self.x},{self.y}: Error while writing")
-            print(e)
-            traceback.print_exc()
+            logging.debug(f"{self.x},{self.y}: Error while writing")
+            logging.debug(e)
 
     def clear(self):
-        print(f"{self.x},{self.y}: Clearing display")
+        logging.debug(f"{self.x},{self.y}: Clearing display")
         self.write(numpy.zeros((self.w, self.h, self.BYTES_PER_PIXEL), dtype=numpy.uint8).tobytes())
 
     def _close(self):
-        print(f"{self.x},{self.y}: Cleaning up and Closing port")
+        logging.debug(f"{self.x},{self.y}: Cleaning up and Closing port")
         if self.port is not None and self.port.isOpen():
             try:
-                print(f"{self.x},{self.y}: Resetting input buffer")
+                logging.debug(f"{self.x},{self.y}: Resetting input buffer")
                 self.port.reset_input_buffer()
             except Exception as e:
-                print(f"{self.x},{self.y}: Exception while resetting input buffer.")
-                print(e)
+                logging.debug(f"{self.x},{self.y}: Exception while resetting input buffer.")
+                logging.debug(e)
 
             try:
-                print(f"{self.x},{self.y}: Resetting output buffer")
+                logging.debug(f"{self.x},{self.y}: Resetting output buffer")
                 self.port.reset_output_buffer()
             except Exception as e:
-                print(f"{self.x},{self.y}: Exception while resetting input buffer.")
-                print(e)
+                logging.debug(f"{self.x},{self.y}: Exception while resetting input buffer.")
+                logging.debug(e)
 
             try:
-                print(f"{self.x},{self.y}: Closing port")
+                logging.debug(f"{self.x},{self.y}: Closing port")
                 self.port.close()
             except Exception as e:
-                print(f"{self.x},{self.y}: Exception while closing port.")
-                print(e)
-        print(f"{self.x},{self.y}: Unsetting port")
+                logging.debug(f"{self.x},{self.y}: Exception while closing port.")
+                logging.debug(e)
+        logging.debug(f"{self.x},{self.y}: Unsetting port")
         self.port = None
         self.is_setup = False
 
@@ -149,7 +157,7 @@ class Display:
         if self.port is None or not self.port.isOpen():
             return
         try:
-            print(f"{self.x},{self.y}: __del__ cleaning up display")
+            logging.debug(f"{self.x},{self.y}: __del__ cleaning up display")
             self.exit_flag.set()
             self._close()
         except:

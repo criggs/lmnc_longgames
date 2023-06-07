@@ -104,7 +104,8 @@ class MultiverseGame:
         if not len(displays):
             #Load the defaults from the config
             config = LongGameConfig()
-            displays = [Display(f'{file}', 53, 11, 0, 11 * i) for i, file in enumerate(config.config['displays']['main']['devices'] )]
+            dummy_displays = config.config['displays']['main'].get("dummy", False)
+            displays = [Display(f'{file}', 53, 11, 0, 11 * i, dummy=dummy_displays) for i, file in enumerate(config.config['displays']['main']['devices'] )]
             
         self.multiverse_display = Multiverse(*displays)
         self.multiverse_display.start() # Starts the execution thread for the buffer
