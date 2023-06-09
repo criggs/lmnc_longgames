@@ -24,11 +24,8 @@ from screen_power_reset import ScreenPowerReset
 """
 
 class LifeDemoGame(MultiverseGame):
-    def __init__(self, upscale_factor, headless):
-        super().__init__("Conway's Game of Life", 60, upscale_factor, headless=headless)
-        self.configure_display()
-        self.screen = self.pygame_screen
-        
+    def __init__(self, multiverse_displays):
+        super().__init__("Conway's Game of Life", 60, multiverse_displays)
         
         self.initial_life = 200 * self.display_count       # Number of live cells to seed
         self.GENERATION_TIME = 0.1     # MS between generations
@@ -73,7 +70,7 @@ class LifeDemoGame(MultiverseGame):
             game_mode: The selected game mode
         """
 
-    def game_loop_callback(self, events: List, dt: float):
+    def loop(self, events: List, dt: float):
         """
         Called for each iteration of the game loop
 
@@ -94,11 +91,11 @@ class LifeDemoGame(MultiverseGame):
         buf = self.palette[buf]
 
         # Update the displays from the buffer
-        _2d_buf = pygame.surfarray.map_array(self.pygame_screen, buf)
-        pygame.surfarray.blit_array(self.pygame_screen, _2d_buf)
+        _2d_buf = pygame.surfarray.map_array(self.screen, buf)
+        pygame.surfarray.blit_array(self.screen, _2d_buf)
 
 
-    def reset_game_callback(self):
+    def reset(self):
         pass
 
     def fire_controller_input_event(self, event_id: int):

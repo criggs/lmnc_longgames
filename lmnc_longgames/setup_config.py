@@ -51,7 +51,7 @@ class SetupConfigGame(MultiverseGame):
         self.configure_display(displays)
 
 
-    def game_loop_callback(self, events: List, dt: float):
+    def loop(self, events: List, dt: float):
 
         self.pygame_screen.fill(BLACK)
 
