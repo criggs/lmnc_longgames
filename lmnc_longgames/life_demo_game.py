@@ -30,7 +30,7 @@ class LifeDemoGame(MultiverseGame):
         self.screen = self.pygame_screen
         
         
-        self.initial_life = 200 * len(self.multiverse_display.displays)       # Number of live cells to seed
+        self.initial_life = 200 * self.display_count       # Number of live cells to seed
         self.GENERATION_TIME = 0.1     # MS between generations
         self.MINIMUM_LIFE = self.initial_life / 5       # Auto reseed when only this many alive cells remain
         self.SMOOTHED = True           # Enable for a more organic if somewhat unsettling feel

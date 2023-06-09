@@ -8,6 +8,8 @@ import pygame
 import numpy
 from config import LongGameConfig
 from multiverse import Multiverse, Display
+from rotary_encoder_controller import RotaryEncoderController
+from screen_power_reset import ScreenPowerReset
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -19,6 +21,62 @@ MODE_ONE_PLAYER = 1
 MODE_TWO_PLAYER = 2
 MODE_AI_VS_AI = 3
 
+class PygameMultiverseDisplay:
+    def __init__(self, 
+                 display_title: str, 
+                 upscale_factor: int,
+                 headless: bool = False
+            ) -> None:
+        if headless:
+            os.environ["SDL_VIDEODRIVER"] = "dummy"
+        pygame.init()
+        pygame.display.set_caption(display_title)
+        self.headless = headless
+        self.width = 0
+        self.height = 0
+        self.upscale_factor = upscale_factor
+        self.multiverse = None
+        self.pygame_screen = None
+        self.initial_configure_called = False
+        
+        print(f'Initializing multiverse display')
+        print(f'upscale_factor: {upscale_factor}')
+        
+        
+    def configure_display(self, displays: List[Display] = []):
+        
+        if not len(displays):
+            #Load the defaults from the config
+            config = LongGameConfig()
+            dummy_displays = config.config['displays']['main'].get("dummy", False)
+            displays = [Display(f'{file}', 53, 11, 0, 11 * i, dummy=dummy_displays) for i, file in enumerate(config.config['displays']['main']['devices'] )]
+            
+        self.multiverse = Multiverse(*displays)
+        self.multiverse.start() # Starts the execution thread for the buffer
+        self.width = len(self.multiverse.displays) * 11 * self.upscale_factor
+        self.height = 53 * self.upscale_factor
+        print(f'Upscaled Width: {self.width} Upscaled Height: {self.height}')
+        
+        if not self.initial_configure_called:
+            self.pygame_screen = pygame.display.set_mode((self.width, self.height), depth=32)
+            if self.headless:
+                # From: https://stackoverflow.com/a/14473777
+                # surface alone wouldn't work so I needed to add a rectangle
+                #self.pygame_screen = pygame.Surface((self.width, self.height), pygame.SRCALPHA, 32)
+                pygame.draw.rect(self.pygame_screen, (0,0,0), (0, 0, self.width, self.height), 0)
+            self.initial_configure_called = True
+
+    def flip_display(self):
+        pygame.display.flip()
+        #This is a copy of the pixels into a new array
+        framegrab = pygame.surfarray.array2d(self.pygame_screen)
+        downsample = numpy.array(framegrab)[::self.upscale_factor, ::self.upscale_factor]
+        # We need to reorder the rows for the correct origin/pixel position on the individual displays
+        downsample = numpy.flipud(downsample)
+        self.multiverse.update(downsample)
+        
+    def stop(self):
+        self.multiverse.stop()
 
 class MultiverseGame:
     """
@@ -43,26 +101,17 @@ class MultiverseGame:
                  upscale_factor: int,
                  headless: bool = False
             ) -> None:
-        if headless:
-            os.environ["SDL_VIDEODRIVER"] = "dummy"
-        pygame.init()
-        pygame.display.set_caption(game_title)
+            
+        self.multiverse_display = PygameMultiverseDisplay(game_title, upscale_factor, headless)
         self.clock = pygame.time.Clock()
-        self.headless = headless
         script_path = os.path.realpath(os.path.dirname(__file__))
         self.font = pygame.font.Font(f"{script_path}/Amble-Bold.ttf", FONT_SIZE * upscale_factor)
         self.game_title = game_title
         self.fps = fps
-        self.width = 0
-        self.height = 0
-        self.upscale_factor = upscale_factor
-        self.multiverse_display = None
-        self.pygame_screen = None
         self.dt = 0
         self.exit_flag = threading.Event()
         self.menu_select_state = True
         self.game_mode = 1
-        self.initial_configure_called = False
         
         print(f'Initializing game {self.game_title}')
         print(f'fps: {fps}')
@@ -70,6 +119,31 @@ class MultiverseGame:
 
         signal.signal(signal.SIGINT, self.signal_handler)
 
+    @property
+    def upscale_factor(self):
+        return self.multiverse_display.upscale_factor
+
+    @property
+    def height(self):
+        return self.multiverse_display.height
+        
+    @property
+    def width(self):
+        return self.multiverse_display.width
+        
+    @property
+    def pygame_screen(self):
+        return self.multiverse_display.pygame_screen
+
+    @property
+    def display_count(self):
+        return len(self.multiverse_display.multiverse.displays)
+
+    def configure_display(self):
+        self.multiverse_display.configure_display()
+        
+    def flip_display(self):
+        self.multiverse_display.flip_display()
 
     def signal_handler(self, sig, frame):
         print('You pressed Ctrl+C!')
@@ -99,37 +173,6 @@ class MultiverseGame:
         """
         pass
 
-    def configure_display(self, displays: List[Display] = []):
-        
-        if not len(displays):
-            #Load the defaults from the config
-            config = LongGameConfig()
-            dummy_displays = config.config['displays']['main'].get("dummy", False)
-            displays = [Display(f'{file}', 53, 11, 0, 11 * i, dummy=dummy_displays) for i, file in enumerate(config.config['displays']['main']['devices'] )]
-            
-        self.multiverse_display = Multiverse(*displays)
-        self.multiverse_display.start() # Starts the execution thread for the buffer
-        self.width = len(self.multiverse_display.displays) * 11 * self.upscale_factor
-        self.height = 53 * self.upscale_factor
-        print(f'Upscaled Width: {self.width} Upscaled Height: {self.height}')
-        
-        if not self.initial_configure_called:
-            self.pygame_screen = pygame.display.set_mode((self.width, self.height), depth=32)
-            if self.headless:
-                # From: https://stackoverflow.com/a/14473777
-                # surface alone wouldn't work so I needed to add a rectangle
-                #self.pygame_screen = pygame.Surface((self.width, self.height), pygame.SRCALPHA, 32)
-                pygame.draw.rect(self.pygame_screen, (0,0,0), (0, 0, self.width, self.height), 0)
-            self.initial_configure_called = True
-
-    def flip_display(self):
-        pygame.display.flip()
-        #This is a copy of the pixels into a new array
-        framegrab = pygame.surfarray.array2d(self.pygame_screen)
-        downsample = numpy.array(framegrab)[::self.upscale_factor, ::self.upscale_factor]
-        # We need to reorder the rows for the correct origin/pixel position on the individual displays
-        downsample = numpy.flipud(downsample)
-        self.multiverse_display.update(downsample)
 
     def stop(self):
         #TODO fix possible race conditions when stopping in the middle of a loop function
@@ -195,23 +238,25 @@ class MultiverseGame:
     """
     def menu_loop(self, events):
         # Check for menu selection
-        for event in events:
-            if event.type == pygame.KEYUP:
-                if event.key == pygame.K_1:
-                    self.game_mode = 1
-                    self.menu_select_state = False
-                if event.key == pygame.K_2:
-                    self.game_mode = 2
-                    self.menu_select_state = False
-                if event.key == pygame.K_3:
-                    self.game_mode = 3
-                    self.menu_select_state = False
+        # for event in events:
+        #     if event.type == pygame.KEYUP:
+        #         if event.key == pygame.K_1:
+        #             self.game_mode = 1
+        #             self.menu_select_state = False
+        #         if event.key == pygame.K_2:
+        #             self.game_mode = 2
+        #             self.menu_select_state = False
+        #         if event.key == pygame.K_3:
+        #             self.game_mode = 3
+        #             self.menu_select_state = False
 
-        if self.headless:
-            self.game_mode = 3
-            self.menu_select_state = False
-            print("Hack to select AI mode, until the menu has a way to headlessly select a game mode")
+        # if self.headless:
+        #     self.game_mode = 3
+        #     self.menu_select_state = False
+        #     print("Hack to select AI mode, until the menu has a way to headlessly select a game mode")
 
+        self.game_mode = 3
+        self.menu_select_state = False
         if not self.menu_select_state:
             self.game_mode_callback(self.game_mode)
 
@@ -245,3 +290,61 @@ class MultiverseGame:
             self.flip_display()
             pygame.time.wait(1000)
         print("GO!")
+
+
+class MultiverseMain:
+    '''
+    Program to initialize displays, show game menu, and execute games
+    '''
+    def __init__(self, upscale_factor, headless):
+        super().__init__("Multiverse Games", 120, upscale_factor, headless=headless)
+        self.configure_display()
+        self.screen = self.pygame_screen
+        
+        
+    
+
+
+def main():
+    # Contants/Configuration
+    show_window = False
+    debug = False
+    opts, args = getopt.getopt(sys.argv[1:],"hwd",[])
+    for opt, arg in opts:
+        if opt == '-h':
+            print ('longpong.py [-w] [-d]')
+            sys.exit()
+        elif opt == '-w':
+            show_window = True
+        elif opt == '-d':
+            debug = True
+    
+    upscale_factor = 5 if show_window else 1
+
+    game_main = MultiverseMain(upscale_factor, headless = not show_window)
+
+    #P1 Controller
+    RotaryEncoderController(longpong.fire_controller_input_event, 
+                                            positive_event_id=P1_UP, 
+                                            negative_event_id=P1_DOWN, 
+                                            clk_pin = 22, 
+                                            dt_pin = 27, 
+                                            button_pin = 17)
+    #P2 Controller
+    RotaryEncoderController(longpong.fire_controller_input_event, 
+                                            positive_event_id=P2_UP, 
+                                            negative_event_id=P2_DOWN, 
+                                            clk_pin = 25, 
+                                            dt_pin = 24, 
+                                            button_pin = 23)
+    ScreenPowerReset(reset_pin=26, button_pin=16)
+    game_thread = Thread(target=longpong.run, args=[])
+
+    game_thread.start()
+    game_thread.join()
+
+
+if __name__ == "__main__":
+    main()
+
+
