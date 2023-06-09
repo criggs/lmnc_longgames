@@ -17,29 +17,13 @@ from multiverse_game import MultiverseGame
 from rotary_encoder_controller import RotaryEncoderController
 from screen_power_reset import ScreenPowerReset
 
-"""
-This code is messy, it will be cleaned up at some point.....
-
-Python Dependencies: pygame, numpy, pyserial, multiverse (from https://github.com/Gadgetoid/gu-multiverse)
-
-3 Game Modes:
-  - One Player
-  - Two Player
-  - AI vs AI
-
-Controls:
- - Player One: Up/Down
- - Player Two: w/s
- - q: Quit
- - r: Reset Game, back to menu
-
-"""
-
-BYTES_PER_PIXEL = 4
-
 class MatrixDemoGame(MultiverseGame):
     def __init__(self, multiverse_displays):
         super().__init__("Matrix", 60, multiverse_displays)
+
+
+        self.sim_height = int(self.height / self.upscale_factor)
+        self.sim_width = int(self.width / self.upscale_factor)
 
         # Fire stuff
         self.fire_spawns = self.display_count + 1
@@ -61,7 +45,7 @@ class MatrixDemoGame(MultiverseGame):
                 [255, 255,   0]
         ], dtype=numpy.uint8)
         # FIIIREREEEEEEE
-        self.matrix = numpy.zeros((self.height, self.width), dtype=numpy.float32)
+        self.matrix = numpy.zeros((self.sim_height, self.sim_width), dtype=numpy.float32)
    
     def game_mode_callback(self, game_mode):    
         """
@@ -91,6 +75,10 @@ class MatrixDemoGame(MultiverseGame):
         buf = buf.astype(numpy.uint8)
         buf = self.palette[buf]
 
+        if self.upscale_factor != 1:
+            #Upsample the sim to the windowed display
+            buf = numpy.repeat(buf, self.upscale_factor, axis=1).repeat(self.upscale_factor, axis=0)
+
         # Update the displays from the buffer
         _2d_buf = pygame.surfarray.map_array(self.screen, buf)
         pygame.surfarray.blit_array(self.screen, _2d_buf)
@@ -107,8 +95,8 @@ class MatrixDemoGame(MultiverseGame):
         self.matrix[:] *= 0.65
 
         for _ in range(10):
-            x = random.randint(0, self.width - 1)
-            y = random.randint(0, self.height // 2)
+            x = random.randint(0, self.sim_width - 1)
+            y = random.randint(0, self.sim_height // 2)
             self.matrix[y][x] = random.randint(128, 255) / 255.0
 
         # Propagate downwards

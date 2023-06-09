@@ -366,7 +366,7 @@ def main():
         elif opt == '-d':
             debug = True
     
-    upscale_factor = 1 if show_window else 1
+    upscale_factor = 5 if show_window else 1
 
     game_main = MultiverseMain(upscale_factor, headless = not show_window)
 
