@@ -30,7 +30,7 @@ class FireDemoGame(MultiverseGame):
         self.screen = self.pygame_screen
 
         # Fire stuff
-        self.fire_spawns = len(self.multiverse_display.displays) + 1
+        self.fire_spawns = self.display_count + 1
         self.damping_factor = 0.98
         self.heat_amount = 4.0
 
