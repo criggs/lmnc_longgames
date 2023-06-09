@@ -323,6 +323,10 @@ class MultiverseMain:
                     from life_demo_game import LifeDemoGame
                     self.game = LifeDemoGame(self.multiverse_display)
                     continue
+                if event.type == pygame.KEYUP and event.key == pygame.K_4:     
+                    from longpong import LongPongGame
+                    self.game = LongPongGame(self.multiverse_display)
+                    continue
                 
                 
             if self.game is None:
@@ -342,11 +346,8 @@ class MultiverseMain:
 
     def menu_loop(self, events, dt):
         #TODO: Hack until a real menu selection is added
-        # from longpong import LongPongGame
-        # self.game = LongPongGame(self.multiverse_display)
-        
-        from fire_demo_game import FireDemoGame
-        self.game = FireDemoGame(self.multiverse_display)
+        from longpong import LongPongGame
+        self.game = LongPongGame(self.multiverse_display)
 
 
 
