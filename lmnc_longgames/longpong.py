@@ -148,7 +148,8 @@ class Ball:
         self._rect.center = (self.game.width // 2, self.game.height // 2)
         self._x = self._rect.x
         self._y = self._rect.y
-        self.angle = random.uniform(-math.pi / 4, math.pi / 4)
+        self.angle = random.uniform(0.2, math.pi / 4)
+        self.direction_y = random.choice((-1,1))
         self.speed =  ((self.max_speed - self.min_speed)/2) + self.min_speed
     
     @property
