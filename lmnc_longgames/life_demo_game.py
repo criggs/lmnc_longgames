@@ -142,32 +142,3 @@ class LifeDemoGame(MultiverseGame):
 
         self.life[:] = numpy.clip(self.next_generation, 0, 1)
 
-def main():
-    # Contants/Configuration
-    show_window = False
-    debug = False
-    opts, args = getopt.getopt(sys.argv[1:],"hwd",[])
-    for opt, arg in opts:
-        if opt == '-h':
-            print ('longpong.py [-w] [-d]')
-            sys.exit()
-        elif opt == '-w':
-            show_window = True
-        elif opt == '-d':
-            debug = True
-    
-    upscale_factor = 1 if show_window else 1
-
-    game = LifeDemoGame(upscale_factor, headless = not show_window)
-
-    ScreenPowerReset(reset_pin=26, button_pin=16)
-    game_thread = Thread(target=game.run, args=[])
-
-    game_thread.start()
-    game_thread.join()
-
-
-if __name__ == "__main__":
-    main()
-
-

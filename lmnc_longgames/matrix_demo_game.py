@@ -116,32 +116,3 @@ class MatrixDemoGame(MultiverseGame):
         self.matrix[:] = numpy.roll(self.matrix, 1, axis=0)
         self.matrix[:] += old
 
-def main():
-    # Contants/Configuration
-    show_window = False
-    debug = False
-    opts, args = getopt.getopt(sys.argv[1:],"hwd",[])
-    for opt, arg in opts:
-        if opt == '-h':
-            print ('longpong.py [-w] [-d]')
-            sys.exit()
-        elif opt == '-w':
-            show_window = True
-        elif opt == '-d':
-            debug = True
-    
-    upscale_factor = 1 if show_window else 1
-
-    game = MatrixDemoGame(upscale_factor, headless = not show_window)
-
-    ScreenPowerReset(reset_pin=26, button_pin=16)
-    game_thread = Thread(target=game.run, args=[])
-
-    game_thread.start()
-    game_thread.join()
-
-
-if __name__ == "__main__":
-    main()
-
-
