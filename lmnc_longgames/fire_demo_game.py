@@ -27,6 +27,10 @@ class FireDemoGame(MultiverseGame):
     def __init__(self, multiverse_displays):
         super().__init__("Fire!!!", 80, multiverse_displays)
 
+
+        self.sim_height = int(self.height / self.upscale_factor)
+        self.sim_width = int(self.width / self.upscale_factor)
+
         # Fire stuff
         self.fire_spawns = self.display_count + 1
         self.damping_factor = 0.98
@@ -42,7 +46,8 @@ class FireDemoGame(MultiverseGame):
         ], dtype=numpy.uint8)
         # FIIIREREEEEEEE
         print(f"h: {self.height}, w: {self.width}")
-        self.heat = numpy.zeros((self.height, self.width), dtype=numpy.float32)
+        self.heat = numpy.zeros((self.sim_height, self.sim_width), dtype=numpy.float32)
+        
 
    
     def game_mode_callback(self, game_mode):    
@@ -72,6 +77,10 @@ class FireDemoGame(MultiverseGame):
         buf = numpy.rot90(buf)
         buf = buf.astype(numpy.uint8)
         buf = self.palette[buf]
+        
+        if self.upscale_factor != 1:
+            #Upsample the sim to the windowed display
+            buf = numpy.repeat(buf, self.upscale_factor, axis=1).repeat(self.upscale_factor, axis=0)
 
         # Update the displays from the buffer
         _2d_buf = pygame.surfarray.map_array(self.screen, buf)
@@ -88,14 +97,14 @@ class FireDemoGame(MultiverseGame):
     # UPDATE THE FIIIIIIIIIIIIREEEEEEEEEEEEEEEEEEEEEEEEEE
     def update(self):
         # Clear the bottom two rows (off screen)
-        self.heat[self.height - 1][:] = 0.0
-        self.heat[self.height - 2][:] = 0.0
+        self.heat[self.sim_height - 1][:] = 0.0
+        self.heat[self.sim_height - 2][:] = 0.0
 
         # Add random fire spawns
         for c in range(self.fire_spawns):
-            x = random.randint(0, self.width - 4) + 2
-            self.heat[self.height - 1][x - 1:x + 1] = self.heat_amount / 2.0
-            self.heat[self.height - 2][x - 1:x + 1] = self.heat_amount
+            x = random.randint(0, self.sim_width - 4) + 2
+            self.heat[self.sim_height - 1][x - 1:x + 1] = self.heat_amount / 2.0
+            self.heat[self.sim_height - 2][x - 1:x + 1] = self.heat_amount
 
         # Propagate the fire upwards
         a = numpy.roll(self.heat, -1, axis=0)  # y + 1, x

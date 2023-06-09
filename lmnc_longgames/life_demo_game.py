@@ -27,6 +27,9 @@ class LifeDemoGame(MultiverseGame):
     def __init__(self, multiverse_displays):
         super().__init__("Conway's Game of Life", 60, multiverse_displays)
         
+        self.sim_height = int(self.height / self.upscale_factor)
+        self.sim_width = int(self.width / self.upscale_factor)
+        
         self.initial_life = 200 * self.display_count       # Number of live cells to seed
         self.GENERATION_TIME = 0.1     # MS between generations
         self.MINIMUM_LIFE = self.initial_life / 5       # Auto reseed when only this many alive cells remain
@@ -38,10 +41,10 @@ class LifeDemoGame(MultiverseGame):
         # Palette conversion, this is actually pretty nifty
         self.palette = numpy.fromiter(self.build_palette(), dtype=numpy.uint8).reshape((256, 3))
         
-        self.life = numpy.zeros((self.height, self.width), dtype=numpy.uint8)
-        self.next_generation = numpy.zeros((self.height, self.width), dtype=numpy.uint8)
-        self.neighbours = numpy.zeros((self.height, self.width), dtype=numpy.uint8)
-        self.duration = numpy.zeros((self.height, self.width), dtype=numpy.float64)
+        self.life = numpy.zeros((self.sim_height, self.sim_width), dtype=numpy.uint8)
+        self.next_generation = numpy.zeros((self.sim_height, self.sim_width), dtype=numpy.uint8)
+        self.neighbours = numpy.zeros((self.sim_height, self.sim_width), dtype=numpy.uint8)
+        self.duration = numpy.zeros((self.sim_height, self.sim_width), dtype=numpy.float64)
         self.last_gen = time.time()
         
         self.seed_life()
@@ -57,8 +60,8 @@ class LifeDemoGame(MultiverseGame):
 
         self.palette = numpy.fromiter(self.build_palette(hsv_offset), dtype=numpy.uint8).reshape((256, 3))
         for _ in range(self.initial_life):
-            x = random.randint(0, self.width - 1)
-            y = random.randint(0, self.height - 1)
+            x = random.randint(0, self.sim_width - 1)
+            y = random.randint(0, self.sim_height - 1)
             self.life[y][x] = int(True)  # Avoid: TypeError: 'bool' object isn't iterable
 
    
@@ -89,6 +92,10 @@ class LifeDemoGame(MultiverseGame):
         buf = numpy.rot90(buf)
         buf = buf.astype(numpy.uint8)
         buf = self.palette[buf]
+
+        if self.upscale_factor != 1:
+            #Upsample the sim to the windowed display
+            buf = numpy.repeat(buf, self.upscale_factor, axis=1).repeat(self.upscale_factor, axis=0)
 
         # Update the displays from the buffer
         _2d_buf = pygame.surfarray.map_array(self.screen, buf)
