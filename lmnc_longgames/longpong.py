@@ -1,12 +1,5 @@
 import sys, os
 
-try:
-    import RPi.GPIO as gpio
-    print("Running on a Raspberry PI")
-except (ImportError, RuntimeError):
-    print("Not running on a Raspberry PI. Setting mock GPIO Zero Pin Factory.")
-    os.environ["GPIOZERO_PIN_FACTORY"] = "mock"
-
 from threading import Thread
 import getopt
 from typing import List
@@ -16,6 +9,20 @@ import math
 from multiverse_game import MultiverseGame
 from rotary_encoder_controller import RotaryEncoderController
 from screen_power_reset import ScreenPowerReset
+
+
+MODE_ONE_PLAYER = 1
+MODE_TWO_PLAYER = 2
+MODE_AI_VS_AI = 3
+
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+
+PLAYER_PADDLE_MOVE_STEPS = 3
+
+PLAYER_PADDLE_SPEED = PLAYER_PADDLE_MOVE_STEPS * 30
+AI_PADDLE_SPEED = 2 * 30
+
 
 """
 This code is messy, it will be cleaned up at some point.....
@@ -44,7 +51,7 @@ TODO:
     * speed/step size
     * scaling amount
 * Add CV-based controller inputs
-* Fix bug with colision logic on bottom and top of screen
+* Fix bug with collision logic on bottom and top of screen
 * Fix bug with direction change when not hitting a paddle 'corner'
 * Refactor paddle code out from the player class
 * Update README.md
@@ -58,7 +65,7 @@ class Player:
         self.speed: int = 0
         
         #Game
-        self.is_ai: bool = False
+        self.is_ai: bool = True
         self.score: int = 0
         self._y = rect.y
         self.game = game
@@ -153,10 +160,8 @@ class Ball:
         return self.speed * math.sin(self.angle) * self.direction_y
 
 class LongPongGame(MultiverseGame):
-    def __init__(self, upscale_factor, headless):
-        super().__init__("Long Pong", 120, upscale_factor, headless=headless)
-        self.configure_display()
-        self.screen = self.pygame_screen
+    def __init__(self, multiverse_display):
+        super().__init__("Long Pong", 120, multiverse_display)
 
         paddle_width = 2 * self.upscale_factor
         paddle_height = 10 * self.upscale_factor
@@ -250,7 +255,7 @@ class LongPongGame(MultiverseGame):
             game_mode: The selected game mode
         """
         print(f'Playing game mode {game_mode}')
-        self.reset_game_callback()
+        self.reset()
         if self.game_mode == MODE_ONE_PLAYER:
             self.player_one.is_ai = False
             self.player_two.is_ai = True
@@ -262,13 +267,13 @@ class LongPongGame(MultiverseGame):
             self.player_two.is_ai = True
 
 
-    def game_loop_callback(self, events: List, dt: float):
+    def loop(self, events: List, dt: float):
         """
         Called for each iteration of the game loop
 
         Parameters:
             events: The pygame events list for this loop iteration
-            dt: The delta time since the last loop iteration. This is for framerate independance.
+            dt: The delta time since the last loop iteration. This is for framerate independence.
         """
         for event in events:
             
@@ -285,9 +290,9 @@ class LongPongGame(MultiverseGame):
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
                         self.player_one.direction = 0
-                if event.type == P1_UP:
+                if event.type == MultiverseGame.P1_UP:
                     self.player_one.move_paddle(-1 * PLAYER_PADDLE_MOVE_STEPS)
-                if event.type == P1_DOWN:
+                if event.type == MultiverseGame.P1_DOWN:
                     self.player_one.move_paddle(PLAYER_PADDLE_MOVE_STEPS)
             
             #Player Two
@@ -300,9 +305,9 @@ class LongPongGame(MultiverseGame):
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_w or event.key == pygame.K_s:
                         self.player_two.direction = 0
-                if event.type == P2_UP:
+                if event.type == MultiverseGame.P2_UP:
                     self.player_two.move_paddle(-1 * PLAYER_PADDLE_MOVE_STEPS)
-                if event.type == P2_DOWN:
+                if event.type == MultiverseGame.P2_DOWN:
                     self.player_two.move_paddle(PLAYER_PADDLE_MOVE_STEPS)
             
         # Update game elements
@@ -323,7 +328,7 @@ class LongPongGame(MultiverseGame):
         # Draw score
         self.draw_score()
 
-    def reset_game_callback(self):
+    def reset(self):
         self.ball.reset()
         self.player_one.reset()
         self.player_two.reset()
@@ -331,69 +336,5 @@ class LongPongGame(MultiverseGame):
     def fire_controller_input_event(self, event_id: int):
         event = pygame.event.Event(event_id)
         pygame.event.post(event)
-
-# Setup and run the game
-
-
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-
-PLAYER_PADDLE_MOVE_STEPS = 3
-
-PLAYER_PADDLE_SPEED = PLAYER_PADDLE_MOVE_STEPS * 30
-AI_PADDLE_SPEED = 2 * 30
-
-P1_UP = pygame.USEREVENT + 1 
-P1_DOWN = pygame.USEREVENT + 2
-
-P2_UP = pygame.USEREVENT + 3
-P2_DOWN = pygame.USEREVENT + 4
-
-MODE_ONE_PLAYER = 1
-MODE_TWO_PLAYER = 2
-MODE_AI_VS_AI = 3
-
-
-def main():
-    # Contants/Configuration
-    show_window = False
-    debug = False
-    opts, args = getopt.getopt(sys.argv[1:],"hwd",[])
-    for opt, arg in opts:
-        if opt == '-h':
-            print ('longpong.py [-w] [-d]')
-            sys.exit()
-        elif opt == '-w':
-            show_window = True
-        elif opt == '-d':
-            debug = True
-    
-    upscale_factor = 5 if show_window else 1
-
-    longpong = LongPongGame(upscale_factor, headless = not show_window)
-
-    #P1 Controller
-    RotaryEncoderController(longpong.fire_controller_input_event, 
-                                            positive_event_id=P1_UP, 
-                                            negative_event_id=P1_DOWN, 
-                                            clk_pin = 22, 
-                                            dt_pin = 27, 
-                                            button_pin = 17)
-    #P2 Controller
-    RotaryEncoderController(longpong.fire_controller_input_event, 
-                                            positive_event_id=P2_UP, 
-                                            negative_event_id=P2_DOWN, 
-                                            clk_pin = 25, 
-                                            dt_pin = 24, 
-                                            button_pin = 23)
-    ScreenPowerReset(reset_pin=26, button_pin=16)
-    game_thread = Thread(target=longpong.run, args=[])
-
-    game_thread.start()
-    game_thread.join()
-
-
-if __name__ == "__main__":
-    main()
 
 
