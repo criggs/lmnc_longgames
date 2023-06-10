@@ -276,16 +276,16 @@ class MultiverseMain:
         
         #P1 Controller
         RotaryEncoderController(self.fire_controller_input_event, 
-                                                positive_event_id=MultiverseGame.P1_UP, 
-                                                negative_event_id=MultiverseGame.P1_DOWN,
+                                                negative_event_id=MultiverseGame.P1_UP, 
+                                                positive_event_id=MultiverseGame.P1_DOWN,
                                                 button_released_id=MultiverseGame.P1_SELECT,
                                                 clk_pin = 22, 
                                                 dt_pin = 27, 
                                                 button_pin = 17)
         #P2 Controller
         RotaryEncoderController(self.fire_controller_input_event, 
-                                                positive_event_id=MultiverseGame.P2_UP, 
-                                                negative_event_id=MultiverseGame.P2_DOWN,
+                                                negative_event_id=MultiverseGame.P2_UP, 
+                                                positive_event_id=MultiverseGame.P2_DOWN,
                                                 button_released_id=MultiverseGame.P2_SELECT,
                                                 clk_pin = 25, 
                                                 dt_pin = 24, 
@@ -302,6 +302,7 @@ class MultiverseMain:
                 MenuItem("1 Player", props={'constructor': LongPongGame, 'args':[1]}),
                 MenuItem("2 Player", props={'constructor': LongPongGame, 'args':[2]}),
                 MenuItem("AI vs AI", props={'constructor': LongPongGame, 'args':[0]}),
+                MenuItem("Back"),
             ]),
             MenuItem("Demos", [
                 MenuItem("Fire", props={'constructor': FireDemoGame}),

@@ -18,6 +18,8 @@ class RotaryEncoderController:
         self.event_callback = event_callback
         self.positive_event_id = positive_event_id
         self.negative_event_id = negative_event_id
+        self.button_pressed_id = button_pressed_id
+        self.button_released_id = button_released_id
         self.rotary_encoder = RotaryEncoder(self.clk_pin, self.dt_pin, max_steps=0)
         self.rotary_encoder.when_rotated_clockwise = self.rotated_cw
         self.rotary_encoder.when_rotated_counter_clockwise = self.rotated_ccw
