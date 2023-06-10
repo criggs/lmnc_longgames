@@ -91,7 +91,7 @@ class MultiverseGame:
     
     The menu loop will select between 3 different game modes.
     
-    The game loop will draw the next frame of the game. The dt will be passed into this loop so frame independant math can be used.
+    The game loop will draw the next frame of the game. The dt will be passed into this loop so frame independent math can be used.
     
     """
 
