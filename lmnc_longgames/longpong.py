@@ -9,13 +9,11 @@ import math
 from multiverse_game import MultiverseGame
 from rotary_encoder_controller import RotaryEncoderController
 from screen_power_reset import ScreenPowerReset
+from constants import *
 
 MODE_AI_VS_AI = 0
 MODE_ONE_PLAYER = 1
 MODE_TWO_PLAYER = 2
-
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
 
 PLAYER_PADDLE_MOVE_STEPS = 3
 
@@ -114,7 +112,7 @@ class Player:
 
 class Ball:
 
-    max_speed = 100
+    max_speed = 80
     min_speed = 15
 
     def __init__(self, radius: int, game: MultiverseGame) -> None:
@@ -274,9 +272,9 @@ class LongPongGame(MultiverseGame):
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
                         self.player_one.direction = 0
-                if event.type == MultiverseGame.P1_UP:
+                if event.type == ROTATED_CCW and event.controller == P1:
                     self.player_one.move_paddle(-1 * PLAYER_PADDLE_MOVE_STEPS)
-                if event.type == MultiverseGame.P1_DOWN:
+                if event.type == ROTATED_CW and event.controller == P1:
                     self.player_one.move_paddle(PLAYER_PADDLE_MOVE_STEPS)
             
             #Player Two
@@ -289,9 +287,9 @@ class LongPongGame(MultiverseGame):
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_w or event.key == pygame.K_s:
                         self.player_two.direction = 0
-                if event.type == MultiverseGame.P2_UP:
+                if event.type == ROTATED_CCW and event.controller == P2:
                     self.player_two.move_paddle(-1 * PLAYER_PADDLE_MOVE_STEPS)
-                if event.type == MultiverseGame.P2_DOWN:
+                if event.type == ROTATED_CW and event.controller == P2:
                     self.player_two.move_paddle(PLAYER_PADDLE_MOVE_STEPS)
             
         # Update game elements
