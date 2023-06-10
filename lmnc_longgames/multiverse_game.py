@@ -8,6 +8,7 @@ except (ImportError, RuntimeError):
     os.environ["GPIOZERO_PIN_FACTORY"] = "mock"
 
 from typing import List
+from enum import Enum
 import pygame
 import numpy
 from config import LongGameConfig
@@ -228,6 +229,31 @@ class MultiverseGame:
             pygame.time.wait(1000)
         print("GO!")
 
+class MenuItem:
+    def __init__(self, name:str, children:list = None):
+        self.name = name
+        self.children = children
+        self.highlighted_index = 0
+        self.parent = None
+        if children is not None:
+            for child in children:
+                child.parent = self
+
+    def highlight(self, child_index):
+        self.highlighted_index = child_index
+    
+    def get_display_list(self):
+        '''
+        Return 3 list items, containing the highlighted item
+        '''
+        l = len(self.children)
+
+        min_index = max(0, self.highlighted_index - 1)
+        max_index = min(min_index + 3, l - 1)
+        r = range(min_index, max_index + 1)
+        return [ (i, self.children[i]) for i in r]
+
+
 
         
 class MultiverseMain:
@@ -240,6 +266,8 @@ class MultiverseMain:
         self.multiverse_display.configure_display()
         self.clock = pygame.time.Clock()
         self.game = None
+        script_path = os.path.realpath(os.path.dirname(__file__))
+        self.font = pygame.font.Font(f"{script_path}/Amble-Bold.ttf", FONT_SIZE * self.multiverse_display.upscale_factor)
         
         #P1 Controller
         RotaryEncoderController(self.fire_controller_input_event, 
@@ -256,7 +284,15 @@ class MultiverseMain:
                                                 dt_pin = 24, 
                                                 button_pin = 23)
         
-        
+        self.game_menu = MenuItem("Game Menu", [
+            MenuItem("Long Pong"),
+            MenuItem("Demos", [
+                MenuItem("Fire"),
+                MenuItem("Matrix"),
+                MenuItem("Life"),
+                MenuItem("Back"),
+            ])
+        ])
     
         signal.signal(signal.SIGINT, self.signal_handler)
     
@@ -311,6 +347,9 @@ class MultiverseMain:
                 if event.type == pygame.KEYUP and event.key == pygame.K_r:
                     self.game.reset()
                     continue
+                if event.type == pygame.KEYUP and event.key == pygame.K_m:
+                    self.game = None
+                    continue
                 if event.type == pygame.KEYUP and event.key == pygame.K_1:     
                     from fire_demo_game import FireDemoGame
                     self.game = FireDemoGame(self.multiverse_display)
@@ -338,17 +377,40 @@ class MultiverseMain:
             self.multiverse_display.flip_display()
 
             # Set the frame rate
-            self.clock.tick(self.game.fps)
+            self.clock.tick(self.game.fps if self.game is not None else 120)
 
         print("Ended multiverse game run loop")
         self.stop()
         
 
     def menu_loop(self, events, dt):
-        #TODO: Hack until a real menu selection is added
-        from longpong import LongPongGame
-        self.game = LongPongGame(self.multiverse_display)
+        
+        #See if something is selected
 
+        #See if we moved, increase/decrease highlighting
+
+        #Show the current menu
+        to_display = self.game_menu.get_display_list()
+
+        screen = self.multiverse_display.pygame_screen
+        width = self.multiverse_display.width
+        upscale_factor = self.multiverse_display.upscale_factor
+
+        screen.fill(BLACK)
+        center_screen = width // 2
+
+        title_text = self.font.render(f'=={self.game_menu.name}==', False, WHITE)
+        screen.blit(title_text, (center_screen - title_text.get_width() // 2, 5 * upscale_factor))
+
+        render_index = 0
+        for i, child in to_display:
+            text = f'{i} {child.name}'
+            if self.game_menu.highlighted_index == i:
+                text = f'{text} *'
+            child_text = self.font.render(text, False, WHITE)
+        
+            screen.blit(child_text, (center_screen - child_text.get_width() // 2, (15 + (10 * render_index)) * upscale_factor))
+            render_index+=1
 
 
 
