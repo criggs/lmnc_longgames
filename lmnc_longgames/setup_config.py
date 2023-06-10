@@ -1,7 +1,7 @@
-import os, time, threading, sys
+import os, time, threading, sys, getopt, signal
 from typing import List
 import pygame
-from multiverse_game import MultiverseGame
+from multiverse_game import MultiverseGame, PygameMultiverseDisplay
 from multiverse import Display
 from config import LongGameConfig
 
@@ -9,10 +9,9 @@ BLACK = (0, 0, 0)
 
 class SetupConfigGame(MultiverseGame):
 
-    def __init__(self):
-        upscale_factor = 6
-        super().__init__("Configure", 120, upscale_factor)
-        self.menu_select_state = False
+    def __init__(self, multiverse_display: PygameMultiverseDisplay):
+        super().__init__("Configure", 60, multiverse_display)
+        self.getting_input = True
         # Put a number on every serial device detected
         try:
             serial_dir = r'/dev/serial/by-id'
@@ -30,14 +29,6 @@ class SetupConfigGame(MultiverseGame):
     
     def reconfigure_displays(self):
         
-        # Delete the old displays
-        # if self.multiverse_display:
-        #     old_displays = self.multiverse_display.displays
-        #     for old_display in old_displays:
-        #         old_display.__del__()
-        
-        # Create new displays
-
         if self.multiverse_display:
             self.multiverse_display.stop()
 
@@ -48,19 +39,13 @@ class SetupConfigGame(MultiverseGame):
             displays.append(Display(f'{file}', 53, 11, 0, 11 * i))
         print("")
         
-        self.configure_display(displays)
+        self.multiverse_display.configure_display(displays)
 
 
-    def game_loop_callback(self, events: List, dt: float):
+    def loop(self, events: List, dt: float):
 
-        self.pygame_screen.fill(BLACK)
+        self.screen.fill(BLACK)
 
-        events = pygame.event.get()
-
-        for event in events:
-            if event.type == pygame.QUIT:
-                self.running = False
-        
         for i, file in enumerate(self.found_devices):
             position = len(self.found_devices) - 1 - i
             self.display_number(i)
@@ -71,12 +56,11 @@ class SetupConfigGame(MultiverseGame):
         text = font.render(f"{screen_number}", False, (255, 255, 255))
         text = pygame.transform.rotate(text, -90)
 
-        self.pygame_screen.blit(text, [((screen_number * 11)) * self.upscale_factor, 10 * self.upscale_factor])
+        self.screen.blit(text, [((screen_number * 11)) * self.upscale_factor, 10 * self.upscale_factor])
 
     def prompt_for_display_order(self):
         time.sleep(1)
-        getting_input = True
-        while getting_input:
+        while self.getting_input:
             val = input("Is the order from left (lowest) to right (highest) correct (y/n)? ")
             if val.lower().startswith("y"):
                 print("Great, saving config")
@@ -84,8 +68,10 @@ class SetupConfigGame(MultiverseGame):
                 config = LongGameConfig()
                 config.config['displays']['main']['devices'] = self.found_devices
                 config.write()
-                getting_input = False
-                self.stop()
+                self.getting_input = False
+                
+                event = pygame.event.Event(pygame.QUIT)
+                pygame.event.post(event)
             else:
                 #prompt for the numbers/order
                 val = input("From left to right, input the numbers that you see on each display, separated by commas: ")
@@ -97,19 +83,98 @@ class SetupConfigGame(MultiverseGame):
 
                 self.reconfigure_displays()
 
+        
+class SetupConfigMain:
+    '''
+    Program to initialize displays, show game menu, and execute games
+    '''
+    def __init__(self, upscale_factor, headless):
+        self.exit_flag = threading.Event()
+        self.multiverse_display = PygameMultiverseDisplay("Multiverse Games", upscale_factor, headless)
+        self.multiverse_display.configure_display()
+        self.clock = pygame.time.Clock()
+        self.game = SetupConfigGame(self.multiverse_display)
+        
+        signal.signal(signal.SIGINT, self.signal_handler)
+    
+    
+    def signal_handler(self, sig, frame):
+        print('You pressed Ctrl+C!')
+        self.game.getting_input = False
+        if self.exit_flag.is_set():
+            print("Force closing")
+            sys.exit(1)
+        self.stop()
+        sys.exit(0)
+    
+    def stop(self):
+        self.multiverse_display.pygame_screen.fill(BLACK)
+        self.multiverse_display.flip_display()
+        self.exit_flag.set()
+        self.multiverse_display.stop()
+        pygame.quit()
 
-    # Generate a list of IDs for the config in the correct order
+    """
+    Runs the game loop.
+    
+    """
+    def run(self):
+        self.exit_flag.clear()
+        prev_time = time.time()
+
+        while not self.exit_flag.wait(0.001):
+            now = time.time()
+            self.dt = now - prev_time
+            prev_time = now
+
+            # Get all events
+            events = pygame.event.get()
+            
+            # Check for quit
+            for event in events:
+                if event.type == pygame.QUIT:
+                    self.exit_flag.set()
+                    continue
+                if event.type == pygame.KEYUP and event.key == pygame.K_q:
+                    self.exit_flag.set()
+                    continue
+                
+            self.game.loop(events, self.dt)
+            # Update the display
+            self.multiverse_display.flip_display()
+
+            # Set the frame rate
+            self.clock.tick(self.game.fps)
+
+        print("Ended multiverse game run loop")
+        self.stop()
+
+
 
 def main():
-    game = SetupConfigGame()
-    input_thread = threading.Thread(target=game.prompt_for_display_order, args=[])
-    game_thread = threading.Thread(target=game.run, args=[])
+    # Constants/Configuration
+    show_window = False
+    debug = False
+    opts, args = getopt.getopt(sys.argv[1:],"hwd",[])
+    for opt, arg in opts:
+        if opt == '-h':
+            print ('multiverse_game.py [-w] [-d]')
+            sys.exit()
+        elif opt == '-w':
+            show_window = True
+        elif opt == '-d':
+            debug = True
+    
+    upscale_factor = 1 if show_window else 1
 
-    game_thread.start()
+    game_main = SetupConfigMain(upscale_factor, headless = not show_window)
+
+    input_thread = threading.Thread(target=game_main.game.prompt_for_display_order, args=[])
     input_thread.start()
-    game_thread.join()
-    #TODO: Signal to interrupt input if the game was quit?
+
+    game_main.run()
     input_thread.join()
+    
 
 
 if __name__ == "__main__":

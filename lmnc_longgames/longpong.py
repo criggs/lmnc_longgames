@@ -1,12 +1,5 @@
 import sys, os
 
-try:
-    import RPi.GPIO as gpio
-    print("Running on a Raspberry PI")
-except (ImportError, RuntimeError):
-    print("Not running on a Raspberry PI. Setting mock GPIO Zero Pin Factory.")
-    os.environ["GPIOZERO_PIN_FACTORY"] = "mock"
-
 from threading import Thread
 import getopt
 from typing import List
@@ -16,6 +9,19 @@ import math
 from multiverse_game import MultiverseGame
 from rotary_encoder_controller import RotaryEncoderController
 from screen_power_reset import ScreenPowerReset
+
+MODE_AI_VS_AI = 0
+MODE_ONE_PLAYER = 1
+MODE_TWO_PLAYER = 2
+
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+
+PLAYER_PADDLE_MOVE_STEPS = 3
+
+PLAYER_PADDLE_SPEED = PLAYER_PADDLE_MOVE_STEPS * 30
+AI_PADDLE_SPEED = 2 * 30
+
 
 """
 This code is messy, it will be cleaned up at some point.....
@@ -44,7 +50,7 @@ TODO:
     * speed/step size
     * scaling amount
 * Add CV-based controller inputs
-* Fix bug with colision logic on bottom and top of screen
+* Fix bug with collision logic on bottom and top of screen
 * Fix bug with direction change when not hitting a paddle 'corner'
 * Refactor paddle code out from the player class
 * Update README.md
@@ -58,7 +64,7 @@ class Player:
         self.speed: int = 0
         
         #Game
-        self.is_ai: bool = False
+        self.is_ai: bool = True
         self.score: int = 0
         self._y = rect.y
         self.game = game
@@ -98,7 +104,7 @@ class Player:
         if self.is_ai:
             self.game.update_for_ai(self)
             #Only use the slower ai speed if one player is human
-            speed = AI_PADDLE_SPEED * self.game.upscale_factor if self.game.game_mode == MODE_ONE_PLAYER else speed
+            speed = speed if self.game.player_one.is_ai else AI_PADDLE_SPEED * self.game.upscale_factor 
         self.y += speed * dt * self.direction
         self.y = max(min(self.y, self.game.height - self.height), 0)
 
@@ -141,7 +147,8 @@ class Ball:
         self._rect.center = (self.game.width // 2, self.game.height // 2)
         self._x = self._rect.x
         self._y = self._rect.y
-        self.angle = random.uniform(-math.pi / 4, math.pi / 4)
+        self.angle = random.uniform(0.2, math.pi / 4)
+        self.direction_y = random.choice((-1,1))
         self.speed =  ((self.max_speed - self.min_speed)/2) + self.min_speed
     
     @property
@@ -153,17 +160,22 @@ class Ball:
         return self.speed * math.sin(self.angle) * self.direction_y
 
 class LongPongGame(MultiverseGame):
-    def __init__(self, upscale_factor, headless):
-        super().__init__("Long Pong", 120, upscale_factor, headless=headless)
-        self.configure_display()
-        self.screen = self.pygame_screen
+    def __init__(self, multiverse_display, game_mode=0):
+        super().__init__("Long Pong", 120, multiverse_display)
+        print(f'Game Mode: {game_mode}')
 
         paddle_width = 2 * self.upscale_factor
         paddle_height = 10 * self.upscale_factor
 
         # Create players
         self.player_one = Player(pygame.Rect(0, self.height // 2 - paddle_height // 2, paddle_width, paddle_height), self)
+        self.player_one.is_ai = game_mode == MODE_AI_VS_AI
+        
+        print(f'Player One is AI? {self.player_one.is_ai}')
+        
         self.player_two = Player(pygame.Rect(self.width - paddle_width, self.height // 2 - paddle_height // 2, paddle_width, paddle_height), self)
+        self.player_two.is_ai = game_mode != MODE_TWO_PLAYER
+        print(f'Player Two is AI? {self.player_two.is_ai}')
 
         # Create ball
         ball_radius = 2 * self.upscale_factor
@@ -241,42 +253,19 @@ class LongPongGame(MultiverseGame):
             self.ball.speed = max(self.ball.speed/1.2, self.ball.min_speed)
         # Reverse the direction of travel
         self.ball.direction_x = colliding_paddle.position * -1
-        
-    def game_mode_callback(self, game_mode):    
-        """
-        Called when a game mode is selected
-        
-        Parameters:
-            game_mode: The selected game mode
-        """
-        print(f'Playing game mode {game_mode}')
-        self.reset_game_callback()
-        if self.game_mode == MODE_ONE_PLAYER:
-            self.player_one.is_ai = False
-            self.player_two.is_ai = True
-        elif self.game_mode == MODE_TWO_PLAYER:
-            self.player_one.is_ai = False
-            self.player_two.is_ai = False
-        else:
-            self.player_one.is_ai = True
-            self.player_two.is_ai = True
 
 
-    def game_loop_callback(self, events: List, dt: float):
+    def loop(self, events: List, dt: float):
         """
         Called for each iteration of the game loop
 
         Parameters:
             events: The pygame events list for this loop iteration
-            dt: The delta time since the last loop iteration. This is for framerate independance.
+            dt: The delta time since the last loop iteration. This is for framerate independence.
         """
         for event in events:
-            
-            #TODO: Make the controls work with GPIO/Joysticks    
-            # Control the player paddle
-            
             #Player One
-            if self.game_mode != MODE_AI_VS_AI: 
+            if not self.player_one.is_ai: 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_UP:
                         self.player_one.direction = -1
@@ -285,13 +274,13 @@ class LongPongGame(MultiverseGame):
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
                         self.player_one.direction = 0
-                if event.type == P1_UP:
+                if event.type == MultiverseGame.P1_UP:
                     self.player_one.move_paddle(-1 * PLAYER_PADDLE_MOVE_STEPS)
-                if event.type == P1_DOWN:
+                if event.type == MultiverseGame.P1_DOWN:
                     self.player_one.move_paddle(PLAYER_PADDLE_MOVE_STEPS)
             
             #Player Two
-            if self.game_mode == MODE_TWO_PLAYER: 
+            if not self.player_two.is_ai: 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_w:
                         self.player_two.direction = -1
@@ -300,9 +289,9 @@ class LongPongGame(MultiverseGame):
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_w or event.key == pygame.K_s:
                         self.player_two.direction = 0
-                if event.type == P2_UP:
+                if event.type == MultiverseGame.P2_UP:
                     self.player_two.move_paddle(-1 * PLAYER_PADDLE_MOVE_STEPS)
-                if event.type == P2_DOWN:
+                if event.type == MultiverseGame.P2_DOWN:
                     self.player_two.move_paddle(PLAYER_PADDLE_MOVE_STEPS)
             
         # Update game elements
@@ -323,7 +312,7 @@ class LongPongGame(MultiverseGame):
         # Draw score
         self.draw_score()
 
-    def reset_game_callback(self):
+    def reset(self):
         self.ball.reset()
         self.player_one.reset()
         self.player_two.reset()
@@ -331,69 +320,5 @@ class LongPongGame(MultiverseGame):
     def fire_controller_input_event(self, event_id: int):
         event = pygame.event.Event(event_id)
         pygame.event.post(event)
-
-# Setup and run the game
-
-
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-
-PLAYER_PADDLE_MOVE_STEPS = 3
-
-PLAYER_PADDLE_SPEED = PLAYER_PADDLE_MOVE_STEPS * 30
-AI_PADDLE_SPEED = 2 * 30
-
-P1_UP = pygame.USEREVENT + 1 
-P1_DOWN = pygame.USEREVENT + 2
-
-P2_UP = pygame.USEREVENT + 3
-P2_DOWN = pygame.USEREVENT + 4
-
-MODE_ONE_PLAYER = 1
-MODE_TWO_PLAYER = 2
-MODE_AI_VS_AI = 3
-
-
-def main():
-    # Contants/Configuration
-    show_window = False
-    debug = False
-    opts, args = getopt.getopt(sys.argv[1:],"hwd",[])
-    for opt, arg in opts:
-        if opt == '-h':
-            print ('longpong.py [-w] [-d]')
-            sys.exit()
-        elif opt == '-w':
-            show_window = True
-        elif opt == '-d':
-            debug = True
-    
-    upscale_factor = 5 if show_window else 1
-
-    longpong = LongPongGame(upscale_factor, headless = not show_window)
-
-    #P1 Controller
-    RotaryEncoderController(longpong.fire_controller_input_event, 
-                                            positive_event_id=P1_UP, 
-                                            negative_event_id=P1_DOWN, 
-                                            clk_pin = 22, 
-                                            dt_pin = 27, 
-                                            button_pin = 17)
-    #P2 Controller
-    RotaryEncoderController(longpong.fire_controller_input_event, 
-                                            positive_event_id=P2_UP, 
-                                            negative_event_id=P2_DOWN, 
-                                            clk_pin = 25, 
-                                            dt_pin = 24, 
-                                            button_pin = 23)
-    ScreenPowerReset(reset_pin=26, button_pin=16)
-    game_thread = Thread(target=longpong.run, args=[])
-
-    game_thread.start()
-    game_thread.join()
-
-
-if __name__ == "__main__":
-    main()
 
 

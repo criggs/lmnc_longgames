@@ -1,13 +1,21 @@
-import os
-import signal
-import time
-import sys
-import threading
+import os, signal, time, sys, threading, getopt
+
+try:
+    import RPi.GPIO as gpio
+    print("Running on a Raspberry PI")
+except (ImportError, RuntimeError):
+    print("Not running on a Raspberry PI. Setting mock GPIO Zero Pin Factory.")
+    os.environ["GPIOZERO_PIN_FACTORY"] = "mock"
+
 from typing import List
+from enum import Enum
 import pygame
 import numpy
 from config import LongGameConfig
 from multiverse import Multiverse, Display
+from rotary_encoder_controller import RotaryEncoderController
+from screen_power_reset import ScreenPowerReset
+
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -19,86 +27,28 @@ MODE_ONE_PLAYER = 1
 MODE_TWO_PLAYER = 2
 MODE_AI_VS_AI = 3
 
-
-class MultiverseGame:
-    """
-    Pygame Instance with display duplication to a multiverse display (collection of unicorn displays)
-    
-    Handles the execution of a menu loop and a game loop.
-    
-    The menu loop will select between 3 different game modes.
-    
-    The game loop will draw the next frame of the game. The dt will be passed into this loop so frame independant math can be used.
-    
-    """
-
-
-    MODE_ONE_PLAYER = 1
-    MODE_TWO_PLAYER = 2
-    MODE_AI_VS_AI = 3
-
+class PygameMultiverseDisplay:
     def __init__(self, 
-                 game_title: str, 
-                 fps: int, 
+                 display_title: str, 
                  upscale_factor: int,
                  headless: bool = False
             ) -> None:
         if headless:
             os.environ["SDL_VIDEODRIVER"] = "dummy"
         pygame.init()
-        pygame.display.set_caption(game_title)
-        self.clock = pygame.time.Clock()
+        pygame.display.set_caption(display_title)
         self.headless = headless
-        script_path = os.path.realpath(os.path.dirname(__file__))
-        self.font = pygame.font.Font(f"{script_path}/Amble-Bold.ttf", FONT_SIZE * upscale_factor)
-        self.game_title = game_title
-        self.fps = fps
         self.width = 0
         self.height = 0
         self.upscale_factor = upscale_factor
-        self.multiverse_display = None
+        self.multiverse = None
         self.pygame_screen = None
-        self.dt = 0
-        self.exit_flag = threading.Event()
-        self.menu_select_state = True
-        self.game_mode = 1
         self.initial_configure_called = False
         
-        print(f'Initializing game {self.game_title}')
-        print(f'fps: {fps}')
+        print(f'Initializing multiverse display')
         print(f'upscale_factor: {upscale_factor}')
-
-        signal.signal(signal.SIGINT, self.signal_handler)
-
-
-    def signal_handler(self, sig, frame):
-        print('You pressed Ctrl+C!')
-        if self.exit_flag.is_set():
-            print("Force closing")
-            sys.exit(1)
-        self.stop()
-        sys.exit(0)
-
-
-    def game_mode_callback(self, game_mode: int):
-        """
-        Override this method for game mode selection
-        """
-        pass
-
-    def game_loop_callback(self, events, dt):
-        """
-        Override this method for the game loop
-        """
-        pass
-
-    def reset_game_callback(self):
-
-        """
-        Override this method for game reset
-        """
-        pass
-
+        
+        
     def configure_display(self, displays: List[Display] = []):
         
         if not len(displays):
@@ -107,14 +57,14 @@ class MultiverseGame:
             dummy_displays = config.config['displays']['main'].get("dummy", False)
             displays = [Display(f'{file}', 53, 11, 0, 11 * i, dummy=dummy_displays) for i, file in enumerate(config.config['displays']['main']['devices'] )]
             
-        self.multiverse_display = Multiverse(*displays)
-        self.multiverse_display.start() # Starts the execution thread for the buffer
-        self.width = len(self.multiverse_display.displays) * 11 * self.upscale_factor
+        self.multiverse = Multiverse(*displays)
+        self.multiverse.start() # Starts the execution thread for the buffer
+        self.width = len(self.multiverse.displays) * 11 * self.upscale_factor
         self.height = 53 * self.upscale_factor
         print(f'Upscaled Width: {self.width} Upscaled Height: {self.height}')
         
         if not self.initial_configure_called:
-            self.pygame_screen = pygame.display.set_mode((self.width, self.height), depth=24)
+            self.pygame_screen = pygame.display.set_mode((self.width, self.height), depth=32)
             if self.headless:
                 # From: https://stackoverflow.com/a/14473777
                 # surface alone wouldn't work so I needed to add a rectangle
@@ -129,21 +79,264 @@ class MultiverseGame:
         downsample = numpy.array(framegrab)[::self.upscale_factor, ::self.upscale_factor]
         # We need to reorder the rows for the correct origin/pixel position on the individual displays
         downsample = numpy.flipud(downsample)
-        self.multiverse_display.update(downsample)
-
+        self.multiverse.update(downsample)
+        
     def stop(self):
-        #TODO fix possible race conditions when stopping in the middle of a loop function
-        self.pygame_screen.fill(BLACK)
-        self.flip_display()
+        self.multiverse.stop()
+
+class MultiverseGame:
+    """
+    Pygame Instance with display duplication to a multiverse display (collection of unicorn displays)
+    
+    Handles the execution of a menu loop and a game loop.
+    
+    The menu loop will select between 3 different game modes.
+    
+    The game loop will draw the next frame of the game. The dt will be passed into this loop so frame independent math can be used.
+    
+    """
+
+
+
+    P1_UP = pygame.USEREVENT + 1 
+    P1_DOWN = P1_UP + 1
+    P1_SELECT = P1_DOWN + 1
+    P1_A = P1_SELECT + 1
+    P1_B = P1_A + 1
+
+    P2_UP = P1_B + 1 
+    P2_DOWN = P2_UP + 1
+    P2_SELECT = P2_DOWN + 1
+    P2_A = P2_SELECT + 1
+    P2_B = P2_A + 1
+
+    MODE_ONE_PLAYER = 1
+    MODE_TWO_PLAYER = 2
+    MODE_AI_VS_AI = 3
+
+    def __init__(self, 
+                 game_title: str, 
+                 fps: int, 
+                 multiverse_display: PygameMultiverseDisplay
+            ) -> None:
+            
+        self.multiverse_display = multiverse_display
+        script_path = os.path.realpath(os.path.dirname(__file__))
+        self.font = pygame.font.Font(f"{script_path}/Amble-Bold.ttf", FONT_SIZE * self.multiverse_display.upscale_factor)
+        self.game_title = game_title
+        self.fps = fps
+        self.menu_select_state = True
+        self.game_mode = 1
+        
+        print(f'Initializing game {self.game_title}')
+        print(f'fps: {fps}')
+
+
+    @property
+    def upscale_factor(self):
+        return self.multiverse_display.upscale_factor
+
+    @property
+    def height(self):
+        return self.multiverse_display.height
+        
+    @property
+    def width(self):
+        return self.multiverse_display.width
+        
+    @property
+    def screen(self):
+        return self.multiverse_display.pygame_screen
+
+    @property
+    def display_count(self):
+        return len(self.multiverse_display.multiverse.displays)
+
+    def game_mode_callback(self, game_mode: int):
+        """
+        Override this method for game mode selection
+        """
+        pass
+
+    def loop(self, events, dt):
+        """
+        Override this method for the game loop
+        """
+        pass
+
+    def reset(self):
+
+        """
+        Override this method for game reset
+        """
+        pass
+
+    """
+    Game mode selection menu
+    """
+    def menu_loop(self, events):
+        # Check for menu selection
+        # for event in events:
+        #     if event.type == pygame.KEYUP:
+        #         if event.key == pygame.K_1:
+        #             self.game_mode = 1
+        #             self.menu_select_state = False
+        #         if event.key == pygame.K_2:
+        #             self.game_mode = 2
+        #             self.menu_select_state = False
+        #         if event.key == pygame.K_3:
+        #             self.game_mode = 3
+        #             self.menu_select_state = False
+
+        # if self.headless:
+        #     self.game_mode = 3
+        #     self.menu_select_state = False
+        #     print("Hack to select AI mode, until the menu has a way to headlessly select a game mode")
+
+        self.game_mode = 3
+        self.menu_select_state = False
+        if not self.menu_select_state:
+            self.game_mode_callback(self.game_mode)
+
+        # Display the menu
+        # Fill the screen
+        self.screen.fill(BLACK)
+
+        title_text = self.font.render("Select Game Mode", False, WHITE)
+        mode1_text = self.font.render("1. 1 Player", False, WHITE)
+        mode2_text = self.font.render("2. 2 Players", False, WHITE)
+        mode3_text = self.font.render("3. AI vs AI", False, WHITE)
+
+
+        center_screen = self.width // 2
+        self.screen.blit(title_text, (center_screen - title_text.get_width() // 2, 5 * self.upscale_factor))
+        self.screen.blit(
+            mode1_text, (center_screen - mode1_text.get_width() // 2, 15 * self.upscale_factor))
+        self.screen.blit(
+            mode2_text, (center_screen - mode2_text.get_width() // 2, 25 * self.upscale_factor))
+        self.screen.blit(
+            mode3_text, (center_screen - mode3_text.get_width() // 2, 35 * self.upscale_factor))
+
+    def display_countdown(self):
+        print("Starting countdown...")
+        for i in range(3, 0, -1):
+            print(i)
+            self.screen.fill(BLACK)
+            countdown_text = self.font.render(str(i), False, WHITE)
+            self.screen.blit(countdown_text, (self.width // 4 - countdown_text.get_width() // 2, self.height // 2 - countdown_text.get_height() // 2))
+            self.screen.blit(countdown_text, (3 * self.width // 4 - countdown_text.get_width() // 2, self.height // 2 - countdown_text.get_height() // 2))
+            self.multiverse_display.flip_display()
+            pygame.time.wait(1000)
+        print("GO!")
+
+class MenuItem:
+    def __init__(self, name:str, children:list = None, props:dict = {}):
+        self.name = name
+        self.children = children
+        self.props = props
+        self.highlighted_index = 0
+        self.parent = None
+        if children is not None:
+            for child in children:
+                child.parent = self
+
+    def highlight(self, index):
+        if index < 0:
+            index = len(self.children) - 1
+        elif index >= len(self.children):
+            index = 0
+        self.highlighted_index = index
+    
+    def get_display_list(self):
+        '''
+        Return 3 list items, containing the highlighted item
+        '''
+        l = len(self.children)
+
+        min_index = max(0, self.highlighted_index - 1)
+        max_index = min(min_index + 3, l - 1)
+        r = range(min_index, max_index + 1)
+        return [ (i, self.children[i]) for i in r]
+
+
+
+        
+class MultiverseMain:
+    '''
+    Program to initialize displays, show game menu, and execute games
+    '''
+    def __init__(self, upscale_factor, headless):
+        self.exit_flag = threading.Event()
+        self.multiverse_display = PygameMultiverseDisplay("Multiverse Games", upscale_factor, headless)
+        self.multiverse_display.configure_display()
+        self.clock = pygame.time.Clock()
+        self.game = None
+        script_path = os.path.realpath(os.path.dirname(__file__))
+        self.font = pygame.font.Font(f"{script_path}/Amble-Bold.ttf", FONT_SIZE * self.multiverse_display.upscale_factor)
+        
+        #P1 Controller
+        RotaryEncoderController(self.fire_controller_input_event, 
+                                                negative_event_id=MultiverseGame.P1_UP, 
+                                                positive_event_id=MultiverseGame.P1_DOWN,
+                                                button_released_id=MultiverseGame.P1_SELECT,
+                                                clk_pin = 22, 
+                                                dt_pin = 27, 
+                                                button_pin = 17)
+        #P2 Controller
+        RotaryEncoderController(self.fire_controller_input_event, 
+                                                negative_event_id=MultiverseGame.P2_UP, 
+                                                positive_event_id=MultiverseGame.P2_DOWN,
+                                                button_released_id=MultiverseGame.P2_SELECT,
+                                                clk_pin = 25, 
+                                                dt_pin = 24, 
+                                                button_pin = 23)
+        
+        
+        from longpong import LongPongGame
+        from fire_demo_game import FireDemoGame
+        from matrix_demo_game import MatrixDemoGame
+        from life_demo_game import LifeDemoGame
+        
+        self.game_menu = MenuItem("Long Games", [
+            MenuItem("Long Pong", [
+                MenuItem("1 Player", props={'constructor': LongPongGame, 'args':[1]}),
+                MenuItem("2 Player", props={'constructor': LongPongGame, 'args':[2]}),
+                MenuItem("AI vs AI", props={'constructor': LongPongGame, 'args':[0]}),
+                MenuItem("Back"),
+            ]),
+            MenuItem("Demos", [
+                MenuItem("Fire", props={'constructor': FireDemoGame}),
+                MenuItem("Matrix", props={'constructor': MatrixDemoGame}),
+                MenuItem("Life", props={'constructor': LifeDemoGame}),
+                MenuItem("Back"),
+            ])
+        ])
+    
+        signal.signal(signal.SIGINT, self.signal_handler)
+    
+    
+    def signal_handler(self, sig, frame):
+        print('You pressed Ctrl+C!')
+        if self.exit_flag.is_set():
+            print("Force closing")
+            sys.exit(1)
+        self.stop()
+        sys.exit(0)
+    
+    def fire_controller_input_event(self, event_id: int):
+        event = pygame.event.Event(event_id)
+        pygame.event.post(event)
+        
+    def set_selected_game(self, game: MultiverseGame):
+        self.game = game
+        self.game.display = self.multiverse_display
+    
+    def stop(self):
+        self.multiverse_display.pygame_screen.fill(BLACK)
+        self.multiverse_display.flip_display()
         self.exit_flag.set()
         self.multiverse_display.stop()
         pygame.quit()
-
-    def reset(self):
-        if self.reset_game_callback:
-            self.reset_game_callback()
-        self.menu_select_state = True
-        self.pygame_screen.fill(BLACK)
 
     """
     Runs the game loop.
@@ -160,8 +353,7 @@ class MultiverseGame:
 
             # Get all events
             events = pygame.event.get()
-
-            #TODO: Make the controls work with GPIO/Joysticks    
+            
             # Check for quit
             for event in events:
                 if event.type == pygame.QUIT:
@@ -171,77 +363,124 @@ class MultiverseGame:
                     self.exit_flag.set()
                     continue
                 if event.type == pygame.KEYUP and event.key == pygame.K_r:
-                    self.reset()
-
-            # TODO Add some game states and make this a switch for the state
-            if self.game_mode_callback and self.menu_select_state:
-                self.menu_loop(events)
-                if not self.menu_select_state:
-                    self.display_countdown()
-                    prev_time = time.time()
+                    self.game.reset()
+                    continue
+                if event.type == pygame.KEYUP and event.key == pygame.K_m:
+                    self.game = None
+                    continue
+                if event.type == pygame.KEYUP and event.key == pygame.K_1:     
+                    from fire_demo_game import FireDemoGame
+                    self.game = FireDemoGame(self.multiverse_display)
+                    continue
+                if event.type == pygame.KEYUP and event.key == pygame.K_2:     
+                    from matrix_demo_game import MatrixDemoGame
+                    self.game = MatrixDemoGame(self.multiverse_display)
+                    continue
+                if event.type == pygame.KEYUP and event.key == pygame.K_3:     
+                    from life_demo_game import LifeDemoGame
+                    self.game = LifeDemoGame(self.multiverse_display)
+                    continue
+                if event.type == pygame.KEYUP and event.key == pygame.K_4:     
+                    from longpong import LongPongGame
+                    self.game = LongPongGame(self.multiverse_display)
+                    continue
+                
+                
+            if self.game is None:
+                #Show game selection menu
+                self.menu_loop(events, self.dt)
             else:
-                self.game_loop_callback(events, self.dt)
+                self.game.loop(events, self.dt)
             # Update the display
-            self.flip_display()
+            self.multiverse_display.flip_display()
 
             # Set the frame rate
-            self.clock.tick(self.fps)
+            self.clock.tick(self.game.fps if self.game is not None else 120)
 
         print("Ended multiverse game run loop")
         self.stop()
+    
+    def select_menu_item(self):
+        selected_child = self.game_menu.children[self.game_menu.highlighted_index]
+        if selected_child.name == 'Back':
+            selected_child = self.game_menu.parent
+        if selected_child.children is None:
+            game_name = selected_child.name
+            print(f"Selected menu leaf {game_name}")
+            
+            args = selected_child.props.get('args', [])
+            self.game = selected_child.props['constructor'](self.multiverse_display, *args)
+        else:
+            self.game_menu = selected_child
+            
 
-    """
-    Game mode selection menu
-    """
-    def menu_loop(self, events):
-        # Check for menu selection
+    def menu_loop(self, events, dt):
+        
+        highlight_change = 0
         for event in events:
-            if event.type == pygame.KEYUP:
-                if event.key == pygame.K_1:
-                    self.game_mode = 1
-                    self.menu_select_state = False
-                if event.key == pygame.K_2:
-                    self.game_mode = 2
-                    self.menu_select_state = False
-                if event.key == pygame.K_3:
-                    self.game_mode = 3
-                    self.menu_select_state = False
+            
+            #See if something is selected
+            if event.type == pygame.KEYUP and event.key == pygame.K_RETURN or event.type == MultiverseGame.P1_SELECT:
+                self.select_menu_item()
+            #See if we moved, increase/decrease highlighting
+            if event.type == pygame.KEYUP and event.key == pygame.K_UP or event.type == MultiverseGame.P1_UP:
+                highlight_change = -1
+            if event.type == pygame.KEYUP and event.key == pygame.K_DOWN or event.type == MultiverseGame.P1_DOWN:
+                highlight_change = 1
 
-        if self.headless:
-            self.game_mode = 3
-            self.menu_select_state = False
-            print("Hack to select AI mode, until the menu has a way to headlessly select a game mode")
+        self.game_menu.highlight(self.game_menu.highlighted_index + highlight_change)
 
-        if not self.menu_select_state:
-            self.game_mode_callback(self.game_mode)
+        #Show the current menu
+        to_display = self.game_menu.get_display_list()
 
-        # Display the menu
-        # Fill the screen
-        self.pygame_screen.fill(BLACK)
+        screen = self.multiverse_display.pygame_screen
+        width = self.multiverse_display.width
+        upscale_factor = self.multiverse_display.upscale_factor
 
-        title_text = self.font.render("Select Game Mode", False, WHITE)
-        mode1_text = self.font.render("1. 1 Player", False, WHITE)
-        mode2_text = self.font.render("2. 2 Players", False, WHITE)
-        mode3_text = self.font.render("3. AI vs AI", False, WHITE)
+        screen.fill(BLACK)
+        center_screen = width // 2
+
+        title_text = self.font.render(f'__{self.game_menu.name}__', False, WHITE)
+        screen.blit(title_text, (center_screen - title_text.get_width() // 2, 5 * upscale_factor))
+
+        render_index = 0
+        for i, child in to_display:
+            text = child.name
+            child_text = self.font.render(text, False, WHITE)
+            text_x = center_screen - child_text.get_width() // 2
+            text_y = (15 + (10 * render_index)) * upscale_factor
+            screen.blit(child_text, (text_x, text_y))
+            
+            if self.game_menu.highlighted_index == i:
+                pygame.draw.rect(screen, WHITE, pygame.Rect(text_x - (5 * upscale_factor), text_y + (5 * upscale_factor), 3 * upscale_factor, 3 * upscale_factor))
+            
+            render_index+=1
+
+def main():
+    
+    # Constants/Configuration
+    show_window = False
+    debug = False
+    opts, args = getopt.getopt(sys.argv[1:],"hwd",[])
+    for opt, arg in opts:
+        if opt == '-h':
+            print ('multiverse_game.py [-w] [-d]')
+            sys.exit()
+        elif opt == '-w':
+            show_window = True
+        elif opt == '-d':
+            debug = True
+    
+    upscale_factor = 5 if show_window else 1
+
+    game_main = MultiverseMain(upscale_factor, headless = not show_window)
+
+    ScreenPowerReset(reset_pin=26, button_pin=16)
+    
+    game_main.run()
 
 
-        center_screen = self.width // 2
-        self.pygame_screen.blit(title_text, (center_screen - title_text.get_width() // 2, 5 * self.upscale_factor))
-        self.pygame_screen.blit(
-            mode1_text, (center_screen - mode1_text.get_width() // 2, 15 * self.upscale_factor))
-        self.pygame_screen.blit(
-            mode2_text, (center_screen - mode2_text.get_width() // 2, 25 * self.upscale_factor))
-        self.pygame_screen.blit(
-            mode3_text, (center_screen - mode3_text.get_width() // 2, 35 * self.upscale_factor))
+if __name__ == "__main__":
+    main()
 
-    def display_countdown(self):
-        print("Starting countdown...")
-        for i in range(3, 0, -1):
-            print(i)
-            self.pygame_screen.fill(BLACK)
-            countdown_text = self.font.render(str(i), False, WHITE)
-            self.pygame_screen.blit(countdown_text, (self.width // 4 - countdown_text.get_width() // 2, self.height // 2 - countdown_text.get_height() // 2))
-            self.pygame_screen.blit(countdown_text, (3 * self.width // 4 - countdown_text.get_width() // 2, self.height // 2 - countdown_text.get_height() // 2))
-            self.flip_display()
-            pygame.time.wait(1000)
-        print("GO!")
+
