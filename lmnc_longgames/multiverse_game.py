@@ -15,17 +15,11 @@ from config import LongGameConfig
 from multiverse import Multiverse, Display
 from rotary_encoder_controller import RotaryEncoderController
 from screen_power_reset import ScreenPowerReset
+from constants import *
 
-
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
 
 FONT_SIZE = 11
 FONT_COLOR = WHITE
-
-MODE_ONE_PLAYER = 1
-MODE_TWO_PLAYER = 2
-MODE_AI_VS_AI = 3
 
 class PygameMultiverseDisplay:
     def __init__(self, 
@@ -95,24 +89,6 @@ class MultiverseGame:
     The game loop will draw the next frame of the game. The dt will be passed into this loop so frame independent math can be used.
     
     """
-
-
-
-    P1_UP = pygame.USEREVENT + 1 
-    P1_DOWN = P1_UP + 1
-    P1_SELECT = P1_DOWN + 1
-    P1_A = P1_SELECT + 1
-    P1_B = P1_A + 1
-
-    P2_UP = P1_B + 1 
-    P2_DOWN = P2_UP + 1
-    P2_SELECT = P2_DOWN + 1
-    P2_A = P2_SELECT + 1
-    P2_B = P2_A + 1
-
-    MODE_ONE_PLAYER = 1
-    MODE_TWO_PLAYER = 2
-    MODE_AI_VS_AI = 3
 
     def __init__(self, 
                  game_title: str, 
@@ -259,8 +235,6 @@ class MenuItem:
         return [ (i, self.children[i]) for i in r]
 
 
-
-        
 class MultiverseMain:
     '''
     Program to initialize displays, show game menu, and execute games
@@ -275,21 +249,23 @@ class MultiverseMain:
         self.font = pygame.font.Font(f"{script_path}/Amble-Bold.ttf", FONT_SIZE * self.multiverse_display.upscale_factor)
         
         #P1 Controller
-        RotaryEncoderController(self.fire_controller_input_event, 
-                                                negative_event_id=MultiverseGame.P1_UP, 
-                                                positive_event_id=MultiverseGame.P1_DOWN,
-                                                button_released_id=MultiverseGame.P1_SELECT,
-                                                clk_pin = 22, 
-                                                dt_pin = 27, 
-                                                button_pin = 17)
+        RotaryEncoderController(controller_id = P1, 
+                                event_callback = self.fire_controller_input_event,
+                                clk_pin = 22, 
+                                dt_pin = 27, 
+                                rotary_push_button_pin = 17,
+                                a_button_pin = 9,
+                                b_button_pin = 10)
         #P2 Controller
-        RotaryEncoderController(self.fire_controller_input_event, 
-                                                negative_event_id=MultiverseGame.P2_UP, 
-                                                positive_event_id=MultiverseGame.P2_DOWN,
-                                                button_released_id=MultiverseGame.P2_SELECT,
-                                                clk_pin = 25, 
-                                                dt_pin = 24, 
-                                                button_pin = 23)
+        RotaryEncoderController(controller_id = P2, 
+                                event_callback = self.fire_controller_input_event,
+                                clk_pin = 25, 
+                                dt_pin = 24, 
+                                rotary_push_button_pin = 23,
+                                a_button_pin=7,
+                                b_button_pin=8)
+
+        # TODO: Console Controls (Restart, back to menu, etc)
         
         
         from longpong import LongPongGame
@@ -323,8 +299,8 @@ class MultiverseMain:
         self.stop()
         sys.exit(0)
     
-    def fire_controller_input_event(self, event_id: int):
-        event = pygame.event.Event(event_id)
+    def fire_controller_input_event(self, event_id: int, controller_id: int, input_id: int):
+        event = pygame.event.Event(event_id, {'controller': controller_id, 'input': input_id})
         pygame.event.post(event)
         
     def set_selected_game(self, game: MultiverseGame):
@@ -356,18 +332,21 @@ class MultiverseMain:
             
             # Check for quit
             for event in events:
-                if event.type == pygame.QUIT:
-                    self.exit_flag.set()
-                    continue
-                if event.type == pygame.KEYUP and event.key == pygame.K_q:
+                if event.type == pygame.QUIT or (event.type == pygame.KEYUP and event.key == pygame.K_q):
+                    #TODO: Add a physical button?
                     self.exit_flag.set()
                     continue
                 if event.type == pygame.KEYUP and event.key == pygame.K_r:
+                    #TODO: Add a physical button
                     self.game.reset()
                     continue
-                if event.type == pygame.KEYUP and event.key == pygame.K_m:
+                if (event.type == pygame.KEYUP and event.key == pygame.K_m) or (event.type == BUTTON_RELEASED and event.input == BUTTON_A):
+                    #TODO: This should be a control button, not a controller's button
+                    # Unset the game and go back to the menu
                     self.game = None
                     continue
+                
+                # Jump directly into a specific game, skipping the menu. These could be physical buttons
                 if event.type == pygame.KEYUP and event.key == pygame.K_1:     
                     from fire_demo_game import FireDemoGame
                     self.game = FireDemoGame(self.multiverse_display)
@@ -420,12 +399,12 @@ class MultiverseMain:
         for event in events:
             
             #See if something is selected
-            if event.type == pygame.KEYUP and event.key == pygame.K_RETURN or event.type == MultiverseGame.P1_SELECT:
+            if (event.type == pygame.KEYUP and event.key == pygame.K_RETURN) or (event.type == BUTTON_RELEASED and event.input == ROTARY_PUSH):
                 self.select_menu_item()
             #See if we moved, increase/decrease highlighting
-            if event.type == pygame.KEYUP and event.key == pygame.K_UP or event.type == MultiverseGame.P1_UP:
+            if (event.type == pygame.KEYUP and event.key == pygame.K_UP) or (event.type == ROTATED_CCW):
                 highlight_change = -1
-            if event.type == pygame.KEYUP and event.key == pygame.K_DOWN or event.type == MultiverseGame.P1_DOWN:
+            if (event.type == pygame.KEYUP and event.key == pygame.K_DOWN) or (event.type == ROTATED_CW):
                 highlight_change = 1
 
         self.game_menu.highlight(self.game_menu.highlighted_index + highlight_change)
@@ -476,7 +455,7 @@ def main():
     game_main = MultiverseMain(upscale_factor, headless = not show_window)
 
     ScreenPowerReset(reset_pin=26, button_pin=16)
-    
+
     game_main.run()
 
 
