@@ -10,10 +10,9 @@ from multiverse_game import MultiverseGame
 from rotary_encoder_controller import RotaryEncoderController
 from screen_power_reset import ScreenPowerReset
 
-
+MODE_AI_VS_AI = 0
 MODE_ONE_PLAYER = 1
 MODE_TWO_PLAYER = 2
-MODE_AI_VS_AI = 3
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -105,7 +104,7 @@ class Player:
         if self.is_ai:
             self.game.update_for_ai(self)
             #Only use the slower ai speed if one player is human
-            speed = AI_PADDLE_SPEED * self.game.upscale_factor if self.game.game_mode == MODE_ONE_PLAYER else speed
+            speed = speed if self.game.player_one.is_ai else AI_PADDLE_SPEED * self.game.upscale_factor 
         self.y += speed * dt * self.direction
         self.y = max(min(self.y, self.game.height - self.height), 0)
 
@@ -161,15 +160,22 @@ class Ball:
         return self.speed * math.sin(self.angle) * self.direction_y
 
 class LongPongGame(MultiverseGame):
-    def __init__(self, multiverse_display):
+    def __init__(self, multiverse_display, game_mode=0):
         super().__init__("Long Pong", 120, multiverse_display)
+        print(f'Game Mode: {game_mode}')
 
         paddle_width = 2 * self.upscale_factor
         paddle_height = 10 * self.upscale_factor
 
         # Create players
         self.player_one = Player(pygame.Rect(0, self.height // 2 - paddle_height // 2, paddle_width, paddle_height), self)
+        self.player_one.is_ai = game_mode == MODE_AI_VS_AI
+        
+        print(f'Player One is AI? {self.player_one.is_ai}')
+        
         self.player_two = Player(pygame.Rect(self.width - paddle_width, self.height // 2 - paddle_height // 2, paddle_width, paddle_height), self)
+        self.player_two.is_ai = game_mode != MODE_TWO_PLAYER
+        print(f'Player Two is AI? {self.player_two.is_ai}')
 
         # Create ball
         ball_radius = 2 * self.upscale_factor
@@ -247,25 +253,6 @@ class LongPongGame(MultiverseGame):
             self.ball.speed = max(self.ball.speed/1.2, self.ball.min_speed)
         # Reverse the direction of travel
         self.ball.direction_x = colliding_paddle.position * -1
-        
-    def game_mode_callback(self, game_mode):    
-        """
-        Called when a game mode is selected
-        
-        Parameters:
-            game_mode: The selected game mode
-        """
-        print(f'Playing game mode {game_mode}')
-        self.reset()
-        if self.game_mode == MODE_ONE_PLAYER:
-            self.player_one.is_ai = False
-            self.player_two.is_ai = True
-        elif self.game_mode == MODE_TWO_PLAYER:
-            self.player_one.is_ai = False
-            self.player_two.is_ai = False
-        else:
-            self.player_one.is_ai = True
-            self.player_two.is_ai = True
 
 
     def loop(self, events: List, dt: float):
@@ -277,12 +264,8 @@ class LongPongGame(MultiverseGame):
             dt: The delta time since the last loop iteration. This is for framerate independence.
         """
         for event in events:
-            
-            #TODO: Make the controls work with GPIO/Joysticks    
-            # Control the player paddle
-            
             #Player One
-            if self.game_mode != MODE_AI_VS_AI: 
+            if not self.player_one.is_ai: 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_UP:
                         self.player_one.direction = -1
@@ -297,7 +280,7 @@ class LongPongGame(MultiverseGame):
                     self.player_one.move_paddle(PLAYER_PADDLE_MOVE_STEPS)
             
             #Player Two
-            if self.game_mode == MODE_TWO_PLAYER: 
+            if not self.player_two.is_ai: 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_w:
                         self.player_two.direction = -1

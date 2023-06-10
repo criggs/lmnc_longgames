@@ -230,17 +230,22 @@ class MultiverseGame:
         print("GO!")
 
 class MenuItem:
-    def __init__(self, name:str, children:list = None):
+    def __init__(self, name:str, children:list = None, props:dict = {}):
         self.name = name
         self.children = children
+        self.props = props
         self.highlighted_index = 0
         self.parent = None
         if children is not None:
             for child in children:
                 child.parent = self
 
-    def highlight(self, child_index):
-        self.highlighted_index = child_index
+    def highlight(self, index):
+        if index < 0:
+            index = len(self.children) - 1
+        elif index >= len(self.children):
+            index = 0
+        self.highlighted_index = index
     
     def get_display_list(self):
         '''
@@ -272,24 +277,36 @@ class MultiverseMain:
         #P1 Controller
         RotaryEncoderController(self.fire_controller_input_event, 
                                                 positive_event_id=MultiverseGame.P1_UP, 
-                                                negative_event_id=MultiverseGame.P1_DOWN, 
+                                                negative_event_id=MultiverseGame.P1_DOWN,
+                                                button_released_id=MultiverseGame.P1_SELECT,
                                                 clk_pin = 22, 
                                                 dt_pin = 27, 
                                                 button_pin = 17)
         #P2 Controller
         RotaryEncoderController(self.fire_controller_input_event, 
                                                 positive_event_id=MultiverseGame.P2_UP, 
-                                                negative_event_id=MultiverseGame.P2_DOWN, 
+                                                negative_event_id=MultiverseGame.P2_DOWN,
+                                                button_released_id=MultiverseGame.P2_SELECT,
                                                 clk_pin = 25, 
                                                 dt_pin = 24, 
                                                 button_pin = 23)
         
-        self.game_menu = MenuItem("Game Menu", [
-            MenuItem("Long Pong"),
+        
+        from longpong import LongPongGame
+        from fire_demo_game import FireDemoGame
+        from matrix_demo_game import MatrixDemoGame
+        from life_demo_game import LifeDemoGame
+        
+        self.game_menu = MenuItem("Long Games", [
+            MenuItem("Long Pong", [
+                MenuItem("1 Player", props={'constructor': LongPongGame, 'args':[1]}),
+                MenuItem("2 Player", props={'constructor': LongPongGame, 'args':[2]}),
+                MenuItem("AI vs AI", props={'constructor': LongPongGame, 'args':[0]}),
+            ]),
             MenuItem("Demos", [
-                MenuItem("Fire"),
-                MenuItem("Matrix"),
-                MenuItem("Life"),
+                MenuItem("Fire", props={'constructor': FireDemoGame}),
+                MenuItem("Matrix", props={'constructor': MatrixDemoGame}),
+                MenuItem("Life", props={'constructor': LifeDemoGame}),
                 MenuItem("Back"),
             ])
         ])
@@ -381,13 +398,36 @@ class MultiverseMain:
 
         print("Ended multiverse game run loop")
         self.stop()
-        
+    
+    def select_menu_item(self):
+        selected_child = self.game_menu.children[self.game_menu.highlighted_index]
+        if selected_child.name == 'Back':
+            selected_child = self.game_menu.parent
+        if selected_child.children is None:
+            game_name = selected_child.name
+            print(f"Selected menu leaf {game_name}")
+            
+            args = selected_child.props.get('args', [])
+            self.game = selected_child.props['constructor'](self.multiverse_display, *args)
+        else:
+            self.game_menu = selected_child
+            
 
     def menu_loop(self, events, dt):
         
-        #See if something is selected
+        highlight_change = 0
+        for event in events:
+            
+            #See if something is selected
+            if event.type == pygame.KEYUP and event.key == pygame.K_RETURN or event.type == MultiverseGame.P1_SELECT:
+                self.select_menu_item()
+            #See if we moved, increase/decrease highlighting
+            if event.type == pygame.KEYUP and event.key == pygame.K_UP or event.type == MultiverseGame.P1_UP:
+                highlight_change = -1
+            if event.type == pygame.KEYUP and event.key == pygame.K_DOWN or event.type == MultiverseGame.P1_DOWN:
+                highlight_change = 1
 
-        #See if we moved, increase/decrease highlighting
+        self.game_menu.highlight(self.game_menu.highlighted_index + highlight_change)
 
         #Show the current menu
         to_display = self.game_menu.get_display_list()
@@ -399,22 +439,24 @@ class MultiverseMain:
         screen.fill(BLACK)
         center_screen = width // 2
 
-        title_text = self.font.render(f'=={self.game_menu.name}==', False, WHITE)
+        title_text = self.font.render(f'__{self.game_menu.name}__', False, WHITE)
         screen.blit(title_text, (center_screen - title_text.get_width() // 2, 5 * upscale_factor))
 
         render_index = 0
         for i, child in to_display:
-            text = f'{i} {child.name}'
-            if self.game_menu.highlighted_index == i:
-                text = f'{text} *'
+            text = child.name
             child_text = self.font.render(text, False, WHITE)
-        
-            screen.blit(child_text, (center_screen - child_text.get_width() // 2, (15 + (10 * render_index)) * upscale_factor))
+            text_x = center_screen - child_text.get_width() // 2
+            text_y = (15 + (10 * render_index)) * upscale_factor
+            screen.blit(child_text, (text_x, text_y))
+            
+            if self.game_menu.highlighted_index == i:
+                pygame.draw.rect(screen, WHITE, pygame.Rect(text_x - (5 * upscale_factor), text_y + (5 * upscale_factor), 3 * upscale_factor, 3 * upscale_factor))
+            
             render_index+=1
 
-
-
 def main():
+    
     # Constants/Configuration
     show_window = False
     debug = False
