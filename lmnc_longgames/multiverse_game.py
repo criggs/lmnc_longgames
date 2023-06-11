@@ -16,6 +16,7 @@ from multiverse import Multiverse, Display
 from rotary_encoder_controller import RotaryEncoderController
 from screen_power_reset import ScreenPowerReset
 from constants import *
+from gpiozero import Button
 
 
 FONT_SIZE = 11
@@ -336,13 +337,10 @@ class MultiverseMain:
                     #TODO: Add a physical button?
                     self.exit_flag.set()
                     continue
-                if event.type == pygame.KEYUP and event.key == pygame.K_r:
-                    #TODO: Add a physical button
+                if event.type == pygame.KEYUP and event.key == pygame.K_r or (event.type == BUTTON_RELEASED and event.input == BUTTON_RESET):
                     self.game.reset()
                     continue
-                if (event.type == pygame.KEYUP and event.key == pygame.K_m) or (event.type == BUTTON_RELEASED and event.input == BUTTON_A):
-                    #TODO: This should be a control button, not a controller's button
-                    # Unset the game and go back to the menu
+                if (event.type == pygame.KEYUP and event.key == pygame.K_m) or (event.type == BUTTON_RELEASED and event.input == BUTTON_MENU):
                     self.game = None
                     continue
                 
@@ -435,6 +433,8 @@ class MultiverseMain:
             
             render_index+=1
 
+
+
 def main():
     
     # Constants/Configuration
@@ -454,7 +454,25 @@ def main():
 
     game_main = MultiverseMain(upscale_factor, headless = not show_window)
 
+    # Set up control buttons
+
+    def back_to_menu():
+        event = pygame.event.Event(BUTTON_RELEASED, {'controller': 0, 'input': BUTTON_MENU})
+        pygame.event.post(event)
+
+    game_menu_button = Button(20)
+    game_menu_button.when_released = back_to_menu
+
+    def reset_game():
+        event = pygame.event.Event(BUTTON_RELEASED, {'controller': 0, 'input': BUTTON_RESET})
+        pygame.event.post(event)
+
+    game_reset_button = Button(21)
+    game_reset_button.when_released = reset_game
+
     ScreenPowerReset(reset_pin=26, button_pin=16)
+
+
 
     game_main.run()
 
