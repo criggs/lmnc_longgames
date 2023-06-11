@@ -1,6 +1,7 @@
 from typing import Callable
 from gpiozero import DigitalOutputDevice, Button
 from time import sleep
+from constants import *
 
 class ScreenPowerReset:
     def __init__(self,
@@ -18,10 +19,9 @@ class ScreenPowerReset:
 
 def main():
     
-    ScreenPowerReset(26, 16)
-    while True:
-        sleep(1)
-        pass
+    print("Resetting Screen Relay")
+    r = ScreenPowerReset(reset_pin=PIN_RESET_RELAY, button_pin=16)
+    r.reset()
 
 if __name__ == "__main__":
     main()
