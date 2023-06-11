@@ -246,6 +246,7 @@ class MultiverseMain:
         self.multiverse_display.configure_display()
         self.clock = pygame.time.Clock()
         self.game = None
+        self.menu_inactive_start_time = time.time()
         script_path = os.path.realpath(os.path.dirname(__file__))
         self.font = pygame.font.Font(f"{script_path}/Amble-Bold.ttf", FONT_SIZE * self.multiverse_display.upscale_factor)
         
@@ -342,6 +343,7 @@ class MultiverseMain:
                     continue
                 if (event.type == pygame.KEYUP and event.key == pygame.K_m) or (event.type == BUTTON_RELEASED and event.input == BUTTON_MENU):
                     self.game = None
+                    self.menu_inactive_start_time = time.time()
                     continue
                 
                 # Jump directly into a specific game, skipping the menu. These could be physical buttons
@@ -376,7 +378,12 @@ class MultiverseMain:
 
         print("Ended multiverse game run loop")
         self.stop()
-    
+
+    def start_random_game(self):
+        #TODO make this a random selection 
+        from life_demo_game import LifeDemoGame
+        self.game = LifeDemoGame(self.multiverse_display)
+
     def select_menu_item(self):
         selected_child = self.game_menu.children[self.game_menu.highlighted_index]
         if selected_child.name == 'Back':
@@ -392,17 +399,25 @@ class MultiverseMain:
             
 
     def menu_loop(self, events, dt):
+        elapsed_menu_time =  time.time() - self.menu_inactive_start_time
+        if elapsed_menu_time > MAX_MENU_INACTIVE_TIME:
+            print(f'Menu time elapsed, starting random demo after {MAX_MENU_INACTIVE_TIME} seconds')
+            self.start_random_game()
+            return
         
         highlight_change = 0
         for event in events:
             
             #See if something is selected
             if (event.type == pygame.KEYUP and event.key == pygame.K_RETURN) or (event.type == BUTTON_RELEASED and event.input == ROTARY_PUSH):
+                self.menu_inactive_start_time = time.time()
                 self.select_menu_item()
             #See if we moved, increase/decrease highlighting
             if (event.type == pygame.KEYUP and event.key == pygame.K_UP) or (event.type == ROTATED_CCW):
+                self.menu_inactive_start_time = time.time()
                 highlight_change = -1
             if (event.type == pygame.KEYUP and event.key == pygame.K_DOWN) or (event.type == ROTATED_CW):
+                self.menu_inactive_start_time = time.time()
                 highlight_change = 1
 
         self.game_menu.highlight(self.game_menu.highlighted_index + highlight_change)
@@ -470,9 +485,7 @@ def main():
     game_reset_button = Button(21)
     game_reset_button.when_released = reset_game
 
-    ScreenPowerReset(reset_pin=26, button_pin=16)
-
-
+    ScreenPowerReset(reset_pin=PIN_RESET_RELAY, button_pin=16)
 
     game_main.run()
 
