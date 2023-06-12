@@ -53,15 +53,15 @@ class SetupConfigGame(MultiverseGame):
 
     def display_number(self, screen_number: int):
         script_path = os.path.realpath(os.path.dirname(__file__))
-        font = pygame.font.Font(
-            f"{script_path}/Amble-Bold.ttf", 10 * self.upscale_factor
-        )
-        text = font.render(f"{screen_number}", False, (255, 255, 255))
+        font = pygame.freetype.Font(f"{script_path}/icl8x8u.bdf", size=8)
+
+        text, _ = self.font.render(f"{screen_number}", (255,255,255))
+        text = pygame.transform.scale_by(text, self.upscale_factor)
         text = pygame.transform.rotate(text, -90)
 
         self.screen.blit(
             text,
-            [((screen_number * 11)) * self.upscale_factor, 10 * self.upscale_factor],
+            [((screen_number * 11) + 2) * self.upscale_factor, 25 * self.upscale_factor],
         )
 
     def prompt_for_display_order(self):
