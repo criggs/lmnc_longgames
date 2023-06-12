@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "lmnc-longgames"
-version = "0.1.6"
+version = "0.1.7"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = ["Chris Riggs <christopher.riggs@gmail.com>"]
 readme = "README.md"
 packages = [{include = "lmnc_longgames"}]
 include = [
@@ -15,10 +15,12 @@ include = [
 [tool.poetry.dependencies]
 python = "^3.9"
 numpy = "1.19.5"
-pygame = "1.9.6"
+pygame = "^2.4.0"
 pyserial = "^3.5"
 gpiozero = "^1.6.2"
 
+[tool.poetry.dev-dependencies]
+black = "^23.3.0"
 
 [build-system]
 requires = ["poetry-core"]
