@@ -224,6 +224,7 @@ class MultiverseMain:
         self.clock = pygame.time.Clock()
         self.game = None
         self.menu_inactive_start_time = time.time()
+        self.running_demo = False
         script_path = os.path.realpath(os.path.dirname(__file__))
         self.font = pygame.freetype.Font(f"{script_path}/icl8x8u.bdf", size=8)
 
@@ -339,6 +340,11 @@ class MultiverseMain:
                     # TODO: Add a physical button?
                     self.exit_flag.set()
                     continue
+                if self.running_demo and event.type in [pygame.KEYUP, BUTTON_RELEASED, ROTATED_CW, ROTATED_CCW]:
+                    self.game = None
+                    self.menu_inactive_start_time = time.time()
+                    self.running_demo = False
+                    continue
                 if (
                     event.type == pygame.KEYUP
                     and event.key == pygame.K_r
@@ -416,6 +422,7 @@ class MultiverseMain:
             print(
                 f"Menu time elapsed, starting random demo after {MAX_MENU_INACTIVE_TIME} seconds"
             )
+            self.running_demo = True
             self.start_random_game()
             return
 
