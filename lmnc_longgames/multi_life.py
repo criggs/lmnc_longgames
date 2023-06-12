@@ -8,7 +8,10 @@ from config import LongGameConfig
 
 
 config = LongGameConfig()
-displays = [Display(f'{file}', 53, 11, 0, 11 * i) for i, file in enumerate(config.config['displays']['main']['devices'] )]
+displays = [
+    Display(f"{file}", 53, 11, 0, 11 * i)
+    for i, file in enumerate(config.config["displays"]["main"]["devices"])
+]
 display = Multiverse(*displays)
 
 display.start()
@@ -18,13 +21,13 @@ WIDTH = 11 * len(displays)
 HEIGHT = 53
 BYTES_PER_PIXEL = 4
 
-INITIAL_LIFE = 200 * len(displays)       # Number of live cells to seed
-GENERATION_TIME = 0.1     # MS between generations
-MINIMUM_LIFE = INITIAL_LIFE / 5       # Auto reseed when only this many alive cells remain
-SMOOTHED = True           # Enable for a more organic if somewhat unsettling feel
+INITIAL_LIFE = 200 * len(displays)  # Number of live cells to seed
+GENERATION_TIME = 0.1  # MS between generations
+MINIMUM_LIFE = INITIAL_LIFE / 5  # Auto reseed when only this many alive cells remain
+SMOOTHED = True  # Enable for a more organic if somewhat unsettling feel
 
-DECAY = 0.95              # Rate at which smoothing effect decays, higher number = more persistent, 1.0 = no decay
-TENACITY = 32             # Rate at which smoothing effect increases
+DECAY = 0.95  # Rate at which smoothing effect decays, higher number = more persistent, 1.0 = no decay
+TENACITY = 32  # Rate at which smoothing effect increases
 
 HSV_OFFSET = 0.3
 
@@ -33,7 +36,7 @@ def palette(offset=0.3):
     for h in range(256):
         for c in colorsys.hsv_to_rgb(offset + h / 1024.0, 1.0, h / 255.0):
             yield int(c * 255)
-        yield 0 # padding byte
+        yield 0  # padding byte
 
 
 # Palette conversion, this is actually pretty nifty
@@ -97,7 +100,6 @@ def seed_life():
         life[y][x] = int(True)  # Avoid: TypeError: 'bool' object isn't iterable
 
 
-
 life = numpy.zeros((HEIGHT, WIDTH), dtype=numpy.uint8)
 next_generation = numpy.zeros((HEIGHT, WIDTH), dtype=numpy.uint8)
 neighbours = numpy.zeros((HEIGHT, WIDTH), dtype=numpy.uint8)
@@ -115,16 +117,17 @@ event = threading.Event()
 
 
 def signal_handler(sig, frame):
-    print('You pressed Ctrl+C!')
+    print("You pressed Ctrl+C!")
     if event.is_set():
-        #This is the second Ctrl+c. Force close.
+        # This is the second Ctrl+c. Force close.
         sys.exit(1)
     event.set()
+
 
 signal.signal(signal.SIGINT, signal_handler)
 
 
-while not event.wait(1/80):
+while not event.wait(1 / 80):
     t_start = time.time()
 
     # Update the fire
@@ -146,7 +149,9 @@ while not event.wait(1/80):
     num_frames += 1
 
     if num_frames == 60:
-        print(f"Took {sum_total:.04f}s for 60 frames, {num_frames / sum_total:.02f} FPS")
+        print(
+            f"Took {sum_total:.04f}s for 60 frames, {num_frames / sum_total:.02f} FPS"
+        )
         num_frames = 0
         sum_total = 0
 

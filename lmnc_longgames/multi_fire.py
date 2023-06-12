@@ -7,7 +7,10 @@ from config import LongGameConfig
 
 
 config = LongGameConfig()
-displays = [Display(f'{file}', 53, 11, 0, 11 * i) for i, file in enumerate(config.config['displays']['main']['devices'] )]
+displays = [
+    Display(f"{file}", 53, 11, 0, 11 * i)
+    for i, file in enumerate(config.config["displays"]["main"]["devices"])
+]
 display = Multiverse(*displays)
 
 display.start()
@@ -23,13 +26,16 @@ DAMPING_FACTOR = 0.98
 HEAT = 4.0
 
 # Palette conversion, this is actually pretty nifty
-PALETTE = numpy.array([
-    [0, 0, 0, 0],
-    [20, 20, 20, 0],
-    [0, 30, 180, 0],
-    [0, 160, 220, 0],
-    [180, 255, 255, 0]
-], dtype=numpy.uint8)
+PALETTE = numpy.array(
+    [
+        [0, 0, 0, 0],
+        [20, 20, 20, 0],
+        [0, 30, 180, 0],
+        [0, 160, 220, 0],
+        [180, 255, 255, 0],
+    ],
+    dtype=numpy.uint8,
+)
 
 # FIIIREREEEEEEE
 heat = numpy.zeros((HEIGHT, WIDTH), dtype=numpy.float32)
@@ -44,15 +50,15 @@ def update():
     # Add random fire spawns
     for c in range(FIRE_SPAWNS):
         x = random.randint(0, WIDTH - 4) + 2
-        heat[HEIGHT - 1][x - 1:x + 1] = HEAT / 2.0
-        heat[HEIGHT - 2][x - 1:x + 1] = HEAT
+        heat[HEIGHT - 1][x - 1 : x + 1] = HEAT / 2.0
+        heat[HEIGHT - 2][x - 1 : x + 1] = HEAT
 
     # Propagate the fire upwards
     a = numpy.roll(heat, -1, axis=0)  # y + 1, x
     b = numpy.roll(heat, -2, axis=0)  # y + 2, x
     c = numpy.roll(heat, -1, axis=0)  # y + 1
-    d = numpy.roll(c, 1, axis=1)      # y + 1, x + 1
-    e = numpy.roll(c, -1, axis=1)     # y + 1, x - 1
+    d = numpy.roll(c, 1, axis=1)  # y + 1, x + 1
+    e = numpy.roll(c, -1, axis=1)  # y + 1, x - 1
 
     # Average over 5 adjacent pixels and apply damping
     heat[:] += a + b + d + e
@@ -65,17 +71,19 @@ num_frames = 0
 
 event = threading.Event()
 
+
 def signal_handler(sig, frame):
-    print('You pressed Ctrl+C!')
+    print("You pressed Ctrl+C!")
     if event.is_set():
-        #This is the second Ctrl+c. Force close.
+        # This is the second Ctrl+c. Force close.
         sys.exit(1)
     event.set()
+
 
 signal.signal(signal.SIGINT, signal_handler)
 
 
-while not event.wait(1/80):
+while not event.wait(1 / 80):
     t_start = time.time()
 
     # Update the fire
@@ -98,7 +106,9 @@ while not event.wait(1/80):
     num_frames += 1
 
     if num_frames == 60:
-        print(f"Took {sum_total:.04f}s for 60 frames, {num_frames / sum_total:.02f} FPS")
+        print(
+            f"Took {sum_total:.04f}s for 60 frames, {num_frames / sum_total:.02f} FPS"
+        )
         num_frames = 0
         sum_total = 0
 
