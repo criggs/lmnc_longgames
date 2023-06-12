@@ -403,7 +403,9 @@ class MultiverseMain:
             screen.blit(child_text, (text_x, text_y))
             
             if self.game_menu.highlighted_index == i:
-                pygame.draw.rect(screen, WHITE, pygame.Rect(text_x - (5 * upscale_factor), text_y + (5 * upscale_factor), 3 * upscale_factor, 3 * upscale_factor))
+                indicator_text, _ = self.font.render(">", WHITE)
+                indicator_text = pygame.transform.scale_by(indicator_text, upscale_factor)
+                screen.blit(indicator_text, (text_x - (10 * upscale_factor), text_y))
             
             render_index+=1
 
