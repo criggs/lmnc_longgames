@@ -19,6 +19,8 @@ pygame = "1.9.6"
 pyserial = "^3.5"
 gpiozero = "^1.6.2"
 
+[tool.poetry.dev-dependencies]
+black = "^23.3.0"
 
 [build-system]
 requires = ["poetry-core"]

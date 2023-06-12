@@ -99,7 +99,7 @@ class MultiverseGame:
             
         self.multiverse_display = multiverse_display
         script_path = os.path.realpath(os.path.dirname(__file__))
-        self.font = pygame.font.Font(f"{script_path}/Amble-Bold.ttf", FONT_SIZE * self.multiverse_display.upscale_factor)
+        self.font = pygame.freetype.Font(f"{script_path}/icl8x8u.bdf")
         self.game_title = game_title
         self.fps = fps
         self.menu_select_state = True
@@ -148,58 +148,15 @@ class MultiverseGame:
         """
         pass
 
-    """
-    Game mode selection menu
-    """
-    def menu_loop(self, events):
-        # Check for menu selection
-        # for event in events:
-        #     if event.type == pygame.KEYUP:
-        #         if event.key == pygame.K_1:
-        #             self.game_mode = 1
-        #             self.menu_select_state = False
-        #         if event.key == pygame.K_2:
-        #             self.game_mode = 2
-        #             self.menu_select_state = False
-        #         if event.key == pygame.K_3:
-        #             self.game_mode = 3
-        #             self.menu_select_state = False
-
-        # if self.headless:
-        #     self.game_mode = 3
-        #     self.menu_select_state = False
-        #     print("Hack to select AI mode, until the menu has a way to headlessly select a game mode")
-
-        self.game_mode = 3
-        self.menu_select_state = False
-        if not self.menu_select_state:
-            self.game_mode_callback(self.game_mode)
-
-        # Display the menu
-        # Fill the screen
-        self.screen.fill(BLACK)
-
-        title_text = self.font.render("Select Game Mode", False, WHITE)
-        mode1_text = self.font.render("1. 1 Player", False, WHITE)
-        mode2_text = self.font.render("2. 2 Players", False, WHITE)
-        mode3_text = self.font.render("3. AI vs AI", False, WHITE)
-
-
-        center_screen = self.width // 2
-        self.screen.blit(title_text, (center_screen - title_text.get_width() // 2, 5 * self.upscale_factor))
-        self.screen.blit(
-            mode1_text, (center_screen - mode1_text.get_width() // 2, 15 * self.upscale_factor))
-        self.screen.blit(
-            mode2_text, (center_screen - mode2_text.get_width() // 2, 25 * self.upscale_factor))
-        self.screen.blit(
-            mode3_text, (center_screen - mode3_text.get_width() // 2, 35 * self.upscale_factor))
-
     def display_countdown(self):
         print("Starting countdown...")
         for i in range(3, 0, -1):
             print(i)
             self.screen.fill(BLACK)
-            countdown_text = self.font.render(str(i), False, WHITE)
+            countdown_text, _ = self.font.render(str(i), WHITE)
+            countdown_text = pygame.transform.scale_by(countdown_text, self.upscale_factor)
+            
+            
             self.screen.blit(countdown_text, (self.width // 4 - countdown_text.get_width() // 2, self.height // 2 - countdown_text.get_height() // 2))
             self.screen.blit(countdown_text, (3 * self.width // 4 - countdown_text.get_width() // 2, self.height // 2 - countdown_text.get_height() // 2))
             self.multiverse_display.flip_display()
@@ -248,7 +205,7 @@ class MultiverseMain:
         self.game = None
         self.menu_inactive_start_time = time.time()
         script_path = os.path.realpath(os.path.dirname(__file__))
-        self.font = pygame.font.Font(f"{script_path}/Amble-Bold.ttf", FONT_SIZE * self.multiverse_display.upscale_factor)
+        self.font = pygame.freetype.Font(f"{script_path}/icl8x8u.bdf",size = 8)
         
         #P1 Controller
         RotaryEncoderController(controller_id = P1, 
@@ -432,13 +389,15 @@ class MultiverseMain:
         screen.fill(BLACK)
         center_screen = width // 2
 
-        title_text = self.font.render(f'__{self.game_menu.name}__', False, WHITE)
+        title_text, _ = self.font.render(f'__{self.game_menu.name}__', WHITE)
+        title_text = pygame.transform.scale_by(title_text, upscale_factor)
         screen.blit(title_text, (center_screen - title_text.get_width() // 2, 5 * upscale_factor))
 
         render_index = 0
         for i, child in to_display:
             text = child.name
-            child_text = self.font.render(text, False, WHITE)
+            child_text, _ = self.font.render(text, WHITE)
+            child_text = pygame.transform.scale_by(child_text, upscale_factor)
             text_x = center_screen - child_text.get_width() // 2
             text_y = (15 + (10 * render_index)) * upscale_factor
             screen.blit(child_text, (text_x, text_y))
