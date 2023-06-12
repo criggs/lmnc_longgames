@@ -2,6 +2,7 @@ import sys, os
 
 try:
     import RPi.GPIO as gpio
+
     print("Running on a Raspberry PI")
 except (ImportError, RuntimeError):
     print("Not running on a Raspberry PI. Setting mock GPIO Zero Pin Factory.")
@@ -23,52 +24,65 @@ from screen_power_reset import ScreenPowerReset
 
 """
 
+
 class LifeDemoGame(MultiverseGame):
     def __init__(self, multiverse_displays):
         super().__init__("Conway's Game of Life", 60, multiverse_displays)
-        
+
         self.sim_height = int(self.height / self.upscale_factor)
         self.sim_width = int(self.width / self.upscale_factor)
-        
-        self.initial_life = 200 * self.display_count       # Number of live cells to seed
-        self.GENERATION_TIME = 0.1     # MS between generations
-        self.MINIMUM_LIFE = self.initial_life / 5       # Auto reseed when only this many alive cells remain
-        self.SMOOTHED = True           # Enable for a more organic if somewhat unsettling feel
 
-        self.DECAY = 0.95              # Rate at which smoothing effect decays, higher number = more persistent, 1.0 = no decay
-        self.TENACITY = 32             # Rate at which smoothing effect increases
+        self.initial_life = 200 * self.display_count  # Number of live cells to seed
+        self.GENERATION_TIME = 0.1  # MS between generations
+        self.MINIMUM_LIFE = (
+            self.initial_life / 5
+        )  # Auto reseed when only this many alive cells remain
+        self.SMOOTHED = True  # Enable for a more organic if somewhat unsettling feel
+
+        self.DECAY = 0.95  # Rate at which smoothing effect decays, higher number = more persistent, 1.0 = no decay
+        self.TENACITY = 32  # Rate at which smoothing effect increases
 
         # Palette conversion, this is actually pretty nifty
-        self.palette = numpy.fromiter(self.build_palette(), dtype=numpy.uint8).reshape((256, 3))
-        
+        self.palette = numpy.fromiter(self.build_palette(), dtype=numpy.uint8).reshape(
+            (256, 3)
+        )
+
         self.life = numpy.zeros((self.sim_height, self.sim_width), dtype=numpy.uint8)
-        self.next_generation = numpy.zeros((self.sim_height, self.sim_width), dtype=numpy.uint8)
-        self.neighbours = numpy.zeros((self.sim_height, self.sim_width), dtype=numpy.uint8)
-        self.duration = numpy.zeros((self.sim_height, self.sim_width), dtype=numpy.float64)
+        self.next_generation = numpy.zeros(
+            (self.sim_height, self.sim_width), dtype=numpy.uint8
+        )
+        self.neighbours = numpy.zeros(
+            (self.sim_height, self.sim_width), dtype=numpy.uint8
+        )
+        self.duration = numpy.zeros(
+            (self.sim_height, self.sim_width), dtype=numpy.float64
+        )
         self.last_gen = time.time()
-        
+
         self.seed_life()
-        
+
     def build_palette(self, offset=0.1):
         for h in range(256):
             for c in colorsys.hsv_to_rgb(offset + h / 1024.0, 1.0, h / 255.0):
                 yield int(c * 255)
-            
-    def seed_life(self):
 
+    def seed_life(self):
         hsv_offset = random.randint(0, 360) / 360.0
 
-        self.palette = numpy.fromiter(self.build_palette(hsv_offset), dtype=numpy.uint8).reshape((256, 3))
+        self.palette = numpy.fromiter(
+            self.build_palette(hsv_offset), dtype=numpy.uint8
+        ).reshape((256, 3))
         for _ in range(self.initial_life):
             x = random.randint(0, self.sim_width - 1)
             y = random.randint(0, self.sim_height - 1)
-            self.life[y][x] = int(True)  # Avoid: TypeError: 'bool' object isn't iterable
+            self.life[y][x] = int(
+                True
+            )  # Avoid: TypeError: 'bool' object isn't iterable
 
-   
-    def game_mode_callback(self, game_mode):    
+    def game_mode_callback(self, game_mode):
         """
         Called when a game mode is selected
-        
+
         Parameters:
             game_mode: The selected game mode
         """
@@ -94,13 +108,14 @@ class LifeDemoGame(MultiverseGame):
         buf = self.palette[buf]
 
         if self.upscale_factor != 1:
-            #Upsample the sim to the windowed display
-            buf = numpy.repeat(buf, self.upscale_factor, axis=1).repeat(self.upscale_factor, axis=0)
+            # Upsample the sim to the windowed display
+            buf = numpy.repeat(buf, self.upscale_factor, axis=1).repeat(
+                self.upscale_factor, axis=0
+            )
 
         # Update the displays from the buffer
         _2d_buf = pygame.surfarray.map_array(self.screen, buf)
         pygame.surfarray.blit_array(self.screen, _2d_buf)
-
 
     def reset(self):
         pass
@@ -110,7 +125,6 @@ class LifeDemoGame(MultiverseGame):
         pygame.event.post(event)
 
     def update(self):
-
         self.duration[:] += self.life * self.TENACITY
         self.duration[:] *= self.DECAY
 
@@ -148,4 +162,3 @@ class LifeDemoGame(MultiverseGame):
         self.next_generation[:] -= (self.neighbours[:] > 3) * self.life
 
         self.life[:] = numpy.clip(self.next_generation, 0, 1)
-

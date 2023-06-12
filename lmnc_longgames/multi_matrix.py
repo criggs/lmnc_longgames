@@ -1,4 +1,5 @@
 import numpy
+
 # import scipy
 import time
 import random
@@ -8,7 +9,10 @@ from config import LongGameConfig
 
 
 config = LongGameConfig()
-displays = [Display(f'{file}', 53, 11, 0, 11 * i) for i, file in enumerate(config.config['displays']['main']['devices'] )]
+displays = [
+    Display(f"{file}", 53, 11, 0, 11 * i)
+    for i, file in enumerate(config.config["displays"]["main"]["devices"])
+]
 display = Multiverse(*displays)
 
 display.start()
@@ -24,19 +28,22 @@ DAMPING_FACTOR = 0.98
 matrix = 4.0
 
 # Palette conversion, this is actually pretty nifty
-PALETTE = numpy.array([
-    [0, 0, 0, 0],
-    [0, 20, 0, 0],
-    [0, 30, 0, 0],
-    [0, 160, 0, 0],
-    [0, 255, 0, 0],
-    [0, 255, 30, 30],
-    [0, 255, 100, 100],
-    [0, 255, 200, 200],
-    [0, 255, 245, 245],
-    [0, 255, 255, 255],
-    [0, 255, 255, 255]
-], dtype=numpy.uint8)
+PALETTE = numpy.array(
+    [
+        [0, 0, 0, 0],
+        [0, 20, 0, 0],
+        [0, 30, 0, 0],
+        [0, 160, 0, 0],
+        [0, 255, 0, 0],
+        [0, 255, 30, 30],
+        [0, 255, 100, 100],
+        [0, 255, 200, 200],
+        [0, 255, 245, 245],
+        [0, 255, 255, 255],
+        [0, 255, 255, 255],
+    ],
+    dtype=numpy.uint8,
+)
 
 
 matrix = numpy.zeros((HEIGHT, WIDTH), dtype=numpy.float32)
@@ -62,16 +69,18 @@ num_frames = 0
 
 event = threading.Event()
 
+
 def signal_handler(sig, frame):
-    print('You pressed Ctrl+C!')
+    print("You pressed Ctrl+C!")
     if event.is_set():
-        #This is the second Ctrl+c. Force close.
+        # This is the second Ctrl+c. Force close.
         sys.exit(1)
     event.set()
 
+
 signal.signal(signal.SIGINT, signal_handler)
 
-while not event.wait(1/80):
+while not event.wait(1 / 80):
     t_start = time.time()
 
     # Update the fire
@@ -98,7 +107,9 @@ while not event.wait(1/80):
     time.sleep(1.0 / 60)
 
     if num_frames == 60:
-        print(f"Took {sum_total:.04f}s for 60 frames, {num_frames / sum_total:.02f} FPS")
+        print(
+            f"Took {sum_total:.04f}s for 60 frames, {num_frames / sum_total:.02f} FPS"
+        )
         num_frames = 0
         sum_total = 0
 

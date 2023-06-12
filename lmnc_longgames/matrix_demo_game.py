@@ -2,6 +2,7 @@ import sys, os
 
 try:
     import RPi.GPIO as gpio
+
     print("Running on a Raspberry PI")
 except (ImportError, RuntimeError):
     print("Not running on a Raspberry PI. Setting mock GPIO Zero Pin Factory.")
@@ -17,10 +18,10 @@ from multiverse_game import MultiverseGame
 from rotary_encoder_controller import RotaryEncoderController
 from screen_power_reset import ScreenPowerReset
 
+
 class MatrixDemoGame(MultiverseGame):
     def __init__(self, multiverse_displays):
         super().__init__("Matrix", 60, multiverse_displays)
-
 
         self.sim_height = int(self.height / self.upscale_factor)
         self.sim_width = int(self.width / self.upscale_factor)
@@ -31,26 +32,31 @@ class MatrixDemoGame(MultiverseGame):
         self.heat_amount = 4.0
 
         # Palette conversion, this is actually pretty nifty
-        self.palette = numpy.array([
-                [  0,   0,   0],
-                [  0,  20,   0],
-                [  0,  30,   0],
-                [  0, 160,   0],
-                [  0, 255,   0],
-                [  4,  31,   0],
-                [40, 102,   0],
-                [156, 199,   0],
-                [235, 245,   0],
-                [255, 255,   0],
-                [255, 255,   0]
-        ], dtype=numpy.uint8)
+        self.palette = numpy.array(
+            [
+                [0, 0, 0],
+                [0, 20, 0],
+                [0, 30, 0],
+                [0, 160, 0],
+                [0, 255, 0],
+                [4, 31, 0],
+                [40, 102, 0],
+                [156, 199, 0],
+                [235, 245, 0],
+                [255, 255, 0],
+                [255, 255, 0],
+            ],
+            dtype=numpy.uint8,
+        )
         # FIIIREREEEEEEE
-        self.matrix = numpy.zeros((self.sim_height, self.sim_width), dtype=numpy.float32)
-   
-    def game_mode_callback(self, game_mode):    
+        self.matrix = numpy.zeros(
+            (self.sim_height, self.sim_width), dtype=numpy.float32
+        )
+
+    def game_mode_callback(self, game_mode):
         """
         Called when a game mode is selected
-        
+
         Parameters:
             game_mode: The selected game mode
         """
@@ -65,7 +71,7 @@ class MatrixDemoGame(MultiverseGame):
         """
         for event in events:
             pass
-        
+
         # Update the fire
         self.update()
 
@@ -76,13 +82,14 @@ class MatrixDemoGame(MultiverseGame):
         buf = self.palette[buf]
 
         if self.upscale_factor != 1:
-            #Upsample the sim to the windowed display
-            buf = numpy.repeat(buf, self.upscale_factor, axis=1).repeat(self.upscale_factor, axis=0)
+            # Upsample the sim to the windowed display
+            buf = numpy.repeat(buf, self.upscale_factor, axis=1).repeat(
+                self.upscale_factor, axis=0
+            )
 
         # Update the displays from the buffer
         _2d_buf = pygame.surfarray.map_array(self.screen, buf)
         pygame.surfarray.blit_array(self.screen, _2d_buf)
-
 
     def reset(self):
         pass
@@ -103,4 +110,3 @@ class MatrixDemoGame(MultiverseGame):
         old = self.matrix * 0.5
         self.matrix[:] = numpy.roll(self.matrix, 1, axis=0)
         self.matrix[:] += old
-
