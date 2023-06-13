@@ -1,7 +1,16 @@
+import os
+
+try:
+    import RPi.GPIO as gpio
+    print("Running on a Raspberry PI")
+except (ImportError, RuntimeError):
+    print("Not running on a Raspberry PI. Setting mock GPIO Zero Pin Factory.")
+    os.environ["GPIOZERO_PIN_FACTORY"] = "mock"
+    
 from typing import Callable
 from gpiozero import DigitalOutputDevice, Button
 from time import sleep
-from constants import *
+from lmnc_longgames.constants import *
 
 
 class ScreenPowerReset:

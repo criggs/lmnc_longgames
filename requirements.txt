@@ -1,6 +1,6 @@
 colorzero==2.0 ; python_version >= "3.9" and python_version < "4.0"
 gpiozero==1.6.2 ; python_version >= "3.9" and python_version < "4.0"
 numpy==1.19.5 ; python_version >= "3.9" and python_version < "4.0"
-pygame==1.9.6 ; python_version >= "3.9" and python_version < "4.0"
+pygame==2.4.0 ; python_version >= "3.9" and python_version < "4.0"
 pyserial==3.5 ; python_version >= "3.9" and python_version < "4.0"
 setuptools==67.8.0 ; python_version >= "3.9" and python_version < "4.0"
