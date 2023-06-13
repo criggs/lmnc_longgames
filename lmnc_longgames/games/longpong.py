@@ -1,15 +1,9 @@
-import sys, os
-
-from threading import Thread
-import getopt
 from typing import List
 import pygame
 import random
 import math
-from multiverse_game import MultiverseGame
-from rotary_encoder_controller import RotaryEncoderController
-from screen_power_reset import ScreenPowerReset
-from constants import *
+from lmnc_longgames.multiverse.multiverse_game import MultiverseGame
+from lmnc_longgames.constants import *
 
 MODE_AI_VS_AI = 0
 MODE_ONE_PLAYER = 1

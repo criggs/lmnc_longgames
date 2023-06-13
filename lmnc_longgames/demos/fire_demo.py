@@ -1,22 +1,8 @@
-import sys, os
-
-try:
-    import RPi.GPIO as gpio
-
-    print("Running on a Raspberry PI")
-except (ImportError, RuntimeError):
-    print("Not running on a Raspberry PI. Setting mock GPIO Zero Pin Factory.")
-    os.environ["GPIOZERO_PIN_FACTORY"] = "mock"
-
-from threading import Thread
-import getopt
 from typing import List
 import pygame
 import random
 import numpy
-from multiverse_game import MultiverseGame
-from rotary_encoder_controller import RotaryEncoderController
-from screen_power_reset import ScreenPowerReset
+from lmnc_longgames.multiverse.multiverse_game import MultiverseGame
 
 """
 
@@ -25,7 +11,7 @@ from screen_power_reset import ScreenPowerReset
 BYTES_PER_PIXEL = 4
 
 
-class FireDemoGame(MultiverseGame):
+class FireDemo(MultiverseGame):
     def __init__(self, multiverse_displays):
         super().__init__("Fire!!!", 80, multiverse_displays)
 

@@ -1,9 +1,9 @@
 import os, time, threading, sys, getopt, signal
 from typing import List
 import pygame
-from multiverse_game import MultiverseGame, PygameMultiverseDisplay
-from multiverse import Display
-from config import LongGameConfig
+from lmnc_longgames.multiverse.multiverse_game import MultiverseGame, PygameMultiverseDisplay
+from lmnc_longgames.multiverse.multiverse import Display
+from lmnc_longgames.config import LongGameConfig
 
 BLACK = (0, 0, 0)
 
