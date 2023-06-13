@@ -251,6 +251,7 @@ class MultiverseMain:
         # TODO: Console Controls (Restart, back to menu, etc)
 
         from lmnc_longgames.games.longpong import LongPongGame
+        from lmnc_longgames.games.snake import SnakeGame
         from lmnc_longgames.demos.fire_demo import FireDemo
         from lmnc_longgames.demos.matrix_demo import MatrixDemo
         from lmnc_longgames.demos.life_demo import LifeDemo
@@ -273,6 +274,7 @@ class MultiverseMain:
                         MenuItem("Back"),
                     ],
                 ),
+                MenuItem("Snake", props={"constructor": SnakeGame}),
                 MenuItem(
                     "Demos",
                     [
