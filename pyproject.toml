@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lmnc-longgames"
-version = "0.1.7"
+version = "0.1.8"
 description = ""
 authors = ["Chris Riggs <christopher.riggs@gmail.com>"]
 readme = "README.md"
