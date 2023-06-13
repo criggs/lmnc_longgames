@@ -136,9 +136,18 @@ class SnakeGame(MultiverseGame):
         for idx, x in numpy.ndenumerate(self.grid):
             grid_x, grid_y = idx
             if x == 1:
-                pygame.draw.rect(self.screen, WHITE, pygame.Rect(grid_x * self.pixel_size, grid_y * self.pixel_size, self.pixel_size, self.pixel_size))
+                color = (127, 255, 36)
+                if idx == self.snake[0]:
+                    #tail
+                    color = (138, 214, 45)
+                if idx == self.snake[-1]:
+                    #head
+                    color = (38, 200, 0)
+                    
+                pygame.draw.rect(self.screen, color, pygame.Rect(grid_x * self.pixel_size, grid_y * self.pixel_size, self.pixel_size, self.pixel_size))
             if x == 2:
                 pygame.draw.rect(self.screen, (135,0,0), pygame.Rect(grid_x * self.pixel_size, grid_y * self.pixel_size, self.pixel_size, self.pixel_size))
+                pygame.draw.rect(self.screen, (0,135,0), pygame.Rect(grid_x * self.pixel_size + self.pixel_size - self.upscale_factor, grid_y * self.pixel_size, self.upscale_factor, self.upscale_factor))
 
     def fire_controller_input_event(self, event_id: int):
         event = pygame.event.Event(event_id)
