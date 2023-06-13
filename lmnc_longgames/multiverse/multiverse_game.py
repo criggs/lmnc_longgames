@@ -12,11 +12,11 @@ from typing import List
 from enum import Enum
 import pygame
 import numpy
-from config import LongGameConfig
-from multiverse import Multiverse, Display
-from rotary_encoder_controller import RotaryEncoderController
-from screen_power_reset import ScreenPowerReset
-from constants import *
+from lmnc_longgames.config import LongGameConfig
+from lmnc_longgames.multiverse.multiverse import Multiverse, Display
+from lmnc_longgames.util.rotary_encoder_controller import RotaryEncoderController
+from lmnc_longgames.util.screen_power_reset import ScreenPowerReset
+from lmnc_longgames.constants import *
 from gpiozero import Button
 
 
@@ -104,7 +104,7 @@ class MultiverseGame:
     ) -> None:
         self.multiverse_display = multiverse_display
         script_path = os.path.realpath(os.path.dirname(__file__))
-        self.font = pygame.freetype.Font(f"{script_path}/icl8x8u.bdf")
+        self.font = pygame.freetype.Font(f"{script_path}/../icl8x8u.bdf")
         self.game_title = game_title
         self.fps = fps
         self.menu_select_state = True
@@ -224,9 +224,8 @@ class MultiverseMain:
         self.clock = pygame.time.Clock()
         self.game = None
         self.menu_inactive_start_time = time.time()
-        self.running_demo = False
         script_path = os.path.realpath(os.path.dirname(__file__))
-        self.font = pygame.freetype.Font(f"{script_path}/icl8x8u.bdf", size=8)
+        self.font = pygame.freetype.Font(f"{script_path}/../icl8x8u.bdf", size=8)
 
         # P1 Controller
         RotaryEncoderController(
@@ -251,10 +250,10 @@ class MultiverseMain:
 
         # TODO: Console Controls (Restart, back to menu, etc)
 
-        from longpong import LongPongGame
-        from fire_demo_game import FireDemoGame
-        from matrix_demo_game import MatrixDemoGame
-        from life_demo_game import LifeDemoGame
+        from lmnc_longgames.games.longpong import LongPongGame
+        from lmnc_longgames.demos.fire_demo import FireDemo
+        from lmnc_longgames.demos.matrix_demo import MatrixDemo
+        from lmnc_longgames.demos.life_demo import LifeDemo
 
         self.game_menu = MenuItem(
             "Long Games",
@@ -277,9 +276,9 @@ class MultiverseMain:
                 MenuItem(
                     "Demos",
                     [
-                        MenuItem("Fire", props={"constructor": FireDemoGame}),
-                        MenuItem("Matrix", props={"constructor": MatrixDemoGame}),
-                        MenuItem("Life", props={"constructor": LifeDemoGame}),
+                        MenuItem("Fire", props={"constructor": FireDemo}),
+                        MenuItem("Matrix", props={"constructor": MatrixDemo}),
+                        MenuItem("Life", props={"constructor": LifeDemo}),
                         MenuItem("Back"),
                     ],
                 ),
@@ -340,11 +339,6 @@ class MultiverseMain:
                     # TODO: Add a physical button?
                     self.exit_flag.set()
                     continue
-                if self.running_demo and event.type in [pygame.KEYUP, BUTTON_RELEASED, ROTATED_CW, ROTATED_CCW]:
-                    self.game = None
-                    self.menu_inactive_start_time = time.time()
-                    self.running_demo = False
-                    continue
                 if (
                     event.type == pygame.KEYUP
                     and event.key == pygame.K_r
@@ -376,7 +370,7 @@ class MultiverseMain:
                     self.game = LifeDemoGame(self.multiverse_display)
                     continue
                 if event.type == pygame.KEYUP and event.key == pygame.K_4:
-                    from longpong import LongPongGame
+                    from lmnc_longgames.games.longpong import LongPongGame
 
                     self.game = LongPongGame(self.multiverse_display)
                     continue
@@ -422,7 +416,6 @@ class MultiverseMain:
             print(
                 f"Menu time elapsed, starting random demo after {MAX_MENU_INACTIVE_TIME} seconds"
             )
-            self.running_demo = True
             self.start_random_game()
             return
 

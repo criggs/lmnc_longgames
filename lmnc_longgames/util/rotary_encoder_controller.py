@@ -1,7 +1,7 @@
 from typing import Callable
 from gpiozero import RotaryEncoder, Button
 from time import sleep
-from constants import *
+from lmnc_longgames.constants import *
 
 
 class RotaryEncoderController:
