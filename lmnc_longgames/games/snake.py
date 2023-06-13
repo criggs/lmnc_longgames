@@ -136,13 +136,13 @@ class SnakeGame(MultiverseGame):
         for idx, x in numpy.ndenumerate(self.grid):
             grid_x, grid_y = idx
             if x == 1:
-                color = (127, 255, 36)
+                color = (50, 100, 0)
                 if idx == self.snake[0]:
                     #tail
-                    color = (138, 214, 45)
+                    color = (100, 100, 0)
                 if idx == self.snake[-1]:
                     #head
-                    color = (38, 200, 0)
+                    color = (0, 200, 0)
                     
                 pygame.draw.rect(self.screen, color, pygame.Rect(grid_x * self.pixel_size, grid_y * self.pixel_size, self.pixel_size, self.pixel_size))
             if x == 2:
