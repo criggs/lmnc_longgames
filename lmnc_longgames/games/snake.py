@@ -23,15 +23,6 @@ class SnakeGame(MultiverseGame):
         self.grid_width = int(self.width / self.pixel_size)
         self.grid_height = int(self.height / self.pixel_size)
         
-        #These are all initialized by reset
-        self.grid = None
-        self.snake_head = None
-        self.snake_dir = None
-        self.snake_speed = None
-        self.snake = None
-        self.snake_target_length = None
-        self.game_over = False
-        
         self.reset()
 
     def reset(self):
@@ -41,9 +32,20 @@ class SnakeGame(MultiverseGame):
         self.snake = [(int(self.snake_head[0]), int(self.snake_head[1]))]
         self.snake_target_length = 10
         self.snake_dir = RIGHT
-        self.snake_speed = 7.0
+        self.snake_speed = 5.0
+        self.food_timer = 3.0
+        self.food_position = None
+        self.speedup_timer = 5.0
     
     def update_snake(self, dt):
+        
+        # Speed up a bit
+        self.speedup_timer = self.speedup_timer - dt
+        if self.speedup_timer <= 0:
+            self.speedup_timer = 5.0
+            self.snake_speed = self.snake_speed + 0.1
+            print(f'Speed is now {self.snake_speed}')
+        
         new_x, new_y = self.snake_head
         if self.snake_dir == UP:
             new_x = new_x - (dt * self.snake_speed)
@@ -54,26 +56,28 @@ class SnakeGame(MultiverseGame):
         if self.snake_dir == RIGHT:
             new_y = new_y + (dt * self.snake_speed)
         
-        # TODO: Bounds check
-        if new_x < 0 or new_x > self.grid_width - 1 or new_y < 0 or new_y > self.grid_height - 1:
-            print("We died on a wall")
+        # Bounds check
+        if new_x < 0 or new_x > self.grid_width or new_y < 0 or new_y > self.grid_height:
+            print(f"We died on a wall 0,0,{self.grid_width},{self.grid_height}. {new_x},{new_y} ")
             self.game_over = True
             return
         
-        #TODO: Eat apples, grow length
-        
-        #TODO: Increase speed
         
         int_pos = (int(new_x), int(new_y))
         if self.snake[-1] != int_pos:
             #we moved
             self.snake.append(int_pos)
             new_cell = self.grid[int_pos[0]][int_pos[1]]
-            if new_cell:
+            if new_cell == 1:
                 # We hit ourselves :(
                 print("We hit ourselves")
                 self.game_over = True
                 return
+            if new_cell == 2:
+                # We got food!
+                self.food_position = None
+                self.snake_target_length = self.snake_target_length + 5
+                print("Ate an apple. Yum :)")
             
             self.grid[int_pos[0]][int_pos[1]] = 1
             
@@ -83,6 +87,21 @@ class SnakeGame(MultiverseGame):
                 self.grid[cleared_tail[0]][cleared_tail[1]] = 0
                 
         self.snake_head = (new_x, new_y)
+        
+    def update_food(self, dt):
+        
+        self.food_timer = self.food_timer - dt
+        if self.food_timer <= 0:
+            self.food_timer = 10.0
+            
+            # Remove old food
+            if self.food_position is not None:
+                self.grid[self.food_position[0]][self.food_position[1]] = 0
+                
+            # New food
+            self.food_position = random.choice(numpy.argwhere(self.grid==0))
+            self.grid[self.food_position[0]][self.food_position[1]] = 2
+        
         
     def loop(self, events: List, dt: float):
         """
@@ -110,14 +129,16 @@ class SnakeGame(MultiverseGame):
         else:     
             # Update game elements
             self.update_snake(dt)
-
+            self.update_food(dt)
             self.draw_grid()
 
     def draw_grid(self):
         for idx, x in numpy.ndenumerate(self.grid):
             grid_x, grid_y = idx
-            if x:
+            if x == 1:
                 pygame.draw.rect(self.screen, WHITE, pygame.Rect(grid_x * self.pixel_size, grid_y * self.pixel_size, self.pixel_size, self.pixel_size))
+            if x == 2:
+                pygame.draw.rect(self.screen, (135,0,0), pygame.Rect(grid_x * self.pixel_size, grid_y * self.pixel_size, self.pixel_size, self.pixel_size))
 
     def fire_controller_input_event(self, event_id: int):
         event = pygame.event.Event(event_id)

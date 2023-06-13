@@ -355,28 +355,6 @@ class MultiverseMain:
                     self.menu_inactive_start_time = time.time()
                     continue
 
-                # Jump directly into a specific game, skipping the menu. These could be physical buttons
-                if event.type == pygame.KEYUP and event.key == pygame.K_1:
-                    from fire_demo_game import FireDemoGame
-
-                    self.game = FireDemoGame(self.multiverse_display)
-                    continue
-                if event.type == pygame.KEYUP and event.key == pygame.K_2:
-                    from matrix_demo_game import MatrixDemoGame
-
-                    self.game = MatrixDemoGame(self.multiverse_display)
-                    continue
-                if event.type == pygame.KEYUP and event.key == pygame.K_3:
-                    from life_demo_game import LifeDemoGame
-
-                    self.game = LifeDemoGame(self.multiverse_display)
-                    continue
-                if event.type == pygame.KEYUP and event.key == pygame.K_4:
-                    from lmnc_longgames.games.longpong import LongPongGame
-
-                    self.game = LongPongGame(self.multiverse_display)
-                    continue
-
             if self.game is None:
                 # Show game selection menu
                 self.menu_loop(events, self.dt)
