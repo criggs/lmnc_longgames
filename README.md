@@ -1,4 +1,7 @@
-# lmnc_longpong
+# lmnc_longgames
+
+> **Warning**
+> This is still under development. The code is messy, the comments are wrong, the documentation is lacking. Enter at your own risk, there be dragons 🐉
 
 ## Goal
 
@@ -15,9 +18,14 @@ Make sure the following python libraries are installed:
 * piserial
 * RPi.GPIO
 
+
+## Configure your Screens
+
+`scripts/setup_config.sh`
+
 ## Running Long Pong
 
-`scripts/longpong.sh`
+`scripts/game.sh`
 
 ### longpong.py Arguments
 ```
