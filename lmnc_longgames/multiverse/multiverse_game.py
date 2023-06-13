@@ -371,9 +371,9 @@ class MultiverseMain:
 
     def start_random_game(self):
         # TODO make this a random selection
-        from life_demo_game import LifeDemoGame
+        from lmnc_longgames.demos.life_demo import LifeDemo
 
-        self.game = LifeDemoGame(self.multiverse_display)
+        self.game = LifeDemo(self.multiverse_display)
 
     def select_menu_item(self):
         selected_child = self.game_menu.children[self.game_menu.highlighted_index]
