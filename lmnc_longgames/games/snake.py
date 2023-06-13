@@ -28,10 +28,10 @@ class SnakeGame(MultiverseGame):
     def reset(self):
         self.game_over = False
         self.grid = numpy.zeros((self.grid_width, self.grid_height))
-        self.snake_head = (self.grid_width//2, self.grid_width//2)
+        self.snake_head = (self.grid_width//2, self.grid_height//2)
         self.snake = [(int(self.snake_head[0]), int(self.snake_head[1]))]
         self.snake_target_length = 10
-        self.snake_dir = RIGHT
+        self.snake_dir = random.choice([UP,DOWN,LEFT,RIGHT])
         self.snake_speed = 5.0
         self.food_timer = 3.0
         self.food_position = None
@@ -116,6 +116,9 @@ class SnakeGame(MultiverseGame):
                 self.snake_dir = (self.snake_dir - 1) % 4
             if event.type == ROTATED_CW and event.controller == P1 or (event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN):
                 self.snake_dir = (self.snake_dir + 1) % 4
+            if self.game_over and event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_A, BUTTON_B, ROTARY_PUSH]:
+                self.reset()
+                return
 
         # Fill the screen
         self.screen.fill(BLACK)
