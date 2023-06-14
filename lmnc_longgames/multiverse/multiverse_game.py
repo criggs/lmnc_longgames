@@ -8,6 +8,7 @@ except (ImportError, RuntimeError):
     print("Not running on a Raspberry PI. Setting mock GPIO Zero Pin Factory.")
     os.environ["GPIOZERO_PIN_FACTORY"] = "mock"
 
+import random
 from typing import List
 from enum import Enum
 import pygame
@@ -224,6 +225,7 @@ class MultiverseMain:
         self.clock = pygame.time.Clock()
         self.game = None
         self.menu_inactive_start_time = time.time()
+        self.running_demo = False
         script_path = os.path.realpath(os.path.dirname(__file__))
         self.font = pygame.freetype.Font(f"{script_path}/../icl8x8u.bdf", size=8)
 
@@ -341,6 +343,11 @@ class MultiverseMain:
                     # TODO: Add a physical button?
                     self.exit_flag.set()
                     continue
+                if self.running_demo and event.type in [pygame.KEYUP, BUTTON_RELEASED, ROTATED_CW, ROTATED_CCW]:
+                    self.game = None
+                    self.menu_inactive_start_time = time.time()
+                    self.running_demo = False
+                    continue
                 if (
                     event.type == pygame.KEYUP
                     and event.key == pygame.K_r
@@ -370,10 +377,19 @@ class MultiverseMain:
         self.stop()
 
     def start_random_game(self):
-        # TODO make this a random selection
+        from lmnc_longgames.demos.fire_demo import FireDemo
+        from lmnc_longgames.demos.matrix_demo import MatrixDemo
         from lmnc_longgames.demos.life_demo import LifeDemo
+        from lmnc_longgames.games.longpong import LongPongGame
 
-        self.game = LifeDemo(self.multiverse_display)
+        options = [
+            (LongPongGame, [0]),
+            (FireDemo, []),
+            (MatrixDemo, []),
+            (LifeDemo, []),
+        ]
+        game_class, args = random.choice(options)
+        self.game = game_class(self.multiverse_display, *args)
 
     def select_menu_item(self):
         selected_child = self.game_menu.children[self.game_menu.highlighted_index]
@@ -396,6 +412,7 @@ class MultiverseMain:
             print(
                 f"Menu time elapsed, starting random demo after {MAX_MENU_INACTIVE_TIME} seconds"
             )
+            self.running_demo = True
             self.start_random_game()
             return
 
