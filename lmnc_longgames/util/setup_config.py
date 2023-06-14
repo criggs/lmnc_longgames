@@ -2,7 +2,7 @@ import os, time, threading, sys, getopt, signal
 from typing import List
 import pygame
 from lmnc_longgames.multiverse.multiverse_game import MultiverseGame, PygameMultiverseDisplay
-from lmnc_longgames.multiverse.multiverse import Display
+from lmnc_longgames.multiverse import Display
 from lmnc_longgames.config import LongGameConfig
 
 BLACK = (0, 0, 0)
@@ -53,7 +53,7 @@ class SetupConfigGame(MultiverseGame):
 
     def display_number(self, screen_number: int):
         script_path = os.path.realpath(os.path.dirname(__file__))
-        font = pygame.freetype.Font(f"{script_path}/icl8x8u.bdf", size=8)
+        font = pygame.freetype.Font(f"{script_path}/../icl8x8u.bdf", size=8)
 
         text, _ = self.font.render(f"{screen_number}", (255,255,255))
         text = pygame.transform.scale_by(text, self.upscale_factor)
@@ -104,7 +104,7 @@ class SetupConfigMain:
         self.multiverse_display = PygameMultiverseDisplay(
             "Multiverse Games", upscale_factor, headless
         )
-        self.multiverse_display.configure_display()
+        self.multiverse_display.configure_display([])
         self.clock = pygame.time.Clock()
         self.game = SetupConfigGame(self.multiverse_display)
 

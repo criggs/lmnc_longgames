@@ -14,7 +14,7 @@ from enum import Enum
 import pygame
 import numpy
 from lmnc_longgames.config import LongGameConfig
-from lmnc_longgames.multiverse.multiverse import Multiverse, Display
+from lmnc_longgames.multiverse import Multiverse, Display
 from lmnc_longgames.util.rotary_encoder_controller import RotaryEncoderController
 from lmnc_longgames.util.screen_power_reset import ScreenPowerReset
 from lmnc_longgames.constants import *
@@ -44,8 +44,8 @@ class PygameMultiverseDisplay:
         print(f"Initializing multiverse display")
         print(f"upscale_factor: {upscale_factor}")
 
-    def configure_display(self, displays: List[Display] = []):
-        if not len(displays):
+    def configure_display(self, displays: List[Display] = None):
+        if displays is None:
             # Load the defaults from the config
             config = LongGameConfig()
             dummy_displays = config.config["displays"]["main"].get("dummy", False)
@@ -55,7 +55,7 @@ class PygameMultiverseDisplay:
             ]
 
         self.multiverse = Multiverse(*displays)
-        self.multiverse.start()  # Starts the execution thread for the buffer
+        self.multiverse.setup(use_threads=True)  # Starts the execution thread for the buffer
         self.width = len(self.multiverse.displays) * 11 * self.upscale_factor
         self.height = 53 * self.upscale_factor
         print(f"Upscaled Width: {self.width} Upscaled Height: {self.height}")
