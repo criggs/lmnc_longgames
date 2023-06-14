@@ -4,7 +4,7 @@ import random
 import math
 import numpy
 from lmnc_longgames.multiverse.multiverse_game import MultiverseGame
-from lmnc_longgames.multiverse.multiverse import Multiverse
+from lmnc_longgames.multiverse import Multiverse
 from lmnc_longgames.constants import *
 
 UP=0

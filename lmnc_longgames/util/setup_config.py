@@ -39,8 +39,12 @@ class SetupConfigGame(MultiverseGame):
         displays = []
         for i, file in enumerate(self.found_devices):
             print(f"{i}: {file}")
-            displays.append(Display(f"{file}", 53, 11, 0, 11 * i))
+            d = Display(f"{file}", 53, 11, 0, 11 * i)
+            d.reset()
+            displays.append(d)
         print("")
+
+
 
         self.multiverse_display.configure_display(displays)
 

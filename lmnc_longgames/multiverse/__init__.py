@@ -27,14 +27,13 @@ class Display:
     PHASE_RELEASE = 3
     PHASE_OFF = 4
 
-    def __init__(self, port, w, h, x, y, rotate=0, dummy=False):
+    def __init__(self, port, w, h, x, y, dummy=False):
         self.path = port
         self.port = None
         self.w = w
         self.h = h
         self.x = x
         self.y = y
-        self.rotate = int(rotate / 90)
         self._use_threads = False
         self.dummy = dummy
 
@@ -42,7 +41,7 @@ class Display:
         if self.dummy:
             # Nothing to do here, move along
             return
-        self.port = serial.Serial(self.path)
+        self.port = serial.Serial(self.path, write_timeout=0.1)
     
         self._use_threads = use_threads
         if self._use_threads:
@@ -86,11 +85,11 @@ class Display:
     def play_note(self, channel, frequency, waveform=WAVEFORM_TRIANGLE, attack=10, decay=200, sustain=0, release=0, phase=PHASE_ATTACK):
         self.sync()
         self.port.write(b"multiverse:note")
-        self.port.write(struct.pack("<BHBHHHHB", channel, frequency, waveform, attack, decay, sustain, release, phase))
+        self.port.write(struct.pack("<BHBHHHHB", channel, int(frequency), waveform, attack, decay, sustain, release, phase))
         self.port.flush()
 
     def update(self, buffer):
-        buffer = numpy.rot90(buffer[self.y:self.y + self.h, self.x:self.x + self.w], self.rotate).tobytes()
+        buffer = numpy.array(buffer[self.y:self.y + self.h, self.x:self.x + self.w]).tobytes()
         if self._use_threads:
             # Wait for display to finish updating
             while self._event.is_set():
