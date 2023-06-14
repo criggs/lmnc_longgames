@@ -53,7 +53,7 @@ class SetupConfigGame(MultiverseGame):
 
     def display_number(self, screen_number: int):
         script_path = os.path.realpath(os.path.dirname(__file__))
-        font = pygame.freetype.Font(f"{script_path}/icl8x8u.bdf", size=8)
+        font = pygame.freetype.Font(f"{script_path}/../icl8x8u.bdf", size=8)
 
         text, _ = self.font.render(f"{screen_number}", (255,255,255))
         text = pygame.transform.scale_by(text, self.upscale_factor)
