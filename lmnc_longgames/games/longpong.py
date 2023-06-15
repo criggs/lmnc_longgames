@@ -262,10 +262,6 @@ class LongPongGame(MultiverseGame):
         # Beep!
         self.random_note()
 
-    def random_note(self):
-        self.play_note(0, C_MINOR[random.randint(4*8,5*8)], waveform=64)
-        #self.play_note(1, C_MINOR[0 + 8*5], waveform=64)
-
     def loop(self, events: List, dt: float):
         """
         Called for each iteration of the game loop

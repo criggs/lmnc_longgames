@@ -42,6 +42,9 @@ class PygameMultiverseDisplay:
         self.pygame_screen = None
         self.initial_configure_called = False
 
+        #TODO set with a switch
+        self.mute = True
+
         print(f"Initializing multiverse display")
         print(f"upscale_factor: {upscale_factor}")
 
@@ -86,6 +89,8 @@ class PygameMultiverseDisplay:
         self.multiverse.update(downsample)
 
     def play_note(self, *args, **kwargs):
+        if self.mute:
+            return
         self.multiverse.play_note(*args, **kwargs)
 
     def stop(self):
@@ -158,6 +163,9 @@ class MultiverseGame:
         Override this method for game reset
         """
         pass
+
+    def random_note(self, waveform=64):
+        self.play_note(0, C_MINOR[random.randint(4*8,5*8)], waveform=waveform)
 
     def display_countdown(self):
         print("Starting countdown...")
@@ -262,6 +270,8 @@ class MultiverseMain:
 
         from lmnc_longgames.games.longpong import LongPongGame
         from lmnc_longgames.games.snake import SnakeGame
+        from lmnc_longgames.games.breakout import BreakoutGame
+
         from lmnc_longgames.demos.fire_demo import FireDemo
         from lmnc_longgames.demos.matrix_demo import MatrixDemo
         from lmnc_longgames.demos.life_demo import LifeDemo
@@ -285,6 +295,7 @@ class MultiverseMain:
                     ],
                 ),
                 MenuItem("Snake", props={"constructor": SnakeGame}),
+                MenuItem("Breakout", props={"constructor": BreakoutGame}),
                 MenuItem(
                     "Demos",
                     [
@@ -504,6 +515,9 @@ def main():
 
     if debug:
         logging.basicConfig(level=logging.DEBUG)
+    else:
+
+        logging.basicConfig(level=logging.INFO)
 
     upscale_factor = 5 if show_window else 1
 
