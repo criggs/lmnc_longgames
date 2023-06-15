@@ -1,4 +1,5 @@
 import os, signal, time, sys, threading, getopt
+import logging
 
 try:
     import RPi.GPIO as gpio
@@ -224,6 +225,7 @@ class MultiverseMain:
 
     def __init__(self, upscale_factor, headless):
         self.exit_flag = threading.Event()
+        self._sig_handler_called=False
         self.multiverse_display = PygameMultiverseDisplay(
             "Multiverse Games", upscale_factor, headless
         )
@@ -299,9 +301,10 @@ class MultiverseMain:
 
     def signal_handler(self, sig, frame):
         print("You pressed Ctrl+C!")
-        if self.exit_flag.is_set():
+        if self._sig_handler_called:
             print("Force closing")
             sys.exit(1)
+        self._sig_handler_called = True
         self.stop()
         sys.exit(0)
 
@@ -318,10 +321,11 @@ class MultiverseMain:
         self.game.display = self.multiverse_display
 
     def stop(self):
-        self.multiverse_display.pygame_screen.fill(BLACK)
-        self.multiverse_display.flip_display()
+        logging.debug("Stopping Game")
         self.exit_flag.set()
+        logging.debug("Stopping Multiverse")
         self.multiverse_display.stop()
+        logging.debug("Quitting Pygamse")
         pygame.quit()
 
     """
@@ -497,6 +501,9 @@ def main():
             show_window = True
         elif opt == "-d":
             debug = True
+
+    if debug:
+        logging.basicConfig(level=logging.DEBUG)
 
     upscale_factor = 5 if show_window else 1
 
