@@ -27,13 +27,14 @@ class Display:
     PHASE_RELEASE = 3
     PHASE_OFF = 4
 
-    def __init__(self, port, w, h, x, y, dummy=False):
+    def __init__(self, port, w, h, x, y, rotate=0, dummy=False):
         self.path = port
         self.port = None
         self.w = w
         self.h = h
         self.x = x
         self.y = y
+        self.rotate = int(rotate / 90)
 
         self.is_setup = False
         self.dummy = dummy
@@ -169,7 +170,7 @@ class Display:
         #TODO move this to the multiverse. The display shouldn't get the whole buffer,
         # or be responsible for determining what to display out of it. Let the multiverse
         # decide
-        buffer = numpy.array(buffer[self.y:self.y + self.h, self.x:self.x + self.w]).tobytes()
+        buffer = numpy.rot90(buffer[self.y:self.y + self.h, self.x:self.x + self.w], self.rotate).tobytes()
         if self._thread is not None:
             # This is thread safe, since we're replacing the old buffer with a new one
             # It's also a copy, becauses of tobytes, so we don't need to worry about another thread
