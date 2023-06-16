@@ -1,12 +1,12 @@
+import termios
 import numpy
 import serial
 import threading
 import signal
-import time
 import struct
 import logging
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 # Class to represent a single Galactic Unicorn display
 # handy place to store the serial port opening and such
@@ -35,6 +35,9 @@ class Display:
         self.x = x
         self.y = y
         self.rotate = int(rotate / 90)
+
+        if rotate in (90, 270):
+            self.w, self.h = (self.h, self.w)
 
         self.is_setup = False
         self.dummy = dummy
@@ -119,6 +122,9 @@ class Display:
             self._close()
         except serial.SerialException as e:
             logging.debug(f"{self.x},{self.y}: SerialException while writing.", exc_info = e)
+            self._close()
+        except termios.error as e:
+            logging.debug(f"{self.x},{self.y}: termios.error while writing.", exc_info = e)
             self._close()
         except Exception as e:
             logging.debug(f"{self.x},{self.y}: Error while writing", exc_info = e)
@@ -249,6 +255,12 @@ class Multiverse:
                 display.start()
             else:
                 display.setup()
+        
+        # Set up a signal handler if we don't have one. Otherwise
+        # let the caller decide to register or handle the shutdown
+        # of the multiverse themselves
+        if not callable(signal.getsignal(signal.SIGINT)):
+            self.register_signal_handler()
 
     def register_signal_handler(self):
         # Get any user signal handlers
