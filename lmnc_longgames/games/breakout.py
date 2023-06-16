@@ -27,11 +27,6 @@ TILE_WIDTH = 10
 TILE_HEIGHT = 4
 TILE_GAP = 1
 
-PLAYER_PADDLE_MOVE_STEPS = 3
-
-PLAYER_PADDLE_SPEED = PLAYER_PADDLE_MOVE_STEPS * 30
-AI_PADDLE_SPEED = 2 * 30
-
 
 class Ball:
     def __init__(self, game):
@@ -39,8 +34,8 @@ class Ball:
         self.radius: int = BALL_RADIUS * game.upscale_factor
         self._x: int = game.width // 2
         self._y: int = game.height - (10 * game.upscale_factor)
-        self.speed_x: int = 10 * random.choice([-1, 1])
-        self.speed_y: int = -10
+        self.speed_x: int = 20 * random.choice([-1, 1])
+        self.speed_y: int = -20
 
         self._rect = pygame.Rect(
             int(self._x),
@@ -163,9 +158,16 @@ class Paddle:
     def update(self):
         keys = pygame.key.get_pressed()
         if keys[K_LEFT] and self.x > 0:
-            self.x -= self.speed
+            self.x -= self.speed * self.game.upscale_factor
         if keys[K_RIGHT] and self.x + self.width < self.game.width:
-            self.x += self.speed
+            self.x += self.speed * self.game.upscale_factor
+
+    def move(self, move_amount):
+        self.x += self.speed * move_amount * self.game.upscale_factor
+        if self.x + self.width >= self.game.width - 1:
+            self.x = self.game.width - 1 - self.width
+        if self.x <= 0:
+            self.x = 0
 
     def draw(self):
         pygame.draw.rect(self.game.screen, WHITE, (self.x, self.y, self.width, self.height))
@@ -200,24 +202,21 @@ class BreakoutGame(MultiverseGame):
             events: The pygame events list for this loop iteration
             dt: The delta time since the last loop iteration. This is for framerate independence.
         """
-        # for event in events:
-        #     # Player One
-        #     if not self.player_one.is_ai:
-        #         if event.type == pygame.KEYDOWN:
-        #             if event.key == pygame.K_LEFT:
-        #                 self.player_one.direction = -1
-        #             elif event.key == pygame.K_RIGHT:
-        #                 self.player_one.direction = 1
-        #         if event.type == pygame.KEYUP:
-        #             if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
-        #                 self.player_one.direction = 0
-        #         if event.type == ROTATED_CCW and event.controller == P1:
-        #             self.player_one.move_paddle(-1 * PLAYER_PADDLE_MOVE_STEPS)
-        #         if event.type == ROTATED_CW and event.controller == P1:
-        #             self.player_one.move_paddle(PLAYER_PADDLE_MOVE_STEPS)
-        # Update the ball and paddle
+        for event in events:
+            if event.type == ROTATED_CW and event.controller == P1:
+                self.paddle.move(-1)
+            if event.type == ROTATED_CCW and event.controller == P1:
+                self.paddle.move(1)
+
+
+        keys = pygame.key.get_pressed()
+        if keys[K_RIGHT]:
+            self.paddle.move(1)
+        elif keys[K_LEFT]:
+            self.paddle.move(-1)
+
+        #Update the ball and paddle
         self.ball.update(dt)
-        self.paddle.update()
 
         # Check for collisions
         self.ball.collide_paddle(self.paddle)
