@@ -16,36 +16,7 @@ AI_PADDLE_SPEED = 2 * 30
 
 
 """
-This code is messy, it will be cleaned up at some point.....
-
-Python Dependencies: pygame, numpy, pyserial, multiverse (from https://github.com/Gadgetoid/gu-multiverse)
-
-3 Game Modes:
-  - One Player
-  - Two Player
-  - AI vs AI
-
-Controls:
- - Player One: Up/Down
- - Player Two: w/s
- - q: Quit
- - r: Reset Game, back to menu
-
-
-TODO:
-* Fix race conditions/screen lockups on unsafe shutdown
-* Add option for 'hidden' lines between screens and implement it
-* Fix screen issues with headless mode
-* Find a better font that works well without scaling
-* Move the following to a config file:
-    * pin configuration
-    * speed/step size
-    * scaling amount
-* Add CV-based controller inputs
-* Fix bug with collision logic on bottom and top of screen
-* Fix bug with direction change when not hitting a paddle 'corner'
-* Refactor paddle code out from the player class
-* Update README.md
+longpong
 """
 
 
@@ -226,6 +197,7 @@ class LongPongGame(MultiverseGame):
         player.score += 1
         print(f"Score: {self.player_one.score}/{self.player_two.score}")
         self.ball.reset()
+        self.play_note(0, 55, release=1000, waveform=32)
 
     # Function to update the ball's position
     def update_ball(self, dt: float):
@@ -257,10 +229,12 @@ class LongPongGame(MultiverseGame):
         # Check collision with top
         if self.ball._rect.top <= 0:
             self.ball.direction_y = 1
+            self.random_note()
 
         # Check collision with bottom
         if self.ball._rect.bottom >= (self.height - 1):
             self.ball.direction_y = -1
+            self.random_note()
 
         # Check if the ball went out of bounds
         if self.ball._rect.right <= 0:
@@ -284,6 +258,9 @@ class LongPongGame(MultiverseGame):
             self.ball.speed = max(self.ball.speed / 1.2, self.ball.min_speed)
         # Reverse the direction of travel
         self.ball.direction_x = colliding_paddle.position * -1
+
+        # Beep!
+        self.random_note()
 
     def loop(self, events: List, dt: float):
         """
