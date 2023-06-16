@@ -243,6 +243,7 @@ class MultiverseMain:
         self.game = None
         self.menu_inactive_start_time = time.time()
         self.running_demo = False
+        self.demo_start_time = self.menu_inactive_start_time
         script_path = os.path.realpath(os.path.dirname(__file__))
         self.font = pygame.freetype.Font(f"{script_path}/../icl8x8u.bdf", size=8)
 
@@ -354,6 +355,11 @@ class MultiverseMain:
             self.dt = now - prev_time
             prev_time = now
 
+
+            if self.running_demo and now > (self.demo_start_time + DEMO_SWITCH_TIME):
+                #change the demo
+                self.load_demo_disc()
+
             # Get all events
             events = pygame.event.get()
 
@@ -398,7 +404,7 @@ class MultiverseMain:
         print("Ended multiverse game run loop")
         self.stop()
 
-    def start_random_game(self):
+    def load_demo_disc(self):
         from lmnc_longgames.demos.fire_demo import FireDemo
         from lmnc_longgames.demos.matrix_demo import MatrixDemo
         from lmnc_longgames.demos.life_demo import LifeDemo
@@ -411,7 +417,10 @@ class MultiverseMain:
             (LifeDemo, []),
         ]
         game_class, args = random.choice(options)
+
         self.game = game_class(self.multiverse_display, *args)
+        self.demo_start_time = time.time()
+        self.running_demo = True
 
     def select_menu_item(self):
         selected_child = self.game_menu.children[self.game_menu.highlighted_index]
@@ -434,8 +443,7 @@ class MultiverseMain:
             print(
                 f"Menu time elapsed, starting random demo after {MAX_MENU_INACTIVE_TIME} seconds"
             )
-            self.running_demo = True
-            self.start_random_game()
+            self.load_demo_disc()
             return
 
         highlight_change = 0
