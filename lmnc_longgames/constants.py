@@ -27,3 +27,11 @@ BUTTON_RESET = 30
 BUTTON_MENU = 31
 
 PIN_RESET_RELAY = 19
+
+# Notes
+
+
+C_MINOR = []
+for i in range(1,9):
+    for note in [16.35, 18.35, 19.45, 21.83, 24.50, 25.96, 29.14]:
+        C_MINOR.append(round(note * i))

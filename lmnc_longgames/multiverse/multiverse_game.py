@@ -1,4 +1,5 @@
 import os, signal, time, sys, threading, getopt
+import logging
 
 try:
     import RPi.GPIO as gpio
@@ -14,7 +15,7 @@ from enum import Enum
 import pygame
 import numpy
 from lmnc_longgames.config import LongGameConfig
-from lmnc_longgames.multiverse.multiverse import Multiverse, Display
+from lmnc_longgames.multiverse import Multiverse, Display
 from lmnc_longgames.util.rotary_encoder_controller import RotaryEncoderController
 from lmnc_longgames.util.screen_power_reset import ScreenPowerReset
 from lmnc_longgames.constants import *
@@ -41,11 +42,14 @@ class PygameMultiverseDisplay:
         self.pygame_screen = None
         self.initial_configure_called = False
 
+        #TODO set with a switch
+        self.mute = False
+
         print(f"Initializing multiverse display")
         print(f"upscale_factor: {upscale_factor}")
 
-    def configure_display(self, displays: List[Display] = []):
-        if not len(displays):
+    def configure_display(self, displays: List[Display] = None):
+        if displays is None:
             # Load the defaults from the config
             config = LongGameConfig()
             dummy_displays = config.config["displays"]["main"].get("dummy", False)
@@ -55,7 +59,7 @@ class PygameMultiverseDisplay:
             ]
 
         self.multiverse = Multiverse(*displays)
-        self.multiverse.start()  # Starts the execution thread for the buffer
+        self.multiverse.setup(use_threads=True)  # Starts the execution thread for the buffer
         self.width = len(self.multiverse.displays) * 11 * self.upscale_factor
         self.height = 53 * self.upscale_factor
         print(f"Upscaled Width: {self.width} Upscaled Height: {self.height}")
@@ -83,6 +87,12 @@ class PygameMultiverseDisplay:
         # We need to reorder the rows for the correct origin/pixel position on the individual displays
         downsample = numpy.flipud(downsample)
         self.multiverse.update(downsample)
+
+    def play_note(self, *args, **kwargs):
+        if self.mute:
+            return
+        self.multiverse.play_note(*args, **kwargs)
+        #self.multiverse.play_note(0, 55, phase=Display.PHASE_OFF)
 
     def stop(self):
         self.multiverse.stop()
@@ -133,6 +143,9 @@ class MultiverseGame:
     @property
     def display_count(self):
         return len(self.multiverse_display.multiverse.displays)
+    
+    def play_note(self, *args, **kwargs):
+        self.multiverse_display.play_note(*args, **kwargs)
 
     def game_mode_callback(self, game_mode: int):
         """
@@ -151,6 +164,9 @@ class MultiverseGame:
         Override this method for game reset
         """
         pass
+
+    def random_note(self, waveform=64):
+        self.play_note(0, C_MINOR[random.randint(4*8,5*8)], waveform=waveform)
 
     def display_countdown(self):
         print("Starting countdown...")
@@ -218,6 +234,7 @@ class MultiverseMain:
 
     def __init__(self, upscale_factor, headless):
         self.exit_flag = threading.Event()
+        self._sig_handler_called=False
         self.multiverse_display = PygameMultiverseDisplay(
             "Multiverse Games", upscale_factor, headless
         )
@@ -254,6 +271,8 @@ class MultiverseMain:
 
         from lmnc_longgames.games.longpong import LongPongGame
         from lmnc_longgames.games.snake import SnakeGame
+        from lmnc_longgames.games.breakout import BreakoutGame
+
         from lmnc_longgames.demos.fire_demo import FireDemo
         from lmnc_longgames.demos.matrix_demo import MatrixDemo
         from lmnc_longgames.demos.life_demo import LifeDemo
@@ -277,6 +296,7 @@ class MultiverseMain:
                     ],
                 ),
                 MenuItem("Snake", props={"constructor": SnakeGame}),
+                MenuItem("Breakout", props={"constructor": BreakoutGame}),
                 MenuItem(
                     "Demos",
                     [
@@ -293,9 +313,10 @@ class MultiverseMain:
 
     def signal_handler(self, sig, frame):
         print("You pressed Ctrl+C!")
-        if self.exit_flag.is_set():
+        if self._sig_handler_called:
             print("Force closing")
             sys.exit(1)
+        self._sig_handler_called = True
         self.stop()
         sys.exit(0)
 
@@ -312,10 +333,11 @@ class MultiverseMain:
         self.game.display = self.multiverse_display
 
     def stop(self):
-        self.multiverse_display.pygame_screen.fill(BLACK)
-        self.multiverse_display.flip_display()
+        logging.debug("Stopping Game")
         self.exit_flag.set()
+        logging.debug("Stopping Multiverse")
         self.multiverse_display.stop()
+        logging.debug("Quitting Pygamse")
         pygame.quit()
 
     """
@@ -424,17 +446,21 @@ class MultiverseMain:
             ):
                 self.menu_inactive_start_time = time.time()
                 self.select_menu_item()
+                self.multiverse_display.play_note(0, C_MINOR[8*3], waveform=64)
             # See if we moved, increase/decrease highlighting
             if (event.type == pygame.KEYUP and event.key == pygame.K_UP) or (
                 event.type == ROTATED_CCW
             ):
                 self.menu_inactive_start_time = time.time()
                 highlight_change = -1
+                self.multiverse_display.play_note(0, C_MINOR[8*2], waveform=64)
             if (event.type == pygame.KEYUP and event.key == pygame.K_DOWN) or (
                 event.type == ROTATED_CW
             ):
                 self.menu_inactive_start_time = time.time()
                 highlight_change = 1
+                self.multiverse_display.play_note(0, C_MINOR[8*2], waveform=64)
+
 
         self.game_menu.highlight(self.game_menu.highlighted_index + highlight_change)
 
@@ -487,6 +513,12 @@ def main():
             show_window = True
         elif opt == "-d":
             debug = True
+
+    if debug:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+
+        logging.basicConfig(level=logging.INFO)
 
     upscale_factor = 5 if show_window else 1
 

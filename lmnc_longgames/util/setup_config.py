@@ -2,7 +2,7 @@ import os, time, threading, sys, getopt, signal
 from typing import List
 import pygame
 from lmnc_longgames.multiverse.multiverse_game import MultiverseGame, PygameMultiverseDisplay
-from lmnc_longgames.multiverse.multiverse import Display
+from lmnc_longgames.multiverse import Display
 from lmnc_longgames.config import LongGameConfig
 
 BLACK = (0, 0, 0)
@@ -39,8 +39,12 @@ class SetupConfigGame(MultiverseGame):
         displays = []
         for i, file in enumerate(self.found_devices):
             print(f"{i}: {file}")
-            displays.append(Display(f"{file}", 53, 11, 0, 11 * i))
+            d = Display(f"{file}", 53, 11, 0, 11 * i)
+            d.reset()
+            displays.append(d)
         print("")
+
+
 
         self.multiverse_display.configure_display(displays)
 
@@ -104,7 +108,7 @@ class SetupConfigMain:
         self.multiverse_display = PygameMultiverseDisplay(
             "Multiverse Games", upscale_factor, headless
         )
-        self.multiverse_display.configure_display()
+        self.multiverse_display.configure_display([])
         self.clock = pygame.time.Clock()
         self.game = SetupConfigGame(self.multiverse_display)
 
