@@ -43,7 +43,7 @@ class PygameMultiverseDisplay:
         self.initial_configure_called = False
 
         #TODO set with a switch
-        self.mute = True
+        self.mute = False
 
         print(f"Initializing multiverse display")
         print(f"upscale_factor: {upscale_factor}")
@@ -92,6 +92,7 @@ class PygameMultiverseDisplay:
         if self.mute:
             return
         self.multiverse.play_note(*args, **kwargs)
+        #self.multiverse.play_note(0, 55, phase=Display.PHASE_OFF)
 
     def stop(self):
         self.multiverse.stop()

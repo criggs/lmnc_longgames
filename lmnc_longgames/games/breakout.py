@@ -202,11 +202,23 @@ class BreakoutGame(MultiverseGame):
             events: The pygame events list for this loop iteration
             dt: The delta time since the last loop iteration. This is for framerate independence.
         """
+
+        if self.game_over:
+            self.screen.fill(BLACK)
+            text, _ = self.font.render("YOU DIED", (135, 0, 0))
+            if all(not tile.is_visible for tile in self.tiles):
+                text, _ = self.font.render("YOU WON", (135, 135, 0))
+            text = pygame.transform.scale_by(text, self.upscale_factor)
+            text_x = (self.width // 2) - (text.get_width() // 2)
+            text_y = (self.height // 2) - (text.get_height() // 2)
+            self.screen.blit(text, (text_x, text_y))
+            return
+
         for event in events:
             if event.type == ROTATED_CW and event.controller == P1:
-                self.paddle.move(-1)
-            if event.type == ROTATED_CCW and event.controller == P1:
                 self.paddle.move(1)
+            if event.type == ROTATED_CCW and event.controller == P1:
+                self.paddle.move(-1)
 
 
         keys = pygame.key.get_pressed()
@@ -232,28 +244,20 @@ class BreakoutGame(MultiverseGame):
         if self.ball.off_screen():
             self.play_note(0, 55, release=1000, waveform=32)
             self.game_over = True
+            return
 
         # Check if all tiles are cleared
         if all(not tile.is_visible for tile in self.tiles):
             self.game_over = True
+            return
 
         # Clear the window
         self.screen.fill(BLACK)
 
-
-        if self.game_over:
-            text, _ = self.font.render("YOU DIED", (135, 0, 0))
-            if all(not tile.is_visible for tile in self.tiles):
-                text, _ = self.font.render("YOU WON", (135, 135, 0))
-            text = pygame.transform.scale_by(text, self.upscale_factor)
-            text_x = (self.width // 2) - (text.get_width() // 2)
-            text_y = (self.height // 2) - (text.get_height() // 2)
-            self.screen.blit(text, (text_x, text_y))
-        else:
-            # Draw the ball, paddle, and tiles
-            self.ball.draw()
-            self.paddle.draw()
-            for tile in self.tiles:
-                tile.draw()
+        # Draw the ball, paddle, and tiles
+        self.ball.draw()
+        self.paddle.draw()
+        for tile in self.tiles:
+            tile.draw()
 
 
