@@ -22,8 +22,8 @@ from lmnc_longgames.constants import *
 from gpiozero import Button
 
 
-FONT_SIZE = 11
-FONT_COLOR = WHITE
+font_SIZE = 11
+font_COLOR = WHITE
 
 
 class PygameMultiverseDisplay:
@@ -115,7 +115,7 @@ class MultiverseGame:
     ) -> None:
         self.multiverse_display = multiverse_display
         script_path = os.path.realpath(os.path.dirname(__file__))
-        self.font = pygame.freetype.Font(f"{script_path}/../icl8x8u.bdf")
+        self.font = pygame.font.Font(f"{script_path}/../icl8x8u.bdf", 8)
         self.game_title = game_title
         self.fps = fps
         self.menu_select_state = True
@@ -173,7 +173,7 @@ class MultiverseGame:
         for i in range(3, 0, -1):
             print(i)
             self.screen.fill(BLACK)
-            countdown_text, _ = self.font.render(str(i), WHITE)
+            countdown_text = self.font.render(str(i), False, WHITE)
             countdown_text = pygame.transform.scale_by(
                 countdown_text, self.upscale_factor
             )
@@ -245,7 +245,7 @@ class MultiverseMain:
         self.running_demo = False
         self.demo_start_time = self.menu_inactive_start_time
         script_path = os.path.realpath(os.path.dirname(__file__))
-        self.font = pygame.freetype.Font(f"{script_path}/../icl8x8u.bdf", size=8)
+        self.font = pygame.font.Font(f"{script_path}/../icl8x8u.bdf", size=8)
 
         # P1 Controller
         RotaryEncoderController(
@@ -482,7 +482,7 @@ class MultiverseMain:
         screen.fill(BLACK)
         center_screen = width // 2
 
-        title_text, _ = self.font.render(f"__{self.game_menu.name}__", WHITE)
+        title_text = self.font.render(f"__{self.game_menu.name}__", False, WHITE)
         title_text = pygame.transform.scale_by(title_text, upscale_factor)
         screen.blit(
             title_text,
@@ -492,14 +492,14 @@ class MultiverseMain:
         render_index = 0
         for i, child in to_display:
             text = child.name
-            child_text, _ = self.font.render(text, WHITE)
+            child_text = self.font.render(text, False, WHITE)
             child_text = pygame.transform.scale_by(child_text, upscale_factor)
             text_x = center_screen - child_text.get_width() // 2
             text_y = (15 + (10 * render_index)) * upscale_factor
             screen.blit(child_text, (text_x, text_y))
 
             if self.game_menu.highlighted_index == i:
-                indicator_text, _ = self.font.render(">", WHITE)
+                indicator_text = self.font.render(">", False, WHITE)
                 indicator_text = pygame.transform.scale_by(
                     indicator_text, upscale_factor
                 )
