@@ -41,8 +41,6 @@ class PygameMultiverseDisplay:
         self.multiverse = None
         self.pygame_screen = None
         self.initial_configure_called = False
-
-        #TODO set with a switch
         self.mute = False
 
         print(f"Initializing multiverse display")
@@ -534,13 +532,30 @@ def main():
 
     # Set up control buttons
 
+    def mute_display():
+        print("Muting Display")
+        game_main.multiverse_display.mute = True
+
+    def unmute_display():
+        print("Un-muting Display")
+        game_main.multiverse_display.mute = False
+
+    mute_switch = Button(PIN_MUTE_SWITCH)
+    mute_switch.when_pressed = mute_display
+    mute_switch.when_released = unmute_display
+
+    if mute_switch.is_pressed:
+        mute_display()
+    else:
+        unmute_display()
+
     def back_to_menu():
         event = pygame.event.Event(
             BUTTON_RELEASED, {"controller": 0, "input": BUTTON_MENU}
         )
         pygame.event.post(event)
 
-    game_menu_button = Button(20)
+    game_menu_button = Button(PIN_MENU_BUTTON)
     game_menu_button.when_released = back_to_menu
 
     def reset_game():
@@ -549,7 +564,7 @@ def main():
         )
         pygame.event.post(event)
 
-    game_reset_button = Button(21)
+    game_reset_button = Button(PIN_GAME_RESET)
     game_reset_button.when_released = reset_game
 
     ScreenPowerReset(reset_pin=PIN_RESET_RELAY, button_pin=16)
