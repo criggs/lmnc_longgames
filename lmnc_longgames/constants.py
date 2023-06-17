@@ -31,8 +31,26 @@ PIN_RESET_RELAY = 19
 
 # Notes
 
-
-C_MINOR = []
+NOTES = []
 for i in range(1,9):
-    for note in [16.35, 18.35, 19.45, 21.83, 24.50, 25.96, 29.14]:
-        C_MINOR.append(round(note * i))
+    for note in [16.35, 17.32, 18.35, 19.45, 20.60, 21.83, 23.12, 24.50, 25.96, 27.50, 29.14, 30.87]:
+        NOTES.append(round(note * i))
+
+_C_MINOR_POS = [0,2,3,5,7,8,10]
+C_MINOR = []
+
+_A_MINOR_POS = [9,11,0,2,4,5,7]
+A_MINOR = []
+
+_PENTATONIC_POS = [1,3,6,8,10]
+PENTATONIC = []
+for i, note in enumerate(NOTES):
+    note_pos = i % 12
+    if note_pos in _C_MINOR_POS:
+        C_MINOR.append(note)
+    if note_pos in _A_MINOR_POS:
+        A_MINOR.append(note)
+    if note_pos in _PENTATONIC_POS:
+        PENTATONIC.append(note)
+
+
