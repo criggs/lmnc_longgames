@@ -19,7 +19,7 @@ from lmnc_longgames.multiverse import Multiverse, Display
 from lmnc_longgames.util.rotary_encoder_controller import RotaryEncoderController
 from lmnc_longgames.util.screen_power_reset import ScreenPowerReset
 from lmnc_longgames.constants import *
-from gpiozero import Button
+from gpiozero import Button, DigitalOutputDevice
 
 
 font_SIZE = 11
@@ -42,6 +42,7 @@ class PygameMultiverseDisplay:
         self.pygame_screen = None
         self.initial_configure_called = False
         self.mute = False
+        self.sound_trigger_out = DigitalOutputDevice(PIN_TRIGGER_OUT)
 
         print(f"Initializing multiverse display")
         print(f"upscale_factor: {upscale_factor}")
@@ -90,6 +91,7 @@ class PygameMultiverseDisplay:
         if self.mute:
             return
         self.multiverse.play_note(*args, **kwargs)
+        self.sound_trigger_out.blink(on_time=50/1000, off_time = 1/1000, n=1)
         #self.multiverse.play_note(0, 55, phase=Display.PHASE_OFF)
 
     def stop(self):
@@ -249,21 +251,21 @@ class MultiverseMain:
         RotaryEncoderController(
             controller_id=P1,
             event_callback=self.fire_controller_input_event,
-            clk_pin=22,
-            dt_pin=27,
-            rotary_push_button_pin=17,
-            a_button_pin=9,
-            b_button_pin=10,
+            clk_pin=PIN_P1_CLK,
+            dt_pin=PIN_P1_DT,
+            rotary_push_button_pin=PIN_P1_ROT_PUSH,
+            a_button_pin=PIN_P1_A,
+            b_button_pin=PIN_P1_B,
         )
         # P2 Controller
         RotaryEncoderController(
             controller_id=P2,
             event_callback=self.fire_controller_input_event,
-            clk_pin=25,
-            dt_pin=24,
-            rotary_push_button_pin=23,
-            a_button_pin=7,
-            b_button_pin=8,
+            clk_pin=PIN_P2_CLK,
+            dt_pin=PIN_P2_DT,
+            rotary_push_button_pin=PIN_P2_ROT_PUSH,
+            a_button_pin=PIN_P2_A,
+            b_button_pin=PIN_P2_B,
         )
 
         # TODO: Console Controls (Restart, back to menu, etc)
