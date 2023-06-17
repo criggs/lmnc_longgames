@@ -166,7 +166,7 @@ class MultiverseGame:
         pass
 
     def random_note(self, waveform=64):
-        self.play_note(0, C_MINOR[random.randint(4*8,5*8)], waveform=waveform)
+        self.play_note(0, PENTATONIC[random.randint(4*5,5*5)], waveform=waveform)
 
     def display_countdown(self):
         print("Starting countdown...")
