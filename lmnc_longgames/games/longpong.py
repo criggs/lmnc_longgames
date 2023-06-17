@@ -170,8 +170,8 @@ class LongPongGame(MultiverseGame):
 
     # Function to update the score on the screen
     def draw_score(self):
-        text, _ = self.font.render(
-            f"{self.player_one.score}    {self.player_two.score}", WHITE
+        text = self.font.render(
+            f"{self.player_one.score}    {self.player_two.score}", False,  WHITE
         )
         text = pygame.transform.scale_by(text, self.upscale_factor)
         text_rect = text.get_rect(center=(self.width // 2, 10 * self.upscale_factor))

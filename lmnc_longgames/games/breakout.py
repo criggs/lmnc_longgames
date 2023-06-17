@@ -205,9 +205,9 @@ class BreakoutGame(MultiverseGame):
 
         if self.game_over:
             self.screen.fill(BLACK)
-            text, _ = self.font.render("YOU DIED", (135, 0, 0))
+            text = self.font.render("YOU DIED", False, (135, 0, 0))
             if all(not tile.is_visible for tile in self.tiles):
-                text, _ = self.font.render("YOU WON", (135, 135, 0))
+                text = self.font.render("YOU WON", False, (135, 135, 0))
             text = pygame.transform.scale_by(text, self.upscale_factor)
             text_x = (self.width // 2) - (text.get_width() // 2)
             text_y = (self.height // 2) - (text.get_height() // 2)
