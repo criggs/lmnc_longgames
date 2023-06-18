@@ -14,6 +14,15 @@ PLAYER_PADDLE_MOVE_STEPS = 3
 PLAYER_PADDLE_SPEED = PLAYER_PADDLE_MOVE_STEPS * 30
 AI_PADDLE_SPEED = 2 * 30
 
+CODE_1 = [
+    (ROTATED_CCW, ROTARY_PUSH),
+    (ROTATED_CW, ROTARY_PUSH),
+    (ROTATED_CCW, ROTARY_PUSH),
+    (ROTATED_CW, ROTARY_PUSH),
+    (BUTTON_RELEASED, BUTTON_B),
+    (BUTTON_RELEASED, BUTTON_A),
+    (BUTTON_RELEASED, ROTARY_PUSH)
+]
 
 """
 longpong
@@ -270,6 +279,17 @@ class LongPongGame(MultiverseGame):
             events: The pygame events list for this loop iteration
             dt: The delta time since the last loop iteration. This is for framerate independence.
         """
+        super().loop(events, dt)
+
+        if self.has_history(P1, CODE_1):
+            self.reset_input_history(P1)
+            self.player_one._rect.height = 10 * self.upscale_factor * 2
+            print("Code 1 for P1")
+        if self.has_history(P2, CODE_1):
+            self.reset_input_history(P2)
+            self.player_two._rect.height = 10 * self.upscale_factor * 2
+            print("Code 1 for P2")
+
         for event in events:
             # Player One
             if not self.player_one.is_ai:
@@ -326,10 +346,8 @@ class LongPongGame(MultiverseGame):
         self.draw_score()
 
     def reset(self):
+        super().reset()
         self.ball.reset()
         self.player_one.reset()
         self.player_two.reset()
 
-    def fire_controller_input_event(self, event_id: int):
-        event = pygame.event.Event(event_id)
-        pygame.event.post(event)

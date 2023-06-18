@@ -122,6 +122,8 @@ class MultiverseGame:
         self.fps = fps
         self.menu_select_state = True
         self.game_mode = 1
+        self.reset_input_history(P1)
+        self.reset_input_history(P2)
 
         print(f"Initializing game {self.game_title}")
         print(f"fps: {fps}")
@@ -149,23 +151,36 @@ class MultiverseGame:
     def play_note(self, *args, **kwargs):
         self.multiverse_display.play_note(*args, **kwargs)
 
-    def game_mode_callback(self, game_mode: int):
-        """
-        Override this method for game mode selection
-        """
-        pass
+    def update_history(self, controller, event):
+        history = self.p1_input_history if controller == P1 else self.p2_input_history
+        history.pop(0)
+        history.append(event)
+    
+    def has_history(self, controller, to_check):
+        history = self.p1_input_history if controller == P1 else self.p2_input_history
+        history_slice  = history[-len(to_check):]
+        return history_slice == to_check
 
     def loop(self, events, dt):
-        """
+        """1    
         Override this method for the game loop
         """
-        pass
+        for event in events:
+            if event.type in [ROTATED_CW, ROTATED_CCW, BUTTON_RELEASED]:
+                self.update_history(event.controller, (event.type, event.input))
 
     def reset(self):
         """
         Override this method for game reset
         """
-        pass
+        self.reset_input_history(P1)
+        self.reset_input_history(P2)
+
+    def reset_input_history(self, controller):
+        if controller == P1:
+            self.p1_input_history = [0] * 20
+        else:
+            self.p2_input_history = [0] * 20
 
     def random_note(self, waveform=64):
         self.play_note(0, PENTATONIC[random.randint(4*5,5*5)], waveform=waveform)
