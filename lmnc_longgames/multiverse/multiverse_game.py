@@ -88,10 +88,12 @@ class PygameMultiverseDisplay:
         self.multiverse.update(downsample)
 
     def play_note(self, *args, **kwargs):
+        #Trigger out, even if the screens are muted
+        self.sound_trigger_out.blink(on_time=TRIGGER_OUT_ON_TIME, n=1)
+
         if self.mute:
             return
         self.multiverse.play_note(*args, **kwargs)
-        self.sound_trigger_out.blink(on_time=50/1000, off_time = 1/1000, n=1)
         #self.multiverse.play_note(0, 55, phase=Display.PHASE_OFF)
 
     def stop(self):
