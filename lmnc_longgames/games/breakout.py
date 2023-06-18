@@ -174,6 +174,10 @@ class Paddle:
 
 
 class BreakoutGame(MultiverseGame):
+    '''
+    It's breadkout
+    TODO: Add directional control when the paddle hits the ball, similar to pong
+    '''
     def __init__(self, multiverse_display):
         super().__init__("Breakout", 120, multiverse_display)
         self.reset()
@@ -203,23 +207,15 @@ class BreakoutGame(MultiverseGame):
             dt: The delta time since the last loop iteration. This is for framerate independence.
         """
 
-        if self.game_over:
-            self.screen.fill(BLACK)
-            text = self.font.render("YOU DIED", False, (135, 0, 0))
-            if all(not tile.is_visible for tile in self.tiles):
-                text = self.font.render("YOU WON", False, (135, 135, 0))
-            text = pygame.transform.scale_by(text, self.upscale_factor)
-            text_x = (self.width // 2) - (text.get_width() // 2)
-            text_y = (self.height // 2) - (text.get_height() // 2)
-            self.screen.blit(text, (text_x, text_y))
-            return
-
         for event in events:
             if event.type == ROTATED_CW and event.controller == P1:
                 self.paddle.move(1)
             if event.type == ROTATED_CCW and event.controller == P1:
                 self.paddle.move(-1)
-
+            if self.game_over and event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_A, BUTTON_B, ROTARY_PUSH]:
+                self.reset()
+                return
+                
 
         keys = pygame.key.get_pressed()
         if keys[K_RIGHT]:
@@ -227,37 +223,45 @@ class BreakoutGame(MultiverseGame):
         elif keys[K_LEFT]:
             self.paddle.move(-1)
 
-        #Update the ball and paddle
-        self.ball.update(dt)
-
-        # Check for collisions
-        self.ball.collide_paddle(self.paddle)
-        self.ball.collide_window_sides()
-        self.ball.collide_window_top()
-
-        # Check collision with tiles
-        for tile in self.tiles:
-            if tile.is_visible and self.ball.collide_tile(tile):
-                tile.is_visible = False
-
-        # Check if the ball is off the screen
-        if self.ball.off_screen():
-            self.play_note(0, 55, release=1000, waveform=32)
-            self.game_over = True
-            return
-
-        # Check if all tiles are cleared
-        if all(not tile.is_visible for tile in self.tiles):
-            self.game_over = True
-            return
-
-        # Clear the window
         self.screen.fill(BLACK)
 
-        # Draw the ball, paddle, and tiles
-        self.ball.draw()
-        self.paddle.draw()
-        for tile in self.tiles:
-            tile.draw()
+        if self.game_over:
+            text = self.font.render("YOU DIED", False, (135, 0, 0))
+            if all(not tile.is_visible for tile in self.tiles):
+                text = self.font.render("YOU WON", False, (135, 135, 0))
+            text = pygame.transform.scale_by(text, self.upscale_factor)
+            text_x = (self.width // 2) - (text.get_width() // 2)
+            text_y = (self.height // 2) - (text.get_height() // 2)
+            self.screen.blit(text, (text_x, text_y))
+        else:
+            #Update the ball and paddle
+            self.ball.update(dt)
+
+            # Check for collisions
+            self.ball.collide_paddle(self.paddle)
+            self.ball.collide_window_sides()
+            self.ball.collide_window_top()
+
+            # Check collision with tiles
+            for tile in self.tiles:
+                if tile.is_visible and self.ball.collide_tile(tile):
+                    tile.is_visible = False
+
+            # Check if the ball is off the screen
+            if self.ball.off_screen():
+                self.play_note(0, 55, release=1000, waveform=32)
+                self.game_over = True
+                return
+
+            # Check if all tiles are cleared
+            if all(not tile.is_visible for tile in self.tiles):
+                self.game_over = True
+                return
+
+            # Draw the ball, paddle, and tiles
+            self.ball.draw()
+            self.paddle.draw()
+            for tile in self.tiles:
+                tile.draw()
 
 
