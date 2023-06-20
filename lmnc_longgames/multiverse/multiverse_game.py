@@ -264,6 +264,8 @@ class MultiverseMain:
         script_path = os.path.realpath(os.path.dirname(__file__))
         self.font = pygame.font.Font(f"{script_path}/../icl8x8u.bdf", size=8)
 
+        config = LongGameConfig()
+
         # P1 Controller
         RotaryEncoderController(
             controller_id=P1,
@@ -322,12 +324,29 @@ class MultiverseMain:
                         MenuItem("Fire", props={"constructor": FireDemo}),
                         MenuItem("Matrix", props={"constructor": MatrixDemo}),
                         MenuItem("Life", props={"constructor": LifeDemo}),
-                        MenuItem("Video", props={"constructor": VideoDemo}),
                         MenuItem("Back"),
                     ],
                 ),
             ],
         )
+
+
+        '''
+        Videos are configured in .config/lmnc_longgames/config.json, i.e.:
+        {
+            ...
+            "videos": [
+                {"name":"My Video", "path": "/my/cool/video.mp4"}
+            ]
+            ...
+        }
+        '''
+        video_config = config.config.get("videos",[])
+
+        video_items = [MenuItem(v.get('name'), props={"constructor": VideoDemo, "args":[v.get('path')]}) for v in video_config]
+        if(len(video_items)):
+            video_items.append(MenuItem("Back"))
+            self.game_menu.children.append(MenuItem("Videos", video_items))
 
         signal.signal(signal.SIGINT, self.signal_handler)
 
