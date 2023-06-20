@@ -294,6 +294,7 @@ class MultiverseMain:
         from lmnc_longgames.demos.fire_demo import FireDemo
         from lmnc_longgames.demos.matrix_demo import MatrixDemo
         from lmnc_longgames.demos.life_demo import LifeDemo
+        from lmnc_longgames.demos.video_demo import VideoDemo
 
         self.game_menu = MenuItem(
             "Long Games",
@@ -321,6 +322,7 @@ class MultiverseMain:
                         MenuItem("Fire", props={"constructor": FireDemo}),
                         MenuItem("Matrix", props={"constructor": MatrixDemo}),
                         MenuItem("Life", props={"constructor": LifeDemo}),
+                        MenuItem("Video", props={"constructor": VideoDemo}),
                         MenuItem("Back"),
                     ],
                 ),
