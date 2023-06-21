@@ -323,6 +323,7 @@ class MultiverseMain:
         from lmnc_longgames.demos.matrix_demo import MatrixDemo
         from lmnc_longgames.demos.life_demo import LifeDemo
         from lmnc_longgames.demos.video_demo import VideoDemo
+        from lmnc_longgames.demos.marquee_demo import MarqueeDemo
 
         self.game_menu = MenuItem(
             "Long Games",
@@ -352,7 +353,7 @@ class MultiverseMain:
                         MenuItem("Life", props={"constructor": LifeDemo}),
                         MenuItem("Back"),
                     ],
-                ),
+                )
             ],
         )
 
@@ -374,6 +375,7 @@ class MultiverseMain:
             video_items.append(MenuItem("Back"))
             self.game_menu.children.append(MenuItem("Videos", video_items, parent=self.game_menu))
 
+        self.game_menu.children.append(MenuItem("Special Thanks", props={"constructor": MarqueeDemo}))
         signal.signal(signal.SIGINT, self.signal_handler)
 
     def signal_handler(self, sig, frame):
