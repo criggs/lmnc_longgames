@@ -60,6 +60,7 @@ class SnakeGame(MultiverseGame):
         if new_x < 0 or new_x > self.grid_width or new_y < 0 or new_y > self.grid_height:
             print(f"We died on a wall 0,0,{self.grid_width},{self.grid_height}. {new_x},{new_y} ")
             self.game_over = True
+            self.play_note(0, 55, release=1000, waveform=32)
             return
         
         
@@ -77,6 +78,7 @@ class SnakeGame(MultiverseGame):
                 # We got food!
                 self.food_position = None
                 self.snake_target_length = self.snake_target_length + 5
+                self.food_timer = 2.0 # New food in 2 seconds
                 print("Ate an apple. Yum :)")
             
             self.grid[int_pos[0]][int_pos[1]] = 1
@@ -92,7 +94,7 @@ class SnakeGame(MultiverseGame):
         
         self.food_timer = self.food_timer - dt
         if self.food_timer <= 0:
-            self.food_timer = 10.0
+            self.food_timer = 20.0 # food lasts this long before moving somewhere else
             
             # Remove old food
             if self.food_position is not None:
@@ -114,8 +116,10 @@ class SnakeGame(MultiverseGame):
         for event in events:
             if (event.type == ROTATED_CCW and event.controller == P1) or (event.type == pygame.KEYDOWN and event.key == pygame.K_UP):
                 self.snake_dir = (self.snake_dir - 1) % 4
+                self.random_note()
             if event.type == ROTATED_CW and event.controller == P1 or (event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN):
                 self.snake_dir = (self.snake_dir + 1) % 4
+                self.random_note()
             if self.game_over and event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_A, BUTTON_B, ROTARY_PUSH]:
                 self.reset()
                 return
