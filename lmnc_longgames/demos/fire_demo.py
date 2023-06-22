@@ -2,6 +2,7 @@ from typing import List
 import pygame
 import random
 import numpy
+from lmnc_longgames.constants import *
 from lmnc_longgames.multiverse.multiverse_game import MultiverseGame
 
 """
@@ -49,7 +50,11 @@ class FireDemo(MultiverseGame):
             dt: The delta time since the last loop iteration. This is for framerate independance.
         """
         for event in events:
-            pass
+            if event.type == BUTTON_RELEASED and event.input in [BUTTON_A]:
+                self.reset()
+
+            if event.type == BUTTON_RELEASED and event.input in [BUTTON_B, ROTARY_PUSH]:
+                self.exit_game()
 
         # Update the fire
         self.update()

@@ -43,6 +43,7 @@ class PygameMultiverseDisplay:
         self.initial_configure_called = False
         self.mute = False
         self.sound_trigger_out = DigitalOutputDevice(PIN_TRIGGER_OUT)
+        self.flip_count = 0
 
         print(f"Initializing multiverse display")
         print(f"upscale_factor: {upscale_factor}")
@@ -77,7 +78,15 @@ class PygameMultiverseDisplay:
             self.initial_configure_called = True
 
     def flip_display(self):
+
+        start = time.time()
         pygame.display.flip()
+        elapsed = time.time() - start
+
+        if self.flip_count % 100 == 0:
+            logging.debug(f'pygame flip took {elapsed * 1000} ms')
+
+        start = time.time()
         # This is a copy of the pixels into a new array
         framegrab = pygame.surfarray.array2d(self.pygame_screen)
         downsample = numpy.array(framegrab)[
@@ -85,7 +94,18 @@ class PygameMultiverseDisplay:
         ]
         # We need to reorder the rows for the correct origin/pixel position on the individual displays
         downsample = numpy.flipud(downsample)
+        elapsed = time.time() - start
+        if self.flip_count % 100 == 0:
+            logging.debug(f'downsample took {elapsed * 1000} ms')
+
+        
+        start = time.time()
         self.multiverse.update(downsample)
+        elapsed = time.time() - start
+        if self.flip_count % 100 == 0:
+            logging.debug(f'multiverse update took {elapsed * 1000} ms')
+
+        self.flip_count += 1
 
     def play_note(self, *args, **kwargs):
         #Trigger out, even if the screens are muted
@@ -126,6 +146,7 @@ class MultiverseGame:
         self.game_mode = 1
         self.reset_input_history(P1)
         self.reset_input_history(P2)
+        self.exit_game_flag = False
 
         print(f"Initializing game {self.game_title}")
         print(f"fps: {fps}")
@@ -162,6 +183,9 @@ class MultiverseGame:
         history = self.p1_input_history if controller == P1 else self.p2_input_history
         history_slice  = history[-len(to_check):]
         return history_slice == to_check
+
+    def exit_game(self):
+        self.exit_game_flag = True
 
     def loop(self, events, dt):
         """1    
@@ -393,15 +417,23 @@ class MultiverseMain:
         game_start_time = None
 
         while not self.exit_flag.wait(0.001):
+            
             frame_start_time = time.time()
             self.dt = frame_start_time - previous_frame_start_time
             previous_frame_start_time = frame_start_time
 
+            if self.game is not None and self.game.exit_game_flag:
+                self.game = None
+                game_start_time = None
+                self.menu_inactive_start_time = time.time()
+                self.running_demo = False
 
             if self.running_demo and frame_start_time > (self.demo_start_time + DEMO_SWITCH_TIME):
                 #change the demo
                 self.load_demo_disc()
 
+
+            start = time.time()
             # Get all events
             events = pygame.event.get()
 
@@ -431,23 +463,41 @@ class MultiverseMain:
                     self.game = None
                     self.menu_inactive_start_time = time.time()
                     continue
+            elapsed = time.time() - start
+            if self.game is not None and self.game.frame_count % 100 == 0:
+                logging.debug(f'pygame events took {elapsed * 1000} ms')
 
             if self.game is None:
                 game_start_time = None
                 # Show game selection menu
                 self.menu_loop(events, self.dt)
             else:
+
+                start = time.time()
                 if game_start_time is None:
                     game_start_time = time.time()
                     frame_start_time = game_start_time
                     self.game.frame_count = 0
                 self.game.loop(events, self.dt)
+                elapsed = time.time() - start
+                if self.game is not None and self.game.frame_count % 100 == 0:
+                    logging.debug(f'game loop took {elapsed * 1000} ms')
+
                 self.game.frame_count += 1
                 
-            # Update the display
+            # Update the display            
+            start = time.time()
             self.multiverse_display.flip_display()
+            elapsed = time.time() - start
+            
+            if self.game is not None and self.game.frame_count % 100 == 1:
+                logging.debug(f'flip_display took {elapsed * 1000} ms')
 
             frame_elapsed_time = time.time() - frame_start_time
+
+            if self.game is not None and self.game.frame_count % 100 == 1:
+                logging.debug(f'frame_elapsed_time took {frame_elapsed_time * 1000} ms')
+
             if self.game is not None and self.game.fixed_fps and game_start_time is not None:
                 
                 game_elapsed_time = time.time() - game_start_time
@@ -465,13 +515,13 @@ class MultiverseMain:
                     
                 actual_delay = max(0, fps_delay - frame_draw_delay + sync_offset)
                 
-                if self.game.frame_count % 100 == 0:
+                if self.game.frame_count % 100 == 1:
                     logging.debug(f'FPS Delay: {fps_delay}, frame_draw_delay: {frame_draw_delay}, actual_delay: {actual_delay}')
                     logging.debug(f"Observed FPS: {observed_fps}")
                     
                 
-                #pygame.time.delay(int(actual_delay))
-                time.sleep(actual_delay / 1000)
+                pygame.time.delay(int(actual_delay))
+                #time.sleep(actual_delay / 1000)
             else: # Basic frame limiting
                 # Set the frame rate
                 self.clock.tick(self.game.fps if self.game is not None else 120)
@@ -526,7 +576,7 @@ class MultiverseMain:
         for event in events:
             # See if something is selected
             if (event.type == pygame.KEYUP and event.key == pygame.K_RETURN) or (
-                event.type == BUTTON_RELEASED and event.input == ROTARY_PUSH
+                event.type == BUTTON_RELEASED and event.input in [ROTARY_PUSH, BUTTON_A]
             ):
                 self.menu_inactive_start_time = time.time()
                 self.select_menu_item()
