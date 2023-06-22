@@ -113,13 +113,15 @@ class MultiverseGame:
     """
 
     def __init__(
-        self, game_title: str, fps: int, multiverse_display: PygameMultiverseDisplay
+        self, game_title: str, fps: int, multiverse_display: PygameMultiverseDisplay, fixed_fps = False
     ) -> None:
         self.multiverse_display = multiverse_display
         script_path = os.path.realpath(os.path.dirname(__file__))
         self.font = pygame.font.Font(f"{script_path}/../icl8x8u.bdf", 8)
         self.game_title = game_title
         self.fps = fps
+        self.fixed_fps = fixed_fps
+        self.frame_count = 0
         self.menu_select_state = True
         self.game_mode = 1
         self.reset_input_history(P1)
@@ -215,12 +217,12 @@ class MultiverseGame:
 
 
 class MenuItem:
-    def __init__(self, name: str, children: list = None, props: dict = {}):
+    def __init__(self, name: str, children: list = None, props: dict = {}, parent = None):
         self.name = name
         self.children = children
         self.props = props
         self.highlighted_index = 0
-        self.parent = None
+        self.parent = parent
         if children is not None:
             for child in children:
                 child.parent = self
@@ -346,7 +348,7 @@ class MultiverseMain:
         video_items = [MenuItem(v.get('name'), props={"constructor": VideoDemo, "args":[v.get('path')]}) for v in video_config]
         if(len(video_items)):
             video_items.append(MenuItem("Back"))
-            self.game_menu.children.append(MenuItem("Videos", video_items))
+            self.game_menu.children.append(MenuItem("Videos", video_items, parent=self.game_menu))
 
         signal.signal(signal.SIGINT, self.signal_handler)
 
@@ -386,15 +388,17 @@ class MultiverseMain:
 
     def run(self):
         self.exit_flag.clear()
-        prev_time = time.time()
+        previous_frame_start_time = time.time()
+
+        game_start_time = None
 
         while not self.exit_flag.wait(0.001):
-            now = time.time()
-            self.dt = now - prev_time
-            prev_time = now
+            frame_start_time = time.time()
+            self.dt = frame_start_time - previous_frame_start_time
+            previous_frame_start_time = frame_start_time
 
 
-            if self.running_demo and now > (self.demo_start_time + DEMO_SWITCH_TIME):
+            if self.running_demo and frame_start_time > (self.demo_start_time + DEMO_SWITCH_TIME):
                 #change the demo
                 self.load_demo_disc()
 
@@ -429,15 +433,48 @@ class MultiverseMain:
                     continue
 
             if self.game is None:
+                game_start_time = None
                 # Show game selection menu
                 self.menu_loop(events, self.dt)
             else:
+                if game_start_time is None:
+                    game_start_time = time.time()
+                    frame_start_time = game_start_time
+                    self.game.frame_count = 0
                 self.game.loop(events, self.dt)
+                self.game.frame_count += 1
+                
             # Update the display
             self.multiverse_display.flip_display()
 
-            # Set the frame rate
-            self.clock.tick(self.game.fps if self.game is not None else 120)
+            frame_elapsed_time = time.time() - frame_start_time
+            if self.game is not None and self.game.fixed_fps and game_start_time is not None:
+                
+                game_elapsed_time = time.time() - game_start_time
+                observed_fps = self.game.frame_count / game_elapsed_time
+
+                fps_delay = 1000/(self.game.fps + 5)
+                frame_draw_delay = frame_elapsed_time * 1000
+                sync_offset = 0
+                if(observed_fps < self.game.fps):
+                    #speed up
+                    sync_offset = - fps_delay / 2
+                elif observed_fps > self.game.fps:
+                    #slow down
+                    sync_offset = fps_delay / 2
+                    
+                actual_delay = max(0, fps_delay - frame_draw_delay + sync_offset)
+                
+                if self.game.frame_count % 100 == 0:
+                    logging.debug(f'FPS Delay: {fps_delay}, frame_draw_delay: {frame_draw_delay}, actual_delay: {actual_delay}')
+                    logging.debug(f"Observed FPS: {observed_fps}")
+                    
+                
+                #pygame.time.delay(int(actual_delay))
+                time.sleep(actual_delay / 1000)
+            else: # Basic frame limiting
+                # Set the frame rate
+                self.clock.tick(self.game.fps if self.game is not None else 120)
 
         print("Ended multiverse game run loop")
         self.stop()
