@@ -472,6 +472,7 @@ class MultiverseMain:
             self.game = selected_child.props["constructor"](
                 self.multiverse_display, *args
             )
+            self.game_menu = selected_child.parent
         else:
             self.game_menu = selected_child
 
