@@ -10,14 +10,13 @@ echo "Reloading udev rules"
 sudo udevadm control --reload-rules
 sudo udevadm trigger
 
+sudo apt install -y ffmpeg
+
 echo "Installing python dependencies"
 pip3 install -r $DIR/../requirements.txt
-
 
 #TODO Check for existing opencv install first
 echo "Installing opencv"
 wget https://github.com/prepkg/opencv-raspberrypi/releases/latest/download/opencv.deb
-
-sudo apt install ./opencv.deb
 
 echo "Done"
