@@ -120,8 +120,11 @@ class SnakeGame(MultiverseGame):
             if event.type == ROTATED_CW and event.controller == P1 or (event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN):
                 self.snake_dir = (self.snake_dir + 1) % 4
                 self.random_note()
-            if self.game_over and event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_A, BUTTON_B, ROTARY_PUSH]:
+            if self.game_over and event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_A]:
                 self.reset()
+                return
+            if self.game_over and event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_B, ROTARY_PUSH]:
+                self.exit()
                 return
 
         # Fill the screen

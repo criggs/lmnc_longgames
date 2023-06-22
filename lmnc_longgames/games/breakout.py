@@ -212,8 +212,11 @@ class BreakoutGame(MultiverseGame):
                 self.paddle.move(1)
             if event.type == ROTATED_CCW and event.controller == P1:
                 self.paddle.move(-1)
-            if self.game_over and event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_A, BUTTON_B, ROTARY_PUSH]:
+            if self.game_over and event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_A]:
                 self.reset()
+                return
+            if self.game_over and event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_B, ROTARY_PUSH]:
+                self.exit()
                 return
                 
 
