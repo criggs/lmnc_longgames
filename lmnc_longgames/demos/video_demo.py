@@ -46,12 +46,17 @@ class VideoDemo(MultiverseGame):
 
     def setup_video(self):
         raw_height = self.multiverse_display.height/self.multiverse_display.upscale_factor
-        self.frame_iter = iio.imiter(
-            self.video_file_path,
-            plugin="pyav",
-            format="rgb24",
-            filter_sequence=[("scale", f"-1:{raw_height}:flags=neighbor"),("fps", f"{self.fps}")]
-        )
+
+        if '<video' in self.video_file_path:
+            self.fps = 30
+            self.frame_iter = iio.imiter(self.video_file_path, fps="30", size=(320,240))
+        else:
+            self.frame_iter = iio.imiter(
+                self.video_file_path,
+                plugin="pyav",
+                format="rgb24",
+                filter_sequence=[("scale", f"-1:{raw_height}:flags=neighbor"),("fps", f"{self.fps}")]
+            )
         self.frame = next(self.frame_iter)
 
     def loop(self, events: List, dt: float):
