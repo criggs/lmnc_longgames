@@ -1,4 +1,5 @@
 from typing import List
+import sys
 import time
 import logging
 import itertools
@@ -15,15 +16,19 @@ class VideoDemo(MultiverseGame):
     FIT_ALL = 0
     FIT_WIDTH = 1
     FIT_HEIGHT = 2
+    
+    TILE_OFF=0
+    TILE_INDIVISIBLE=1
+    TILE_FILL=2
 
-    def __init__(self, multiverse_displays, video_file_path, fit_mode = FIT_HEIGHT, tile = True):
+    def __init__(self, multiverse_displays, video_file_path, fit_mode = FIT_HEIGHT, tile_mode = TILE_FILL):
         self.video_file_path = video_file_path
         print(f'Playing video {video_file_path}')
 
         super().__init__("Video", 60, multiverse_displays, fixed_fps = True)
         
         self.fit_mode = fit_mode
-        self.tile = tile
+        self.tile_mode = tile_mode
         self.setup_video()
 
         self.v_height, self.v_width, _ = self.frame.shape
@@ -84,14 +89,27 @@ class VideoDemo(MultiverseGame):
         coords = ((self.width - self.scaled_v_width) // 2, (self.height - self.scaled_v_height) // 2)
         
         
-        if self.tile:
-            x_vals = itertools.chain(range(coords[0], 0-self.width, -self.scaled_v_width), range(coords[0], self.width, self.scaled_v_width))
-            y_vals = itertools.chain(range(coords[1], 0-self.height, -self.scaled_v_height), range(coords[1], self.height, self.scaled_v_height))
-            blit_coords = itertools.product(x_vals, y_vals)
-            for tile_coords in blit_coords:
-                self.screen.blit(video_surf, tile_coords)
-        else:
+        if self.tile_mode == self.TILE_OFF:
             self.screen.blit(video_surf, coords)
+        else:
+            
+            total_tiles = self.width // self.scaled_v_width
+            if self.tile_mode == self.TILE_FILL and self.width % self.scaled_v_width > 0:
+              total_tiles += 1
+            
+            # TODO: Make this work for vertical tiling as well (but I probably won't bother)
+            if total_tiles == 0:
+                self.screen.blit(video_surf, coords)
+            else:
+                leftmost = (self.width // 2) - ((self.scaled_v_width * total_tiles) // 2)
+                rightmost = leftmost + (self.scaled_v_width * (total_tiles - 1)) + 1
+                
+                x_range = range(leftmost, rightmost, self.scaled_v_width)
+                y_range = [0]
+                blit_coords = itertools.product(x_range, y_range)
+            
+                for tile_coords in blit_coords:
+                    self.screen.blit(video_surf, tile_coords)
         
         elapsed = time.time() - start
 
