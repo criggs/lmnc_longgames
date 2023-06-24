@@ -54,7 +54,7 @@ class PygameMultiverseDisplay:
             config = LongGameConfig()
             dummy_displays = config.config["displays"]["main"].get("dummy", False)
             displays = [
-                Display(f"{file}", 53, 11, 0, 11 * i, dummy=dummy_displays)
+                Display(f"{file}", 53, 11, 0, 11 * i, dummy=(dummy_displays or 'dummy' in file))
                 for i, file in enumerate(config.config["displays"]["main"]["devices"])
             ]
 
