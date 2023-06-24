@@ -222,9 +222,9 @@ class BreakoutGame(MultiverseGame):
 
         keys = pygame.key.get_pressed()
         if keys[K_RIGHT]:
-            self.paddle.move(1)
+            self.paddle.move(1 / 5)
         elif keys[K_LEFT]:
-            self.paddle.move(-1)
+            self.paddle.move(-1 / 5)
 
         self.screen.fill(BLACK)
 

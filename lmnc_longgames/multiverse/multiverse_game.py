@@ -498,33 +498,38 @@ class MultiverseMain:
             if self.game is not None and self.game.frame_count % 100 == 1:
                 logging.debug(f'frame_elapsed_time took {frame_elapsed_time * 1000} ms')
 
-            if self.game is not None and self.game.fixed_fps and game_start_time is not None:
-                
+            if self.game is not None and game_start_time is not None:
                 game_elapsed_time = time.time() - game_start_time
                 observed_fps = self.game.frame_count / game_elapsed_time
-
-                fps_delay = 1000/(self.game.fps + 5)
-                frame_draw_delay = frame_elapsed_time * 1000
-                sync_offset = 0
-                if(observed_fps < self.game.fps):
-                    #speed up
-                    sync_offset = - fps_delay / 2
-                elif observed_fps > self.game.fps:
-                    #slow down
-                    sync_offset = fps_delay / 2
-                    
-                actual_delay = max(0, fps_delay - frame_draw_delay + sync_offset)
-                
                 if self.game.frame_count % 100 == 1:
-                    logging.debug(f'FPS Delay: {fps_delay}, frame_draw_delay: {frame_draw_delay}, actual_delay: {actual_delay}')
                     logging.debug(f"Observed FPS: {observed_fps}")
+
+                if  self.game.fixed_fps:
+                    # Hacky attempt to keep a fixed-ish framerate
+                    # Added specifically for video playback
+                    fps_delay = 1000/(self.game.fps + 5)
+                    frame_draw_delay = frame_elapsed_time * 1000
+                    sync_offset = 0
+                    if(observed_fps < self.game.fps):
+                        #speed up
+                        sync_offset = - fps_delay / 2
+                    elif observed_fps > self.game.fps:
+                        #slow down
+                        sync_offset = fps_delay / 2
+                        
+                    actual_delay = max(0, fps_delay - frame_draw_delay + sync_offset)
                     
-                
-                pygame.time.delay(int(actual_delay))
-                #time.sleep(actual_delay / 1000)
-            else: # Basic frame limiting
-                # Set the frame rate
-                self.clock.tick(self.game.fps if self.game is not None else 120)
+                    if self.game.frame_count % 100 == 1:
+                        logging.debug(f'FPS Delay: {fps_delay}, frame_draw_delay: {frame_draw_delay}, actual_delay: {actual_delay}')                        
+                    
+                    pygame.time.delay(int(actual_delay))
+                    #time.sleep(actual_delay / 1000)
+                else: # Basic frame limiting
+                    # Set the frame rate
+                    self.clock.tick(self.game.fps if self.game is not None else 120)
+            else:
+                # No game right now, not sure why were here but lets keep that train a' rolling
+                self.clock.tick(120)
 
         print("Ended multiverse game run loop")
         self.stop()
