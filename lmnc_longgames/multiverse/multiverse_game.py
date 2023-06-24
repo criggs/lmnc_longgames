@@ -176,6 +176,9 @@ class MultiverseGame:
 
     def update_history(self, controller, event):
         history = self.p1_input_history if controller == P1 else self.p2_input_history
+        if event[0] in [ROTATED_CW, ROTATED_CCW] and history[-1] == event:
+            #Only record a single movement event for multiple moves in the same direction
+            return
         history.pop(0)
         history.append(event)
     
