@@ -49,6 +49,7 @@ class VideoDemo(MultiverseGame):
 
         if '<video' in self.video_file_path:
             self.fps = 30
+            print(f"Resetting FPS to {self.fps} for video")
             self.frame_iter = iio.imiter(self.video_file_path, fps="30", size=(320,240))
         else:
             self.frame_iter = iio.imiter(
