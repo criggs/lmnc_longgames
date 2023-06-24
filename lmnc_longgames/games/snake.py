@@ -124,7 +124,7 @@ class SnakeGame(MultiverseGame):
                 self.reset()
                 return
             if self.game_over and event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_B, ROTARY_PUSH]:
-                self.exit()
+                self.exit_game()
                 return
 
         # Fill the screen
