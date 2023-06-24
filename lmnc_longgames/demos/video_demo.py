@@ -21,7 +21,7 @@ class VideoDemo(MultiverseGame):
     TILE_INDIVISIBLE=1
     TILE_FILL=2
 
-    def __init__(self, multiverse_displays, video_file_path, fit_mode = FIT_HEIGHT, tile_mode = TILE_FILL):
+    def __init__(self, multiverse_displays, video_file_path, fit_mode = FIT_HEIGHT, tile_mode = TILE_INDIVISIBLE):
         self.video_file_path = video_file_path
         print(f'Playing video {video_file_path}')
 
@@ -79,6 +79,12 @@ class VideoDemo(MultiverseGame):
             if event.type == BUTTON_RELEASED and event.input in [BUTTON_B, ROTARY_PUSH]:
                 self.exit_game()
 
+            if event.type == ROTATED_CW or (event.type == pygame.KEYUP and event.key == pygame.K_RIGHT):
+                self.tile_mode = (self.tile_mode + 1) % 3
+
+            if event.type == ROTATED_CCW or (event.type == pygame.KEYUP and event.key == pygame.K_LEFT):
+                self.tile_mode = (self.tile_mode - 1) % 3
+
         start = time.time()
         self.screen.fill(BLACK)
 
@@ -95,7 +101,7 @@ class VideoDemo(MultiverseGame):
             
             total_tiles = self.width // self.scaled_v_width
             if self.tile_mode == self.TILE_FILL and self.width % self.scaled_v_width > 0:
-              total_tiles += 1
+              total_tiles += 2 # Add 2 to keep the 'ideal' tiling centered.
             
             # TODO: Make this work for vertical tiling as well (but I probably won't bother)
             if total_tiles == 0:
