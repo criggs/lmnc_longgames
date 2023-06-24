@@ -707,7 +707,12 @@ def main():
 
     ScreenPowerReset(reset_pin=PIN_RESET_RELAY, button_pin=16)
 
-    game_main.run()
+    try:
+        game_main.run()
+    except Exception as e:
+        logging.error("Exception from Game Main Run. Stopping Program.", exc_info=e)
+        game_main.stop()
+        sys.exit(1)
 
 
 if __name__ == "__main__":
