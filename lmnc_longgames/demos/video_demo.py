@@ -25,6 +25,9 @@ class VideoDemo(MultiverseGame):
         self.video_file_path = video_file_path
         print(f'Playing video {video_file_path}')
 
+        if '<video' in video_file_path:
+            fit_mode = self.FIT_WIDTH
+
         super().__init__("Video", 60, multiverse_displays, fixed_fps = True)
         
         self.fit_mode = fit_mode
