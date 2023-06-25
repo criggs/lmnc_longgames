@@ -20,6 +20,7 @@ pyserial = "^3.5"
 gpiozero = "^1.6.2"
 av = "^10.0.0"
 imageio = "^2.31.1"
+imageio-ffmpeg = "^0.4.8"
 
 [tool.poetry.dev-dependencies]
 black = "^23.3.0"
