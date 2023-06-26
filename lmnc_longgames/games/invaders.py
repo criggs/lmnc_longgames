@@ -84,7 +84,7 @@ class Player(GameObject):
         pygame.draw.rect(screen, WHITE, self._rect)
         
     def fire(self):
-        bullet = PlayerBullet(self.game, self.x + self.width // 2, self.y)
+        bullet = PlayerBullet(self.game, self.x + (PLAYER_WIDTH // 2) * self.game.upscale_factor, self.y)
         self.game.player_bullets.append(bullet)
     
 
