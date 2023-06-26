@@ -169,6 +169,9 @@ class GameObject:
     
     def reset(self):
         pass
+    
+    def collides_with(self, other_object):
+        return self._rect.colliderect(other_object._rect)
 
 class MultiverseGame:
     """

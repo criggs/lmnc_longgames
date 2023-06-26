@@ -33,15 +33,29 @@ class Invader(GameObject):
         self.y = y
         
         self.color = random.choice(PALETTE)
-        self.is_visible = True
         
-    def update(self, dt):
+    def update(self, dt, move_dir):
         super().update(dt)
-        
-        #TODO Move
+        self.x += self.game.invader_speed * dt * move_dir
+        if self.x <= 0:
+            self.x = 0
+            self.game.invader_shift = True
+        if self.x >= self.game.width - self.width - 1:
+            self.game.invader_shift = True
+            self.x = self.game.width - self.width - 1
+        #TODO if it hits the player, Game Over
+            
+    
+    def move_down(self):
+        self.y += self.height + INVADER_GAP * self.game.upscale_factor
+        #TODO If it reaches the bottom, Game Over
 
     def draw(self, screen):
         pygame.draw.rect(screen, self.color, self._rect)
+    
+    def fire(self):
+        #TODO Fire random invaders if they're on the bottom most position in their column. Probably need to keep track of a 'rank' list of each column
+        pass
 
 class Player(GameObject):
     def __init__(self, game):
@@ -68,9 +82,35 @@ class Player(GameObject):
 
     def draw(self, screen):
         pygame.draw.rect(screen, WHITE, self._rect)
-        print(self._rect)
-        print(self.game.height)
+        
+    def fire(self):
+        bullet = PlayerBullet(self.game, self.x + self.width // 2, self.y)
+        self.game.player_bullets.append(bullet)
     
+
+
+class PlayerBullet(GameObject):
+    def __init__(self, game, x, y):
+        super().__init__(game)
+        self.width = 1 * game.upscale_factor
+        self.height = 1 * game.upscale_factor
+        self.speed = 20
+        self.x = x
+        self.y = y
+        
+        
+    def update(self, dt: float):
+        super().update(dt)
+        self.y -= dt * self.speed * self.game.upscale_factor
+        
+    
+    def draw(self, screen):
+        pygame.draw.rect(screen, WHITE, self._rect)
+        tail_rect = pygame.Rect(self.x, self.y + self.height, self.width, self.height * 2)
+        pygame.draw.rect(screen, (150,150,150), tail_rect)
+        tail_rect.y += tail_rect.height
+        pygame.draw.rect(screen, (50,50,50), tail_rect)
+           
 
 class InvadersGame(MultiverseGame):
     '''
@@ -79,11 +119,21 @@ class InvadersGame(MultiverseGame):
     def __init__(self, multiverse_display):
         super().__init__("Invaders", 120, multiverse_display)
         self.invaders = []
+        self.player_bullets = []
+        self.invader_bullets = []
+        self.invader_shift = False
+        self.invader_move_dir = 1
+        self.invader_speed = 0
         self.reset()
 
     def reset(self):
         self.game_over = False
         self.invaders = []
+        self.player_bullets = []
+        self.invader_bullets = []
+        self.invader_shift = False
+        self.invader_move_dir = 1
+        self.invader_speed = 20
         gap = INVADER_GAP * self.upscale_factor
         width = INVADER_WIDTH * self.upscale_factor
         height = INVADER_HEIGHT * self.upscale_factor
@@ -110,6 +160,9 @@ class InvadersGame(MultiverseGame):
                 self.player.move(1)
             if event.type == ROTATED_CCW and event.controller == P1:
                 self.player.move(-1)
+            if event.type == BUTTON_PRESSED and event.controller == P1 and event.input in [BUTTON_A] or (event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE):
+                #Fire
+                self.player.fire()
             if self.game_over and event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_A]:
                 self.reset()
                 return
@@ -135,17 +188,48 @@ class InvadersGame(MultiverseGame):
             text_y = (self.height // 2) - (text.get_height() // 2)
             self.screen.blit(text, (text_x, text_y))
         else:
-            # Check bullet collisions with invaders
             for invader in self.invaders:
-                #TODO
-                pass
+                invader.update(dt, self.invader_move_dir)
+
+            if self.invader_shift:
+                self.invader_shift = False
+                self.invader_move_dir = -self.invader_move_dir
+                for invader in self.invaders:
+                    invader.move_down()
+                self.invader_speed += 5
+            
+            for bullet in self.player_bullets:
+                bullet.update(dt)
+            
+            for bullet in self.invader_bullets:
+                bullet.update(dt)
+                
+            hit_bullets = []
+            hit_invaders = []
+            # Bullet collisions with invaders
+            for bullet in self.player_bullets:
+                for invader in self.invaders:
+                    if bullet.collides_with(invader):
+                        #Invader Hit!
+                        hit_bullets.append(bullet)
+                        hit_invaders.append(invader)
+            
+            self.player_bullets = [b for b in self.player_bullets if b not in hit_bullets]
+            self.invaders = [i for i in self.invaders if i not in hit_invaders]
+            
             
             # Check if all invaders are cleared
-            if all(not invader.is_visible for invader in self.invaders):
+            if len(self.invaders) == 0:
                 self.game_over = True
                 return
 
-            # Draw the ball, paddle, and tiles
+            # Draw the things
+            for bullet in self.player_bullets:
+                bullet.draw(self.screen)
+            
+            for bullet in self.invader_bullets:
+                bullet.draw(self.screen)
+                
             self.player.draw(self.screen)
             for invader in self.invaders:
                 invader.draw(self.screen)
