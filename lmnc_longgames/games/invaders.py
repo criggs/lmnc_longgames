@@ -1,11 +1,14 @@
 from typing import List
 import pygame
 import random
+import os
 import math
 from lmnc_longgames.multiverse.multiverse_game import MultiverseGame
 from lmnc_longgames.multiverse.multiverse_game import GameObject
 from lmnc_longgames.constants import *
 from pygame.locals import *
+
+script_path = os.path.realpath(os.path.dirname(__file__))
 
 PALETTE = [
     (255,190,11),
@@ -16,23 +19,36 @@ PALETTE = [
 ]
 
 # Game constants
-INVADER_ROWS = 5
+INVADER_ROWS = 4
 INVADER_GAP = 1
 STARTING_LIVES = 5
-INVADER_WIDTH = 3
-INVADER_HEIGHT = 3
-PLAYER_WIDTH = 3
-PLAYER_HEIGHT = 3
-    
+INVADER_WIDTH = 5
+INVADER_HEIGHT = 5
+PLAYER_WIDTH = 5
+PLAYER_HEIGHT = 4
+
+IMG_INVADER_A_0 = pygame.image.load(f"{script_path}/assets/invader_a_0.png").convert_alpha()
+IMG_INVADER_A_1 = pygame.image.load(f"{script_path}/assets/invader_a_1.png").convert_alpha()
+IMG_INVADER_C = pygame.image.load(f"{script_path}/assets/invader_b.png").convert_alpha()
+IMG_INVADER_B = pygame.image.load(f"{script_path}/assets/invader_c.png").convert_alpha()
+IMG_INVADER_PLAYER = pygame.image.load(f"{script_path}/assets/invader_player.png").convert_alpha()
+
 class Invader(GameObject):
-    def __init__(self, game, x, y):
+    def __init__(self, game, x, y, images):
         super().__init__(game)
         self.width = INVADER_WIDTH * game.upscale_factor
         self.height = INVADER_HEIGHT * game.upscale_factor
         self.x = x
-        self.y = y
-        
+        self.y = y        
         self.color = random.choice(PALETTE)
+        self.images = []
+        for image in images:
+            image = pygame.transform.scale_by(image, game.upscale_factor)
+            pxar = pygame.PixelArray(image)
+            pxar.replace(WHITE, self.color)
+            del pxar
+            self.images.append(image)
+        #TODO replace color
         
     def update(self, dt, move_dir):
         super().update(dt)
@@ -51,7 +67,11 @@ class Invader(GameObject):
         #TODO If it reaches the bottom, Game Over
 
     def draw(self, screen):
-        pygame.draw.rect(screen, self.color, self._rect)
+        #pygame.draw.rect(screen, self.color, self._rect)
+        
+        image = self.images[self.game.animation_index]
+        
+        screen.blit(image, (self.x, self.y))
     
     def fire(self):
         #TODO Fire random invaders if they're on the bottom most position in their column. Probably need to keep track of a 'rank' list of each column
@@ -67,6 +87,7 @@ class Player(GameObject):
         self.speed = 5
         
         self.color = random.choice(PALETTE)
+        self.image = pygame.transform.scale_by(IMG_INVADER_PLAYER, game.upscale_factor)
     
     def move(self, move_amount):
         self.x += self.speed * move_amount * self.game.upscale_factor
@@ -81,7 +102,8 @@ class Player(GameObject):
         #TODO Move
 
     def draw(self, screen):
-        pygame.draw.rect(screen, WHITE, self._rect)
+        screen.blit(self.image, (self.x, self.y))
+        #pygame.draw.rect(screen, WHITE, self._rect)
         
     def fire(self):
         bullet = PlayerBullet(self.game, self.x + (PLAYER_WIDTH // 2) * self.game.upscale_factor, self.y)
@@ -124,6 +146,8 @@ class InvadersGame(MultiverseGame):
         self.invader_shift = False
         self.invader_move_dir = 1
         self.invader_speed = 0
+        self.animation_index = 0
+        self.next_animation_tick = 0
         self.reset()
 
     def reset(self):
@@ -134,15 +158,17 @@ class InvadersGame(MultiverseGame):
         self.invader_shift = False
         self.invader_move_dir = 1
         self.invader_speed = 20
+        self.animation_index = 0
+        self.next_animation_tick = 0
         gap = INVADER_GAP * self.upscale_factor
         width = INVADER_WIDTH * self.upscale_factor
         height = INVADER_HEIGHT * self.upscale_factor
-        columns = len(self.multiverse_display.multiverse.displays) * 2
+        columns = len(self.multiverse_display.multiverse.displays)
         for row in range(INVADER_ROWS):
             for column in range(columns):
                 x = column * (width + gap) + gap
                 y = row * (height + gap) + gap
-                invader = Invader(self, x, y)
+                invader = Invader(self, x, y, [IMG_INVADER_A_0, IMG_INVADER_A_1])
                 self.invaders.append(invader)
         self.player = Player(self)
 
@@ -154,6 +180,10 @@ class InvadersGame(MultiverseGame):
             events: The pygame events list for this loop iteration
             dt: The delta time since the last loop iteration. This is for framerate independence.
         """
+        now_ticks = pygame.time.get_ticks()
+        if self.next_animation_tick < pygame.time.get_ticks():
+            self.animation_index = (self.animation_index + 1) % 2
+            self.next_animation_tick = now_ticks + 1000
 
         for event in events:
             if event.type == ROTATED_CW and event.controller == P1:
