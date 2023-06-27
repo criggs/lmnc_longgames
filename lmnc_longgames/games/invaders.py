@@ -27,10 +27,21 @@ INVADER_HEIGHT = 5
 PLAYER_WIDTH = 5
 PLAYER_HEIGHT = 4
 
-IMG_INVADER_A_0 = pygame.image.load(f"{script_path}/assets/invader_a_0.png").convert_alpha()
-IMG_INVADER_A_1 = pygame.image.load(f"{script_path}/assets/invader_a_1.png").convert_alpha()
-IMG_INVADER_C = pygame.image.load(f"{script_path}/assets/invader_b.png").convert_alpha()
-IMG_INVADER_B = pygame.image.load(f"{script_path}/assets/invader_c.png").convert_alpha()
+IMG_INVADER_A = [
+        pygame.image.load(f"{script_path}/assets/invader_a_0.png").convert_alpha(),
+        pygame.image.load(f"{script_path}/assets/invader_a_1.png").convert_alpha()
+    ]
+IMG_INVADER_B = [
+        pygame.image.load(f"{script_path}/assets/invader_b_0.png").convert_alpha(),
+        pygame.image.load(f"{script_path}/assets/invader_b_1.png").convert_alpha()
+    ]
+IMG_INVADER_C = [
+        pygame.image.load(f"{script_path}/assets/invader_c_0.png").convert_alpha(),
+        pygame.image.load(f"{script_path}/assets/invader_c_1.png").convert_alpha()
+    ]
+
+IMG_INVADERS = [IMG_INVADER_A, IMG_INVADER_B, IMG_INVADER_C]
+
 IMG_INVADER_PLAYER = pygame.image.load(f"{script_path}/assets/invader_player.png").convert_alpha()
 
 class Invader(GameObject):
@@ -168,7 +179,7 @@ class InvadersGame(MultiverseGame):
             for column in range(columns):
                 x = column * (width + gap) + gap
                 y = row * (height + gap) + gap
-                invader = Invader(self, x, y, [IMG_INVADER_A_0, IMG_INVADER_A_1])
+                invader = Invader(self, x, y, IMG_INVADERS[row % 3])
                 self.invaders.append(invader)
         self.player = Player(self)
 
