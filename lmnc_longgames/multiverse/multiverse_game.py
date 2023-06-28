@@ -119,6 +119,59 @@ class PygameMultiverseDisplay:
     def stop(self):
         self.multiverse.stop()
 
+class GameObject:
+    def __init__(self, game):
+        self.game = game
+        self._rect = pygame.Rect(0,0,0,0)
+        self._x = 0.0
+        self._y = 0.0
+    
+    
+    @property
+    def x(self):
+        return self._x
+
+    @x.setter
+    def x(self, value):
+        self._x = value
+        self._rect.x = int(value)
+
+    @property
+    def y(self):
+        return self._y
+
+    @y.setter
+    def y(self, value):
+        self._y = value
+        self._rect.y = int(value)
+    
+    @property
+    def width(self):
+        return self._rect.width
+    
+    @width.setter
+    def width(self, w):
+        self._rect.width = w
+        
+    @property
+    def height(self):
+        return self._rect.height
+    
+    @height.setter
+    def height(self, h):
+        self._rect.height = h
+        
+    def update(self, dt: float):
+        pass
+
+    def draw(self, screen):
+        pass
+    
+    def reset(self):
+        pass
+    
+    def collides_with(self, other_object):
+        return self._rect.colliderect(other_object._rect)
 
 class MultiverseGame:
     """
@@ -327,6 +380,7 @@ class MultiverseMain:
         from lmnc_longgames.demos.life_demo import LifeDemo
         from lmnc_longgames.demos.video_demo import VideoDemo
         from lmnc_longgames.demos.marquee_demo import MarqueeDemo
+        from lmnc_longgames.games.invaders import InvadersGame
 
         self.game_menu = MenuItem(
             "Long Games",
@@ -348,6 +402,7 @@ class MultiverseMain:
                 ),
                 MenuItem("Snake", props={"constructor": SnakeGame}),
                 MenuItem("Breakout", props={"constructor": BreakoutGame}),
+                MenuItem("Invaders", props={"constructor": InvadersGame}),
                 MenuItem(
                     "Demos",
                     [
