@@ -11,11 +11,10 @@ from pygame.locals import *
 script_path = os.path.realpath(os.path.dirname(__file__))
 
 PALETTE = [
-    (255,190,11),
-    (251,86,7),
-    (255,0,110),
-    (205,66,255),
-    (58,134,255)
+    (238, 85, 238),
+    (229, 229, 56),
+    (44, 247, 2),
+    (81, 117, 225),
 ]
 
 # Game constants
@@ -27,31 +26,27 @@ INVADER_HEIGHT = 5
 PLAYER_WIDTH = 5
 PLAYER_HEIGHT = 4
 
-IMG_INVADER_A = [
-        pygame.image.load(f"{script_path}/assets/invader_a_0.png").convert_alpha(),
-        pygame.image.load(f"{script_path}/assets/invader_a_1.png").convert_alpha()
-    ]
-IMG_INVADER_B = [
-        pygame.image.load(f"{script_path}/assets/invader_b_0.png").convert_alpha(),
-        pygame.image.load(f"{script_path}/assets/invader_b_1.png").convert_alpha()
-    ]
-IMG_INVADER_C = [
-        pygame.image.load(f"{script_path}/assets/invader_c_0.png").convert_alpha(),
-        pygame.image.load(f"{script_path}/assets/invader_c_1.png").convert_alpha()
-    ]
+def load_sprites(name, count):
+    return [pygame.image.load(f"{script_path}/assets/{name}_{i}.png").convert_alpha() for i in range(count)]
+
+IMG_INVADER_A = load_sprites(f"invader_a", 2)
+IMG_INVADER_B = load_sprites(f"invader_b", 2)
+IMG_INVADER_C = load_sprites(f"invader_c", 2)
 
 IMG_INVADERS = [IMG_INVADER_A, IMG_INVADER_B, IMG_INVADER_C]
+
+IMG_INVADER_BULLET = load_sprites("invader_bullet", 4)
 
 IMG_INVADER_PLAYER = pygame.image.load(f"{script_path}/assets/invader_player.png").convert_alpha()
 
 class Invader(GameObject):
-    def __init__(self, game, x, y, images):
+    def __init__(self, game, x, y, color, images):
         super().__init__(game)
         self.width = INVADER_WIDTH * game.upscale_factor
         self.height = INVADER_HEIGHT * game.upscale_factor
         self.x = x
         self.y = y        
-        self.color = random.choice(PALETTE)
+        self.color = color
         self.images = []
         for image in images:
             image = pygame.transform.scale_by(image, game.upscale_factor)
@@ -85,9 +80,8 @@ class Invader(GameObject):
         screen.blit(image, (self.x, self.y))
     
     def fire(self):
-        #TODO Fire random invaders if they're on the bottom most position in their column. Probably need to keep track of a 'rank' list of each column
-        pass
-
+        self.game.invader_bullets.append(InvaderBullet(self.game, self.x, self.y))
+            
 class Player(GameObject):
     def __init__(self, game):
         super().__init__(game)
@@ -120,7 +114,32 @@ class Player(GameObject):
         bullet = PlayerBullet(self.game, self.x + (PLAYER_WIDTH // 2) * self.game.upscale_factor, self.y)
         self.game.player_bullets.append(bullet)
     
-
+class InvaderBullet(GameObject):
+    def __init__(self, game, x, y):
+        super().__init__(game)
+        self.width = 3 * game.upscale_factor
+        self.height = 5 * game.upscale_factor
+        self.speed = 20
+        self.x = x
+        self.y = y
+        self.frame_time = 100
+        self.frame = 0
+        self.next_frame = pygame.time.get_ticks() + self.frame_time
+        self.images = [pygame.transform.scale_by(image, game.upscale_factor) for image in IMG_INVADER_BULLET]
+        
+        
+    def update(self, dt: float):
+        super().update(dt)
+        
+        self.y += dt * self.speed * self.game.upscale_factor
+        
+    def draw(self, screen):
+        now = pygame.time.get_ticks()
+        if(self.next_frame < now):
+            self.frame = (self.frame + 1) % len(IMG_INVADER_BULLET)
+            self.next_frame = now + self.frame_time
+        
+        screen.blit(self.images[self.frame], (self.x, self.y))
 
 class PlayerBullet(GameObject):
     def __init__(self, game, x, y):
@@ -135,6 +154,8 @@ class PlayerBullet(GameObject):
     def update(self, dt: float):
         super().update(dt)
         self.y -= dt * self.speed * self.game.upscale_factor
+        if self.y > self.game.height:
+            self.game.invader_bullets.remove(self)
         
     
     def draw(self, screen):
@@ -176,10 +197,11 @@ class InvadersGame(MultiverseGame):
         height = INVADER_HEIGHT * self.upscale_factor
         columns = len(self.multiverse_display.multiverse.displays)
         for row in range(INVADER_ROWS):
+            row_color = PALETTE[row]
             for column in range(columns):
                 x = column * (width + gap) + gap
                 y = row * (height + gap) + gap
-                invader = Invader(self, x, y, IMG_INVADERS[row % 3])
+                invader = Invader(self, x, y, row_color, IMG_INVADERS[row % 3])
                 self.invaders.append(invader)
         self.player = Player(self)
 
@@ -192,9 +214,12 @@ class InvadersGame(MultiverseGame):
             dt: The delta time since the last loop iteration. This is for framerate independence.
         """
         now_ticks = pygame.time.get_ticks()
+        invader_fire = False
         if self.next_animation_tick < pygame.time.get_ticks():
             self.animation_index = (self.animation_index + 1) % 2
             self.next_animation_tick = now_ticks + 1000
+            invader_fire = True
+            
 
         for event in events:
             if event.type == ROTATED_CW and event.controller == P1:
@@ -222,7 +247,7 @@ class InvadersGame(MultiverseGame):
 
         if self.game_over:
             text = self.font.render("YOU DIED", False, (135, 0, 0))
-            if all(not invader.is_visible for invader in self.invaders):
+            if len(self.invaders) == 0:
                 text = self.font.render("YOU WON", False, (135, 135, 0))
             text = pygame.transform.scale_by(text, self.upscale_factor)
             text_x = (self.width // 2) - (text.get_width() // 2)
@@ -231,6 +256,11 @@ class InvadersGame(MultiverseGame):
         else:
             for invader in self.invaders:
                 invader.update(dt, self.invader_move_dir)
+                if invader._rect.bottom > self.player.y:
+                    self.game_over = True
+                    return
+            if len(self.invaders) > 0 and invader_fire:
+                random.choice(self.invaders).fire()
 
             if self.invader_shift:
                 self.invader_shift = False
@@ -257,6 +287,14 @@ class InvadersGame(MultiverseGame):
             
             self.player_bullets = [b for b in self.player_bullets if b not in hit_bullets]
             self.invaders = [i for i in self.invaders if i not in hit_invaders]
+            
+            for bullet in self.invader_bullets:
+                if bullet.collides_with(self.player):
+                    #You Got Hit!
+                    self.game_over = True
+                    return
+            
+            
             
             
             # Check if all invaders are cleared
