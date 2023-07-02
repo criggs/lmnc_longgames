@@ -270,6 +270,18 @@ class MultiverseGame:
     def random_note(self, waveform=64):
         self.play_note(0, PENTATONIC[random.randint(4*5,5*5)], waveform=waveform)
 
+    def death_note(self):
+        self.play_note(0, 55, release=1000, waveform=32)
+        self.play_note(1, 60, release=1000, waveform=32)
+        self.play_note(2, 65, release=1000, waveform=32)
+        self.play_note(3, 70, release=1000, waveform=32)
+
+    def win_note(self):
+        self.play_note(0, 880, release=1000, waveform=32)
+        self.play_note(1, 440, release=1000, waveform=32)
+        self.play_note(2, 220, release=1000, waveform=32)
+        self.play_note(4, 110, release=1000, waveform=32)
+
     def display_countdown(self):
         print("Starting countdown...")
         for i in range(3, 0, -1):

@@ -27,6 +27,8 @@ class VideoDemo(MultiverseGame):
 
         if '<video' in video_file_path:
             fit_mode = self.FIT_WIDTH
+            tile_mode = self.TILE_OFF
+
 
         super().__init__("Video", 60, multiverse_displays, fixed_fps = True)
         
@@ -83,10 +85,12 @@ class VideoDemo(MultiverseGame):
                 self.exit_game()
 
             if event.type == ROTATED_CW or (event.type == pygame.KEYUP and event.key == pygame.K_RIGHT):
-                self.tile_mode = (self.tile_mode + 1) % 3
+                if self.fit_mode != self.FIT_WIDTH:
+                    self.tile_mode = (self.tile_mode + 1) % 3
 
             if event.type == ROTATED_CCW or (event.type == pygame.KEYUP and event.key == pygame.K_LEFT):
-                self.tile_mode = (self.tile_mode - 1) % 3
+                if self.fit_mode != self.FIT_WIDTH:
+                    self.tile_mode = (self.tile_mode - 1) % 3
 
         start = time.time()
         self.screen.fill(BLACK)

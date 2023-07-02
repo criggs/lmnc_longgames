@@ -60,7 +60,7 @@ class SnakeGame(MultiverseGame):
         if new_x < 0 or new_x > self.grid_width or new_y < 0 or new_y > self.grid_height:
             print(f"We died on a wall 0,0,{self.grid_width},{self.grid_height}. {new_x},{new_y} ")
             self.game_over = True
-            self.play_note(0, 55, release=1000, waveform=32)
+            self.death_note()
             return
         
         

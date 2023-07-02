@@ -252,12 +252,13 @@ class BreakoutGame(MultiverseGame):
 
             # Check if the ball is off the screen
             if self.ball.off_screen():
-                self.play_note(0, 55, release=1000, waveform=32)
+                self.death_note()
                 self.game_over = True
                 return
 
             # Check if all tiles are cleared
             if all(not tile.is_visible for tile in self.tiles):
+                self.win_note()
                 self.game_over = True
                 return
 

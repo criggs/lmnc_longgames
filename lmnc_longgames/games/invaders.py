@@ -70,7 +70,7 @@ class Invader(GameObject):
     
     def move_down(self):
         self.y += self.height + INVADER_GAP * self.game.upscale_factor
-        #TODO If it reaches the bottom, Game Over
+        self.game.play_note(0, 105, release=1000, waveform=32)
 
     def draw(self, screen):
         #pygame.draw.rect(screen, self.color, self._rect)
@@ -81,6 +81,7 @@ class Invader(GameObject):
     
     def fire(self):
         self.game.invader_bullets.append(InvaderBullet(self.game, self.x, self.y))
+        self.game.random_note()
             
 class Player(GameObject):
     def __init__(self, game):
@@ -113,6 +114,7 @@ class Player(GameObject):
     def fire(self):
         bullet = PlayerBullet(self.game, self.x + (PLAYER_WIDTH // 2) * self.game.upscale_factor, self.y)
         self.game.player_bullets.append(bullet)
+        self.game.random_note()
     
 class InvaderBullet(GameObject):
     def __init__(self, game, x, y):
@@ -246,9 +248,10 @@ class InvadersGame(MultiverseGame):
         self.screen.fill(BLACK)
 
         if self.game_over:
-            text = self.font.render("YOU DIED", False, (135, 0, 0))
             if len(self.invaders) == 0:
                 text = self.font.render("YOU WON", False, (135, 135, 0))
+            else:
+                text = self.font.render("YOU DIED", False, (135, 0, 0))
             text = pygame.transform.scale_by(text, self.upscale_factor)
             text_x = (self.width // 2) - (text.get_width() // 2)
             text_y = (self.height // 2) - (text.get_height() // 2)
@@ -258,6 +261,7 @@ class InvadersGame(MultiverseGame):
                 invader.update(dt, self.invader_move_dir)
                 if invader._rect.bottom > self.player.y:
                     self.game_over = True
+                    self.death_note()
                     return
             if len(self.invaders) > 0 and invader_fire:
                 random.choice(self.invaders).fire()
@@ -292,14 +296,16 @@ class InvadersGame(MultiverseGame):
                 if bullet.collides_with(self.player):
                     #You Got Hit!
                     self.game_over = True
+                    self.death_note()
                     return
             
             
             
             
             # Check if all invaders are cleared
-            if len(self.invaders) == 0:
+            if not self.game_over and len(self.invaders) == 0:
                 self.game_over = True
+                self.win_note()
                 return
 
             # Draw the things
