@@ -118,6 +118,9 @@ class PygameMultiverseDisplay:
 
     def stop(self):
         self.multiverse.stop()
+        
+    def reset(self):
+        self.multiverse.reset()
 
 class GameObject:
     def __init__(self, game):
@@ -736,7 +739,7 @@ def main():
         print("Un-muting Display")
         game_main.multiverse_display.mute = False
 
-    mute_switch = Button(PIN_MUTE_SWITCH)
+    mute_switch = Button(PIN_SWITCH_MUTE)
     mute_switch.when_pressed = mute_display
     mute_switch.when_released = unmute_display
 
@@ -751,7 +754,7 @@ def main():
         )
         pygame.event.post(event)
 
-    game_menu_button = Button(PIN_MENU_BUTTON)
+    game_menu_button = Button(PIN_BUTTON_MENU)
     game_menu_button.when_released = back_to_menu
 
     def reset_game():
@@ -760,11 +763,17 @@ def main():
         )
         pygame.event.post(event)
 
-    game_reset_button = Button(PIN_GAME_RESET)
+    game_reset_button = Button(PIN_BUTTON_GAME_RESET)
     game_reset_button.when_released = reset_game
 
-    ScreenPowerReset(reset_pin=PIN_RESET_RELAY, button_pin=16)
+    #ScreenPowerReset(reset_pin=PIN_RESET_RELAY, button_pin=PIN_BUTTON_SCREEN_RESET)
 
+    def reset_screen():
+        logging.info("Reset Screens Button Pressed. Performing soft reset.")
+        game_main.multiverse_display.reset()
+    screen_reset_button = Button(PIN_BUTTON_SCREEN_RESET)
+    screen_reset_button.when_released = reset_screen
+    
     try:
         game_main.run()
     except Exception as e:
