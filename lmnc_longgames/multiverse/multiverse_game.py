@@ -747,7 +747,7 @@ def main():
     root.handlers.clear()
     root.addHandler(handler)
 
-    logging.info("Starting LonGame Program")
+    logging.info("Starting Long Game Program")
     upscale_factor = 5 if show_window else 1
 
     game_main = MultiverseMain(upscale_factor, headless=not show_window)
