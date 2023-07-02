@@ -4,9 +4,9 @@ import logging
 try:
     import RPi.GPIO as gpio
 
-    print("Running on a Raspberry PI")
+    logging.info("Running on a Raspberry PI")
 except (ImportError, RuntimeError):
-    print("Not running on a Raspberry PI. Setting mock GPIO Zero Pin Factory.")
+    logging.info("Not running on a Raspberry PI. Setting mock GPIO Zero Pin Factory.")
     os.environ["GPIOZERO_PIN_FACTORY"] = "mock"
 
 import random
@@ -45,8 +45,8 @@ class PygameMultiverseDisplay:
         self.sound_trigger_out = DigitalOutputDevice(PIN_TRIGGER_OUT)
         self.flip_count = 0
 
-        print(f"Initializing multiverse display")
-        print(f"upscale_factor: {upscale_factor}")
+        logging.info(f"Initializing multiverse display")
+        logging.info(f"upscale_factor: {upscale_factor}")
 
     def configure_display(self, displays: List[Display] = None):
         if displays is None:
@@ -62,7 +62,7 @@ class PygameMultiverseDisplay:
         self.multiverse.setup(use_threads=True)  # Starts the execution thread for the buffer
         self.width = len(self.multiverse.displays) * 11 * self.upscale_factor
         self.height = 53 * self.upscale_factor
-        print(f"Upscaled Width: {self.width} Upscaled Height: {self.height}")
+        logging.info(f"Upscaled Width: {self.width} Upscaled Height: {self.height}")
 
         if not self.initial_configure_called:
             self.pygame_screen = pygame.display.set_mode(
@@ -204,8 +204,8 @@ class MultiverseGame:
         self.reset_input_history(P2)
         self.exit_game_flag = False
 
-        print(f"Initializing game {self.game_title}")
-        print(f"fps: {fps}")
+        logging.info(f"Initializing game {self.game_title}")
+        logging.info(f"fps: {fps}")
 
     @property
     def upscale_factor(self):
@@ -283,9 +283,9 @@ class MultiverseGame:
         self.play_note(4, 110, release=1000, waveform=32)
 
     def display_countdown(self):
-        print("Starting countdown...")
+        logging.info("Starting countdown...")
         for i in range(3, 0, -1):
-            print(i)
+            logging.info(i)
             self.screen.fill(BLACK)
             countdown_text = self.font.render(str(i), False, WHITE)
             countdown_text = pygame.transform.scale_by(
@@ -308,7 +308,7 @@ class MultiverseGame:
             )
             self.multiverse_display.flip_display()
             pygame.time.wait(1000)
-        print("GO!")
+        logging.info("GO!")
 
 
 class MenuItem:
@@ -453,9 +453,9 @@ class MultiverseMain:
         signal.signal(signal.SIGINT, self.signal_handler)
 
     def signal_handler(self, sig, frame):
-        print("You pressed Ctrl+C!")
+        logging.info("You pressed Ctrl+C!")
         if self._sig_handler_called:
-            print("Force closing")
+            logging.info("Force closing")
             sys.exit(1)
         self._sig_handler_called = True
         self.stop()
@@ -607,7 +607,7 @@ class MultiverseMain:
                 # No game right now, not sure why were here but lets keep that train a' rolling
                 self.clock.tick(120)
 
-        print("Ended multiverse game run loop")
+        logging.info("Ended multiverse game run loop")
         self.stop()
 
     def load_demo_disc(self):
@@ -636,7 +636,7 @@ class MultiverseMain:
             selected_child = self.game_menu.parent
         if selected_child.children is None:
             game_name = selected_child.name
-            print(f"Selected menu leaf {game_name}")
+            logging.info(f"Selected menu leaf {game_name}")
 
             args = selected_child.props.get("args", [])
             self.game = selected_child.props["constructor"](
@@ -649,7 +649,7 @@ class MultiverseMain:
     def menu_loop(self, events, dt):
         elapsed_menu_time = time.time() - self.menu_inactive_start_time
         if elapsed_menu_time > MAX_MENU_INACTIVE_TIME:
-            print(
+            logging.info(
                 f"Menu time elapsed, starting random demo after {MAX_MENU_INACTIVE_TIME} seconds"
             )
             self.load_demo_disc()
@@ -724,19 +724,29 @@ def main():
     opts, args = getopt.getopt(sys.argv[1:], "hwd", [])
     for opt, arg in opts:
         if opt == "-h":
-            print("multiverse_game.py [-w] [-d]")
+            logging.info("multiverse_game.py [-w] [-d]")
             sys.exit()
         elif opt == "-w":
             show_window = True
         elif opt == "-d":
             debug = True
 
+
+
+
+    root = logging.getLogger()
     if debug:
-        logging.basicConfig(level=logging.DEBUG)
+        root.setLevel(logging.DEBUG)
     else:
+        root.setLevel(logging.INFO)
 
-        logging.basicConfig(level=logging.INFO)
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    root.addHandler(handler)
 
+    logging.info("Starting LonGame Program")
     upscale_factor = 5 if show_window else 1
 
     game_main = MultiverseMain(upscale_factor, headless=not show_window)
@@ -744,11 +754,11 @@ def main():
     # Set up control buttons
 
     def mute_display():
-        print("Muting Display")
+        logging.info("Muting Display")
         game_main.multiverse_display.mute = True
 
     def unmute_display():
-        print("Un-muting Display")
+        logging.info("Un-muting Display")
         game_main.multiverse_display.mute = False
 
     mute_switch = Button(PIN_SWITCH_MUTE)
