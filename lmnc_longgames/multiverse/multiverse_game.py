@@ -781,8 +781,13 @@ def main():
     #ScreenPowerReset(reset_pin=PIN_RESET_RELAY, button_pin=PIN_BUTTON_SCREEN_RESET)
 
     def reset_screen():
-        logging.info("Reset Screens Button Pressed. Performing soft reset.")
-        game_main.multiverse_display.reset()
+        logging.info("Reset Screens Button Pressed.")
+        try:
+            game_main.stop()
+            game_main.multiverse_display.reset()
+        finally:
+            logging.info("Stopping program. Should restart if running as a service")
+            sys.exit(2)
     screen_reset_button = Button(PIN_BUTTON_SCREEN_RESET)
     screen_reset_button.when_released = reset_screen
     
