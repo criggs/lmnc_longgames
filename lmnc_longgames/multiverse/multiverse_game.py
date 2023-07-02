@@ -744,6 +744,7 @@ def main():
     handler.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
+    root.handlers.clear()
     root.addHandler(handler)
 
     logging.info("Starting LonGame Program")
