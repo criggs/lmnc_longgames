@@ -10,7 +10,7 @@ echo "Reloading udev rules"
 sudo udevadm control --reload-rules
 sudo udevadm trigger
 
-sudo apt install -y ffmpeg
+sudo apt install -y ffmpeg libsdl2-image-2.0-0 libsdl2-ttf-2.0-0
 
 echo "Installing python dependencies"
 pip3 install -r $DIR/../requirements.txt
