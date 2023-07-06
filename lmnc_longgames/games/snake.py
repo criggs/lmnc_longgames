@@ -22,7 +22,7 @@ class SnakeGame(MultiverseGame):
         self.pixel_size = 2 * self.upscale_factor
         self.grid_width = int(self.width / self.pixel_size)
         self.grid_height = int(self.height / self.pixel_size)
-        
+        self.moving_active = True
         self.reset()
 
     def reset(self):
@@ -36,6 +36,7 @@ class SnakeGame(MultiverseGame):
         self.food_timer = 3.0
         self.food_position = None
         self.speedup_timer = 5.0
+        self.moving_active = True
     
     def update_snake(self, dt):
         
@@ -55,7 +56,7 @@ class SnakeGame(MultiverseGame):
             new_y = new_y - (dt * self.snake_speed)
         if self.snake_dir == RIGHT:
             new_y = new_y + (dt * self.snake_speed)
-        
+
         # Bounds check
         if new_x < 0 or new_x > self.grid_width or new_y < 0 or new_y > self.grid_height:
             print(f"We died on a wall 0,0,{self.grid_width},{self.grid_height}. {new_x},{new_y} ")
@@ -67,6 +68,7 @@ class SnakeGame(MultiverseGame):
         int_pos = (int(new_x), int(new_y))
         if self.snake[-1] != int_pos:
             #we moved
+            self.moving_active = True
             self.snake.append(int_pos)
             new_cell = self.grid[int_pos[0]][int_pos[1]]
             if new_cell == 1:
@@ -103,8 +105,13 @@ class SnakeGame(MultiverseGame):
             # New food
             self.food_position = random.choice(numpy.argwhere(self.grid==0))
             self.grid[self.food_position[0]][self.food_position[1]] = 2
-        
-        
+    
+    def turn_snake(self, dir):
+        if self.moving_active:
+            self.snake_dir = (self.snake_dir + dir) % 4
+            self.random_note()
+            self.moving_active = False
+
     def loop(self, events: List, dt: float):
         """
         Called for each iteration of the game loop
@@ -115,11 +122,9 @@ class SnakeGame(MultiverseGame):
         """
         for event in events:
             if (event.type == ROTATED_CCW and event.controller == P1) or (event.type == pygame.KEYDOWN and event.key == pygame.K_UP):
-                self.snake_dir = (self.snake_dir - 1) % 4
-                self.random_note()
+                self.turn_snake(-1)
             if event.type == ROTATED_CW and event.controller == P1 or (event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN):
-                self.snake_dir = (self.snake_dir + 1) % 4
-                self.random_note()
+                self.turn_snake(1)
             if self.game_over and event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_A]:
                 self.reset()
                 return
