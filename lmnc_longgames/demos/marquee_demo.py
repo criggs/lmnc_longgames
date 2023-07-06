@@ -75,7 +75,12 @@ class MarqueeDemo(MultiverseGame):
         self.header.x = self.width / 2 - self.header.width / 2
             
         
-        self.txt_lines = [f'Kosmo {i}' for i in range(35)]
+        names_file = self.config.config.get("names_file", None)
+        if names_file is not None:
+            f = open(names_file, 'r')
+            self.txt_lines = [stripped_name for name in f.readlines() if (stripped_name := name.strip()) != '']
+        else:
+            self.txt_lines = [f'Kosmo {i}' for i in range(35)]
         random.shuffle(self.txt_lines)
             
     

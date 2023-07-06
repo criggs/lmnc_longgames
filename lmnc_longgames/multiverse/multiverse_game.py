@@ -204,6 +204,8 @@ class MultiverseGame:
         self.reset_input_history(P2)
         self.exit_game_flag = False
 
+        self.config = LongGameConfig()
+
         logging.info(f"Initializing game {self.game_title}")
         logging.info(f"fps: {fps}")
 
