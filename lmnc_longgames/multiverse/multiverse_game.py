@@ -398,6 +398,7 @@ class MultiverseMain:
         from lmnc_longgames.demos.video_demo import VideoDemo
         from lmnc_longgames.demos.marquee_demo import MarqueeDemo
         from lmnc_longgames.games.invaders import InvadersGame
+        from lmnc_longgames.games.combat import CombatGame
 
         self.game_menu = MenuItem(
             "Long Games",
@@ -420,6 +421,7 @@ class MultiverseMain:
                 MenuItem("Snake", props={"constructor": SnakeGame}),
                 MenuItem("Breakout", props={"constructor": BreakoutGame}),
                 MenuItem("Invaders", props={"constructor": InvadersGame}),
+                MenuItem("Combat", props={"constructor": CombatGame}),
                 MenuItem(
                     "Demos",
                     [
@@ -480,7 +482,7 @@ class MultiverseMain:
         self.exit_flag.set()
         logging.debug("Stopping Multiverse")
         self.multiverse_display.stop()
-        logging.debug("Quitting Pygamse")
+        logging.debug("Quitting Pygame")
         pygame.quit()
 
     """
