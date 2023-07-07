@@ -50,23 +50,10 @@ class Player(GameObject):
             self.y = game.height - self.height
             self.dir = W
             images = TANK_B
-        self.speed = 5
+        self.speed = 10
+        self.moving = False
                 
         self.images = [pygame.transform.scale_by(image, game.upscale_factor) for image in images]
-    
-    def move(self, move_amount):
-        self.x += self.speed * move_amount * self.game.upscale_factor * self.dir.x_dir
-        self.y += self.speed * move_amount * self.game.upscale_factor * self.dir.y_dir
-        
-        if self.x + self.width >= self.game.width - 1:
-            self.x = self.game.width - 1 - self.width
-        if self.x <= 0:
-            self.x = 0
-            
-        if self.y + self.height >= self.game.height - 1:
-            self.y = self.game.height - 1 - self.height
-        if self.y <= 0:
-            self.y = 0
             
     def rotate(self, amount):
         self.dir = Directions[(self.dir.index + amount) % len(Directions)]
@@ -74,7 +61,20 @@ class Player(GameObject):
     
     def update(self, dt):
         super().update(dt)
-        #Not sure there's anything to do here
+        
+        if self.moving:
+            self.x += self.speed * self.game.upscale_factor * self.dir.x_dir * dt
+            self.y += self.speed * self.game.upscale_factor * self.dir.y_dir * dt
+            
+            if self.x + self.width >= self.game.width - 1:
+                self.x = self.game.width - 1 - self.width
+            if self.x <= 0:
+                self.x = 0
+                
+            if self.y + self.height >= self.game.height - 1:
+                self.y = self.game.height - 1 - self.height
+            if self.y <= 0:
+                self.y = 0
 
     def draw(self, screen):
         image = self.images[self.dir.index]
@@ -158,9 +158,13 @@ class CombatGame(MultiverseGame):
 
             #Move
             if event.type == BUTTON_PRESSED and event.controller == P1 and event.input in [BUTTON_B] or (event.type == pygame.KEYDOWN and event.key == pygame.K_UP):
-                self.p1_tank.move(1)
+                self.p1_tank.moving = True
+            if event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_B] or (event.type == pygame.KEYUP and event.key == pygame.K_UP):
+                self.p1_tank.moving = False
             if event.type == BUTTON_PRESSED and event.controller == P2 and event.input in [BUTTON_B] or (event.type == pygame.KEYDOWN and event.key == pygame.K_w):
-                self.p2_tank.move(1)
+                self.p2_tank.moving = True
+            if event.type == BUTTON_RELEASED and event.controller == P2 and event.input in [BUTTON_B] or (event.type == pygame.KEYUP and event.key == pygame.K_w):
+                self.p2_tank.moving = False
             
             # Reset/Quit
             if self.game_over and event.type == BUTTON_RELEASED and event.input in [BUTTON_A]:
@@ -184,6 +188,8 @@ class CombatGame(MultiverseGame):
             self.screen.blit(text, (text_x, text_y))
         else:
 
+            self.p1_tank.update(dt)
+            self.p2_tank.update(dt)
             
             for bullet in self.bullets:
                 bullet.update(dt)
