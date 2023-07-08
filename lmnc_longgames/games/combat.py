@@ -16,6 +16,7 @@ script_path = os.path.realpath(os.path.dirname(__file__))
 # Game constants
 TANK_WIDTH = 5
 TANK_HEIGHT = 5
+WALL_COLOR = (150,150,150)
 
 def load_sprites(name, count):
     return [pygame.image.load(f"{script_path}/assets/{name}_{i}.png").convert_alpha() for i in range(count)]
@@ -107,8 +108,10 @@ class Player(GameObject):
             self.health -= len(hits) * BULLET_DAMAGE
 
     def collision_with_wall(self):
-        #TODO
-        pass
+        for wall in self.game.walls:
+            if self.collides_with(wall):
+                return True
+        return False
     
     def collision_with_other_player(self):
         other_player = self.game.p2_tank if self.player == P1 else self.game.p1_tank
@@ -157,13 +160,30 @@ class CombatGame(MultiverseGame):
     def __init__(self, multiverse_display):
         super().__init__("Combat", 120, multiverse_display)
         self.bullets = set()
+        self.walls = []
         self.reset()
+        
 
     def reset(self):
         self.game_over = False
         self.bullets = set()
         self.p1_tank = Player(self, P1)
         self.p2_tank = Player(self, P2)
+        self.walls = []
+        
+        # Build the walls
+        wall_width = 2 * self.upscale_factor
+        
+        # 4 vertical walls
+        
+        v_wall_gap = self.width // 5
+        for i in range(1,5):
+            wall = pygame.Rect(i * v_wall_gap, self.height // 4, wall_width, self.height // 2)
+            self.walls.append(wall)
+        
+        # 2 horizontal walls
+        
+        
 
     def loop(self, events: List, dt: float):
         """
@@ -238,6 +258,10 @@ class CombatGame(MultiverseGame):
             if self.p2_tank.health <= 0:
                 self.game_over = True
                 self.winner = P1
+                
+                
+            for wall in self.walls:
+                pygame.draw.rect(self.screen, WALL_COLOR, wall)
                 
             # Draw the things
             for bullet in self.bullets:

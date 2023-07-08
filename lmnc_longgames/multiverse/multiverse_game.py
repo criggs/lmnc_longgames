@@ -174,7 +174,11 @@ class GameObject:
         pass
     
     def collides_with(self, other_object):
-        return self._rect.colliderect(other_object._rect)
+        if isinstance(other_object, pygame.rect.Rect):
+            return self._rect.colliderect(other_object)
+        elif isinstance(other_object, GameObject):
+            return self._rect.colliderect(other_object._rect)
+        return False
 
 class MultiverseGame:
     """
