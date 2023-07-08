@@ -136,18 +136,82 @@ class Bullet(GameObject):
         self.x = x
         self.y = y
         self.dir = dir
+        self.x_dir = dir.x_dir
+        self.y_dir = dir.y_dir
         self.player = player
+        self.bounce_count = 0
         
         
     def update(self, dt: float):
         super().update(dt)
         
-        self.x += dt * self.speed * self.game.upscale_factor * self.dir.x_dir
-        self.y += dt * self.speed * self.game.upscale_factor * self.dir.y_dir
+        for wall in self.game.walls:
+            if self.collide_wall(wall):
+                self.bounce_count += 1
         
-        if self.y > self.game.height or self.y < 0 or self.x > self.game.width or self.x < 0:
+        self.x += dt * self.speed * self.game.upscale_factor * self.x_dir
+        self.y += dt * self.speed * self.game.upscale_factor * self.y_dir
+        
+        if self.bounce_count >= 3 or self.y > self.game.height or self.y < 0 or self.x > self.game.width or self.x < 0:
             self.game.bullets.remove(self)
+            
+
         
+    def collide_wall(self, wall: pygame.rect.Rect):
+        if self._rect.colliderect(wall):
+            if wall.collidepoint(self._rect.topright):
+                if wall.collidepoint(self._rect.topleft):
+                    #full top hit
+                    #send down
+                    self.y_dir = 1
+                    self.y = wall.bottom
+                elif wall.collidepoint(self._rect.bottomright):
+                    #full right hit
+                    #send left
+                    self.x_dir = -1
+                    self.x = wall.left - self.width
+                else:
+                    #corner hit, down and left
+                    self.y_dir = 1
+                    self.x_dir = -1
+                    self.y = wall.bottom
+                    self.x = wall.left - self.width
+
+            elif wall.collidepoint(self._rect.topleft):
+                if wall.collidepoint(self._rect.bottomleft):
+                    #full left hit
+                    #send right
+                    self.x_dir = 1
+                    self.x = wall.right
+                else:
+                    #corner hit, down and right
+                    self.y_dir = 1
+                    self.x_dir = 1
+                    self.y = wall.bottom
+                    self.x = wall.right
+            
+            elif wall.collidepoint(self._rect.bottomleft):
+                if wall.collidepoint(self._rect.bottomright):
+                    #full bottom hit
+                    #send up
+                    self.y_dir = -1
+                    self.y = wall.top - self.height
+                else:
+                    #corner hit, up and right
+                    self.y_dir = -1
+                    self.x_dir = 1
+                    self.y = wall.top - self.height
+                    self.x = wall.right
+            
+            elif wall.collidepoint(self._rect.bottomright):
+                #corner hit, up and left
+                self.y_dir = -1
+                self.x_dir = -1
+                self.y = wall.top - self.height
+                self.x = wall.left - self.width
+            self.game.random_note(waveform=32)
+            return True
+        return False
     
     def draw(self, screen):
         pygame.draw.rect(screen, WHITE, self._rect)
