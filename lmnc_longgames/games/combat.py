@@ -35,6 +35,9 @@ NW = Direction(7, -1, -1)
 
 Directions = [N,NE,E,SE,S,SW,W,NW]
 
+BULLET_DAMAGE = 10
+PLAYER_HEALTH = 100
+
 
 class Player(GameObject):
     def __init__(self, game, player):
@@ -42,6 +45,8 @@ class Player(GameObject):
         self.width = TANK_WIDTH * game.upscale_factor
         self.height = TANK_HEIGHT * game.upscale_factor
         self.player = player
+        self.health = PLAYER_HEALTH
+        
         if player == P1:
             self.x =  0
             self.y = 0
@@ -99,6 +104,7 @@ class Player(GameObject):
             self.game.bullets.difference_update(hits)
             
             #Drop player health
+            self.health -= len(hits) * BULLET_DAMAGE
 
     def collision_with_wall(self):
         #TODO
@@ -209,10 +215,10 @@ class CombatGame(MultiverseGame):
         self.screen.fill(BLACK)
 
         if self.game_over:
-            if len(self.invaders) == 0:
-                text = self.font.render("YOU WON", False, (135, 135, 0))
+            if self.winner == 1:
+                text = self.font.render("PLAYER 1 WINS!", False, (135, 135, 0))
             else:
-                text = self.font.render("YOU DIED", False, (135, 0, 0))
+                text = self.font.render("PLAYER 2 WINS!", False, (135, 135, 0))
             text = pygame.transform.scale_by(text, self.upscale_factor)
             text_x = (self.width // 2) - (text.get_width() // 2)
             text_y = (self.height // 2) - (text.get_height() // 2)
@@ -225,6 +231,14 @@ class CombatGame(MultiverseGame):
             for bullet in list(self.bullets):
                 bullet.update(dt)
             
+            if self.p1_tank.health <= 0:
+                self.game_over = True
+                self.winner = P2
+            
+            if self.p2_tank.health <= 0:
+                self.game_over = True
+                self.winner = P1
+                
             # Draw the things
             for bullet in self.bullets:
                 bullet.draw(self.screen)
