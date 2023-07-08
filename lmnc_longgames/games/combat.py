@@ -152,63 +152,61 @@ class Bullet(GameObject):
         self.x += dt * self.speed * self.game.upscale_factor * self.x_dir
         self.y += dt * self.speed * self.game.upscale_factor * self.y_dir
         
-        if self.bounce_count >= 3 or self.y > self.game.height or self.y < 0 or self.x > self.game.width or self.x < 0:
+        if self.bounce_count > 3 or self.y > self.game.height or self.y < 0 or self.x > self.game.width or self.x < 0:
             self.game.bullets.remove(self)
             
 
         
     def collide_wall(self, wall: pygame.rect.Rect):
-        if self._rect.colliderect(wall):
-            if wall.collidepoint(self._rect.topright):
-                if wall.collidepoint(self._rect.topleft):
-                    #full top hit
-                    #send down
-                    self.y_dir = 1
-                    self.y = wall.bottom
-                elif wall.collidepoint(self._rect.bottomright):
-                    #full right hit
-                    #send left
-                    self.x_dir = -1
-                    self.x = wall.left - self.width
-                else:
-                    #corner hit, down and left
-                    self.y_dir = 1
-                    self.x_dir = -1
-                    self.y = wall.bottom
-                    self.x = wall.left - self.width
-
-            elif wall.collidepoint(self._rect.topleft):
-                if wall.collidepoint(self._rect.bottomleft):
-                    #full left hit
-                    #send right
-                    self.x_dir = 1
-                    self.x = wall.right
-                else:
-                    #corner hit, down and right
-                    self.y_dir = 1
-                    self.x_dir = 1
-                    self.y = wall.bottom
-                    self.x = wall.right
+        # wall = wall.copy()
+        # wall.heigh += 1
+        # wall.width += 1
+        collision_rect = self._rect.copy()
+        collision_rect.height += 1
+        collision_rect.width += 1
+        if collision_rect.colliderect(wall):
+            if wall.collidepoint(collision_rect.topleft) and wall.collidepoint(collision_rect.topright):
+                #full top hit
+                #send down
+                self.y_dir = 1
+            elif wall.collidepoint(collision_rect.bottomleft) and wall.collidepoint(collision_rect.bottomright):
+                #full bottom hit
+                #send up
+                self.y_dir = -1
+            elif wall.collidepoint(collision_rect.topright) and wall.collidepoint(collision_rect.bottomright):
+                #full right hit
+                #send left
+                self.x_dir = -1
+            elif wall.collidepoint(collision_rect.topleft) and wall.collidepoint(collision_rect.bottomleft):
+                #full left hit
+                #send right
+                self.x_dir = 1    
             
-            elif wall.collidepoint(self._rect.bottomleft):
-                if wall.collidepoint(self._rect.bottomright):
-                    #full bottom hit
-                    #send up
-                    self.y_dir = -1
-                    self.y = wall.top - self.height
-                else:
-                    #corner hit, up and right
-                    self.y_dir = -1
-                    self.x_dir = 1
-                    self.y = wall.top - self.height
-                    self.x = wall.right
-            
-            elif wall.collidepoint(self._rect.bottomright):
+            # Check for corner hits
+            elif wall.collidepoint(collision_rect.topright):
+                #corner hit, down and left
+                self.y_dir = 1
+                self.x_dir = -1
+                # self.y = wall.bottom
+                # self.x = wall.left - self.width
+            elif wall.collidepoint(collision_rect.topleft):
+                #corner hit, down and right
+                self.y_dir = 1
+                self.x_dir = 1
+                # self.y = wall.bottom
+                # self.x = wall.right
+            elif wall.collidepoint(collision_rect.bottomleft):
+                #corner hit, up and right
+                self.y_dir = -1
+                self.x_dir = 1
+                # self.y = wall.top - self.height
+                # self.x = wall.right
+            elif wall.collidepoint(collision_rect.bottomright):
                 #corner hit, up and left
                 self.y_dir = -1
                 self.x_dir = -1
-                self.y = wall.top - self.height
-                self.x = wall.left - self.width
+                # self.y = wall.top - self.height
+                # self.x = wall.left - self.width
             self.game.random_note(waveform=32)
             return True
         return False
@@ -222,7 +220,7 @@ class CombatGame(MultiverseGame):
     World of 8-bit tanks!
     '''
     def __init__(self, multiverse_display):
-        super().__init__("Combat", 120, multiverse_display)
+        super().__init__("Combat", 60, multiverse_display)
         self.bullets = set()
         self.walls = []
         self.reset()
