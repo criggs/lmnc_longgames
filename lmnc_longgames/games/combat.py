@@ -114,7 +114,6 @@ class Player(GameObject):
         screen.blit(image, (self.x, self.y))
         
     def fire(self):
-        #TODO Fire based on dir
         bullet = Bullet(self.game, self._rect.centerx, self._rect.centery, self.dir, self.player)
         self.game.bullets.add(bullet)
         self.game.random_note()
@@ -122,7 +121,6 @@ class Player(GameObject):
 class Bullet(GameObject):
     def __init__(self, game, x, y, dir: Direction, player):
         super().__init__(game)
-        #TODO: Which player is this bullet from
         self.width = 1 * game.upscale_factor
         self.height = 1 * game.upscale_factor
         self.speed = 20
@@ -226,8 +224,6 @@ class CombatGame(MultiverseGame):
             
             for bullet in list(self.bullets):
                 bullet.update(dt)
-            
-            #TODO Hit detection
             
             # Draw the things
             for bullet in self.bullets:
