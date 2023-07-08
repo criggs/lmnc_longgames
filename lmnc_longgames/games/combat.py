@@ -40,6 +40,7 @@ class Player(GameObject):
         super().__init__(game)
         self.width = TANK_WIDTH * game.upscale_factor
         self.height = TANK_HEIGHT * game.upscale_factor
+        self.player = player
         if player == P1:
             self.x =  0
             self.y = 0
@@ -63,6 +64,9 @@ class Player(GameObject):
         super().update(dt)
         
         if self.moving:
+            
+            orig_xy = (self.x, self.y)
+            
             self.x += self.speed * self.game.upscale_factor * self.dir.x_dir * dt
             self.y += self.speed * self.game.upscale_factor * self.dir.y_dir * dt
             
@@ -75,7 +79,18 @@ class Player(GameObject):
                 self.y = self.game.height - 1 - self.height
             if self.y <= 0:
                 self.y = 0
+             
+            if self.collision_with_wall() or self.collision_with_other_player():
+                self.x, self.y = orig_xy
 
+    def collision_with_wall(self):
+        pass
+    
+    def collision_with_other_player(self):
+        other_player = self.game.p2_tank if self.player == P1 else self.game.p1_tank
+        return self.collides_with(other_player)
+        
+    
     def draw(self, screen):
         image = self.images[self.dir.index]
         screen.blit(image, (self.x, self.y))
