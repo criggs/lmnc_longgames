@@ -729,15 +729,19 @@ def main():
     # Constants/Configuration
     show_window = False
     debug = False
-    opts, args = getopt.getopt(sys.argv[1:], "hwd", [])
+    upscale = False
+    opts, args = getopt.getopt(sys.argv[1:], "hwdu", [])
     for opt, arg in opts:
         if opt == "-h":
-            logging.info("multiverse_game.py [-w] [-d]")
+            logging.info("multiverse_game.py [-w] [-d] [-u]")
             sys.exit()
         elif opt == "-w":
             show_window = True
         elif opt == "-d":
             debug = True
+        elif opt == "-u":
+            upscale = True
+            
 
 
 
@@ -756,7 +760,7 @@ def main():
     root.addHandler(handler)
 
     logging.info("Starting Long Game Program")
-    upscale_factor = 5 if show_window else 1
+    upscale_factor = 5 if show_window and upscale else 1
 
     game_main = MultiverseMain(upscale_factor, headless=not show_window)
 
