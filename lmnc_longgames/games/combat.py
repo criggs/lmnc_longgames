@@ -1,4 +1,5 @@
 from typing import List
+import logging
 import pygame
 import random
 import os
@@ -62,7 +63,7 @@ class Player(GameObject):
     
     def update(self, dt):
         super().update(dt)
-        
+        self.check_bullet_hits()
         if self.moving:
             
             orig_xy = (self.x, self.y)
@@ -82,8 +83,25 @@ class Player(GameObject):
              
             if self.collision_with_wall() or self.collision_with_other_player():
                 self.x, self.y = orig_xy
+            
+
+    def check_bullet_hits(self):
+        
+        other_player = P2 if self.player == P1 else P1
+        
+        hits = set([bullet for bullet in self.game.bullets if bullet.player == other_player and self.collides_with(bullet)])
+        
+        if len(hits) > 0:
+            logging.info(f"Player {self.player} hit!")
+            self.game.death_note()
+            
+            #Remove bullet from list
+            self.game.bullets.difference_update(hits)
+            
+            #Drop player health
 
     def collision_with_wall(self):
+        #TODO
         pass
     
     def collision_with_other_player(self):
@@ -97,12 +115,12 @@ class Player(GameObject):
         
     def fire(self):
         #TODO Fire based on dir
-        bullet = Bullet(self.game, self._rect.centerx, self._rect.centery, self.dir)
-        self.game.bullets.append(bullet)
+        bullet = Bullet(self.game, self._rect.centerx, self._rect.centery, self.dir, self.player)
+        self.game.bullets.add(bullet)
         self.game.random_note()
     
 class Bullet(GameObject):
-    def __init__(self, game, x, y, dir: Direction):
+    def __init__(self, game, x, y, dir: Direction, player):
         super().__init__(game)
         #TODO: Which player is this bullet from
         self.width = 1 * game.upscale_factor
@@ -111,6 +129,7 @@ class Bullet(GameObject):
         self.x = x
         self.y = y
         self.dir = dir
+        self.player = player
         
         
     def update(self, dt: float):
@@ -133,13 +152,12 @@ class CombatGame(MultiverseGame):
     '''
     def __init__(self, multiverse_display):
         super().__init__("Combat", 120, multiverse_display)
-        self.invaders = []
-        self.bullets = []
+        self.bullets = set()
         self.reset()
 
     def reset(self):
         self.game_over = False
-        self.bullets = []
+        self.bullets = set()
         self.p1_tank = Player(self, P1)
         self.p2_tank = Player(self, P2)
 
@@ -206,7 +224,7 @@ class CombatGame(MultiverseGame):
             self.p1_tank.update(dt)
             self.p2_tank.update(dt)
             
-            for bullet in self.bullets:
+            for bullet in list(self.bullets):
                 bullet.update(dt)
             
             #TODO Hit detection
