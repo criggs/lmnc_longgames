@@ -779,7 +779,7 @@ def main():
         )
         pygame.event.post(event)
 
-    game_menu_button = Button(PIN_BUTTON_MENU)
+    game_menu_button = Button(PIN_BUTTON_MENU, bounce_time=BUTTON_BOUNCE_TIME_SEC)
     game_menu_button.when_released = back_to_menu
 
     def reset_game():
@@ -788,7 +788,7 @@ def main():
         )
         pygame.event.post(event)
 
-    game_reset_button = Button(PIN_BUTTON_GAME_RESET)
+    game_reset_button = Button(PIN_BUTTON_GAME_RESET, bounce_time=BUTTON_BOUNCE_TIME_SEC)
     game_reset_button.when_released = reset_game
 
     #ScreenPowerReset(reset_pin=PIN_RESET_RELAY, button_pin=PIN_BUTTON_SCREEN_RESET)
@@ -801,7 +801,7 @@ def main():
         finally:
             logging.info("Stopping program. Should restart if running as a service")
             sys.exit(2)
-    screen_reset_button = Button(PIN_BUTTON_SCREEN_RESET)
+    screen_reset_button = Button(PIN_BUTTON_SCREEN_RESET, bounce_time=BUTTON_BOUNCE_TIME_SEC)
     screen_reset_button.when_released = reset_screen
     
     try:

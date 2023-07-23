@@ -16,7 +16,7 @@ from lmnc_longgames.constants import *
 class ScreenPowerReset:
     def __init__(self, reset_pin: int, button_pin: int):
         self.power_reset = DigitalOutputDevice(reset_pin)
-        self.button = Button(button_pin)
+        self.button = Button(button_pin, bounce_time=BUTTON_BOUNCE_TIME_SEC)
         self.button.when_released = self.reset
 
     def reset(self):

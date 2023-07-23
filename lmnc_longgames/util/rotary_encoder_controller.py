@@ -5,6 +5,7 @@ from lmnc_longgames.constants import *
 
 
 class RotaryEncoderController:
+    
     def __init__(
         self,
         controller_id: int,
@@ -26,17 +27,17 @@ class RotaryEncoderController:
             ROTATED_CCW, ROTARY_PUSH
         )
 
-        self.rotary_push = Button(rotary_push_button_pin)
+        self.rotary_push = Button(rotary_push_button_pin, bounce_time=BUTTON_BOUNCE_TIME_SEC)
         self.rotary_push.when_released = self.build_callback(
             BUTTON_RELEASED, ROTARY_PUSH
         )
         self.rotary_push.when_pressed = self.build_callback(BUTTON_PRESSED, ROTARY_PUSH)
 
-        self.button_a = Button(a_button_pin)
+        self.button_a = Button(a_button_pin, bounce_time=BUTTON_BOUNCE_TIME_SEC)
         self.button_a.when_released = self.build_callback(BUTTON_RELEASED, BUTTON_A)
         self.button_a.when_pressed = self.build_callback(BUTTON_PRESSED, BUTTON_A)
 
-        self.button_b = Button(b_button_pin)
+        self.button_b = Button(b_button_pin, bounce_time=BUTTON_BOUNCE_TIME_SEC)
         self.button_b.when_released = self.build_callback(BUTTON_RELEASED, BUTTON_B)
         self.button_b.when_pressed = self.build_callback(BUTTON_PRESSED, BUTTON_B)
 
