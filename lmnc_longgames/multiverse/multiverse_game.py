@@ -174,7 +174,11 @@ class GameObject:
         pass
     
     def collides_with(self, other_object):
-        return self._rect.colliderect(other_object._rect)
+        if isinstance(other_object, pygame.rect.Rect):
+            return self._rect.colliderect(other_object)
+        elif isinstance(other_object, GameObject):
+            return self._rect.colliderect(other_object._rect)
+        return False
 
 class MultiverseGame:
     """
@@ -398,6 +402,7 @@ class MultiverseMain:
         from lmnc_longgames.demos.video_demo import VideoDemo
         from lmnc_longgames.demos.marquee_demo import MarqueeDemo
         from lmnc_longgames.games.invaders import InvadersGame
+        from lmnc_longgames.games.combat import CombatGame
 
         self.game_menu = MenuItem(
             "Long Games",
@@ -420,6 +425,7 @@ class MultiverseMain:
                 MenuItem("Snake", props={"constructor": SnakeGame}),
                 MenuItem("Breakout", props={"constructor": BreakoutGame}),
                 MenuItem("Invaders", props={"constructor": InvadersGame}),
+                MenuItem("Combat", props={"constructor": CombatGame}),
                 MenuItem(
                     "Demos",
                     [
@@ -480,7 +486,7 @@ class MultiverseMain:
         self.exit_flag.set()
         logging.debug("Stopping Multiverse")
         self.multiverse_display.stop()
-        logging.debug("Quitting Pygamse")
+        logging.debug("Quitting Pygame")
         pygame.quit()
 
     """
@@ -723,15 +729,19 @@ def main():
     # Constants/Configuration
     show_window = False
     debug = False
-    opts, args = getopt.getopt(sys.argv[1:], "hwd", [])
+    upscale = False
+    opts, args = getopt.getopt(sys.argv[1:], "hwdu", [])
     for opt, arg in opts:
         if opt == "-h":
-            logging.info("multiverse_game.py [-w] [-d]")
+            logging.info("multiverse_game.py [-w] [-d] [-u]")
             sys.exit()
         elif opt == "-w":
             show_window = True
         elif opt == "-d":
             debug = True
+        elif opt == "-u":
+            upscale = True
+            
 
 
 
@@ -750,7 +760,7 @@ def main():
     root.addHandler(handler)
 
     logging.info("Starting Long Game Program")
-    upscale_factor = 5 if show_window else 1
+    upscale_factor = 5 if show_window and upscale else 1
 
     game_main = MultiverseMain(upscale_factor, headless=not show_window)
 
