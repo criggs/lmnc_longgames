@@ -276,13 +276,13 @@ class CombatGame(MultiverseGame):
                 self.p2_tank.fire()
 
             #Move
-            if event.type == BUTTON_PRESSED and event.controller == P1 and event.input in [BUTTON_B] or (event.type == pygame.KEYDOWN and event.key == pygame.K_UP):
+            if (event.type == BUTTON_PRESSED and event.controller == P1 and event.input in [BUTTON_B]) or (event.type == pygame.KEYDOWN and event.key == pygame.K_UP):
                 self.p1_tank.moving = True
-            if event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_B] or (event.type == pygame.KEYUP and event.key == pygame.K_UP):
+            if (event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_B]) or (event.type == pygame.KEYUP and event.key == pygame.K_UP):
                 self.p1_tank.moving = False
-            if event.type == BUTTON_PRESSED and event.controller == P2 and event.input in [BUTTON_B] or (event.type == pygame.KEYDOWN and event.key == pygame.K_w):
+            if (event.type == BUTTON_PRESSED and event.controller == P2 and event.input in [BUTTON_B]) or (event.type == pygame.KEYDOWN and event.key == pygame.K_w):
                 self.p2_tank.moving = True
-            if event.type == BUTTON_RELEASED and event.controller == P2 and event.input in [BUTTON_B] or (event.type == pygame.KEYUP and event.key == pygame.K_w):
+            if (event.type == BUTTON_RELEASED and event.controller == P2 and event.input in [BUTTON_B]) or (event.type == pygame.KEYUP and event.key == pygame.K_w):
                 self.p2_tank.moving = False
             
             # Reset/Quit
