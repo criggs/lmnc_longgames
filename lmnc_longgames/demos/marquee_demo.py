@@ -3,6 +3,7 @@ import os
 import random
 import pygame
 import itertools
+import logging
 from lmnc_longgames.constants import *
 from lmnc_longgames.multiverse.multiverse_game import MultiverseGame
 
@@ -24,6 +25,8 @@ PALETTE = [
 ]
 
 
+font = pygame.font.Font(f"{script_path}/../icl8x8u.bdf", 8)
+
 """
 
 """
@@ -31,15 +34,13 @@ class TextBox:
     
     def __init__(self, text, color, x, y, upscale_factor):
         
-        self.font = pygame.font.Font(f"{script_path}/../icl8x8u.bdf", 8)
-        
         self.text = text
         self.color = color
         self.x = x
         self.y = y
         self.upscale_factor = upscale_factor
         
-        self.rendered_text = self.font.render(self.text, False, color)
+        self.rendered_text = font.render(self.text, False, color)
         self.rendered_text = pygame.transform.scale_by(self.rendered_text, self.upscale_factor)
     
     @property
@@ -59,7 +60,7 @@ class MarqueeDemo(MultiverseGame):
     def __init__(self, multiverse_displays, header_text):
         super().__init__("Marquee", 120, multiverse_displays)
         self.is_setup = False
-        self.speed = 20
+        self.speed = 50
         self.row_a = []
         self.row_b = []
         self.row_c = []
@@ -82,6 +83,7 @@ class MarqueeDemo(MultiverseGame):
         else:
             self.txt_lines = [f'Kosmo {i}' for i in range(35)]
         random.shuffle(self.txt_lines)
+        logging.info(f'Starting Name Marquee with {len(self.txt_lines)} names')
             
     
     def update(self, dt):
