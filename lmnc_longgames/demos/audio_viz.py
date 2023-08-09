@@ -68,15 +68,20 @@ class AudioVizDemo(MultiverseGame):
     def __init__(self, multiverse_displays):
         super().__init__("Audio Viz", 120, multiverse_displays, fixed_fps = True)
 
-        self.bar_width = 6
-        self.bar_num = 10
-        self.chunk = 2 ** self.bar_num # number of screens
+        self.bar_width = 3
+        self.chunk_pow = 10
+        self.bar_num = 20
+        self.chunk = 2 ** self.chunk_pow
+
+        self.fft_bins = [int(v) for v in numpy.logspace(0,self.chunk_pow - 1, num = self.bar_num + 3, base=2)[2:]]
 
         # WTF?
         self.update_window_n_frames = 132
         self.updates_per_second = 1000
         self.data_windows_to_buffer = int(self.updates_per_second / 2)
         self.data_buffer = numpy_data_buffer(self.data_windows_to_buffer, self.update_window_n_frames)
+
+
 
         self.s = 0
 
@@ -93,6 +98,11 @@ class AudioVizDemo(MultiverseGame):
             stream_callback=self.non_blocking_stream_read
         )
         self.max_val = 200
+
+        print(self.chunk)
+        print(self.chunk_pow)
+        print(self.bar_num)
+        print(self.fft_bins)
 
         
     def non_blocking_stream_read(self, in_data, frame_count, time_info, status):
@@ -163,8 +173,8 @@ class AudioVizDemo(MultiverseGame):
         #     pygame.draw.line(self.screen, color, start, end, width = self.upscale_factor * self.bar_width)
 
         for i in range(self.bar_num):
-            log_i = 2 ** i
-            v = fft[log_i - 1]
+            #v = fft[self.fft_bins[i]]
+            v = numpy.mean(fft[self.fft_bins[i]:self.fft_bins[i+1]])
             scaled_value = int(v * scale_value)
             r = pygame.rect.Rect(i * self.bar_width * self.upscale_factor, 
                 (self.height - scaled_value) * self.upscale_factor,
