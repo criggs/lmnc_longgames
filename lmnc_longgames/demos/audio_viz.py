@@ -68,8 +68,9 @@ class AudioVizDemo(MultiverseGame):
     def __init__(self, multiverse_displays):
         super().__init__("Audio Viz", 120, multiverse_displays, fixed_fps = True)
 
-        self.bar_width = 2
-        self.chunk = ((multiverse_displays.width * 2) // self.bar_width)
+        self.bar_width = 6
+        self.bar_num = 10
+        self.chunk = 2 ** self.bar_num # number of screens
 
         # WTF?
         self.update_window_n_frames = 132
@@ -91,7 +92,7 @@ class AudioVizDemo(MultiverseGame):
             frames_per_buffer=self.chunk,
             stream_callback=self.non_blocking_stream_read
         )
-        self.max_val = 6000
+        self.max_val = 200
 
         
     def non_blocking_stream_read(self, in_data, frame_count, time_info, status):
@@ -143,18 +144,33 @@ class AudioVizDemo(MultiverseGame):
         if self.buffer is None:
             return
         # fft = self.getFFT(numpy.frombuffer(self.buffer, dtype=numpy.int16), False)
-        fft = numpy.abs(numpy.fft.rfft(numpy.frombuffer(self.buffer, dtype=numpy.int16))[1:])
+        
+        #fft = numpy.abs(numpy.fft.rfft(numpy.frombuffer(self.buffer, dtype=numpy.int16))[1:])
+        
+        data = numpy.fft.rfft(numpy.frombuffer(self.buffer, dtype=numpy.int16))[1:]
+        fft = numpy.sqrt(numpy.real(data)**2+numpy.imag(data)**2) / self.chunk 
+
         # Use a pretty green for our histogram
         color = (0, 128, 128)
         #self.max_val = max(self.max_val, max(fft))
 
         scale_value = self.height / self.max_val
         # for index and value in the frequencies
-        for i,v in enumerate(fft):
+        # for i,v in enumerate(fft):
+        #     scaled_value = int(v * scale_value)
+        #     start = (i * self.upscale_factor * self.bar_width, self.height * self.upscale_factor)
+        #     end = (i * self.upscale_factor * self.bar_width, (self.height - scaled_value) * self.upscale_factor)
+        #     pygame.draw.line(self.screen, color, start, end, width = self.upscale_factor * self.bar_width)
+
+        for i in range(self.bar_num):
+            log_i = 2 ** i
+            v = fft[log_i - 1]
             scaled_value = int(v * scale_value)
-            start = (i * self.upscale_factor * self.bar_width, self.height * self.upscale_factor)
-            end = (i * self.upscale_factor * self.bar_width, (self.height - scaled_value) * self.upscale_factor)
-            pygame.draw.line(self.screen, color, start, end, width = self.upscale_factor * self.bar_width)
+            r = pygame.rect.Rect(i * self.bar_width * self.upscale_factor, 
+                (self.height - scaled_value) * self.upscale_factor,
+                self.bar_width * self.upscale_factor,
+                scaled_value * self.upscale_factor)
+            pygame.draw.rect(self.screen, color, r)
 
 
         rendered_text = font.render("Testing", False, (135, 0, 135))
