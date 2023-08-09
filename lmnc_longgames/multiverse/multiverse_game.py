@@ -122,6 +122,10 @@ class PygameMultiverseDisplay:
     def reset(self):
         self.multiverse.reset()
 
+    @property
+    def display_num(self):
+        return len(self.multiverse.displays)
+
 class GameObject:
     def __init__(self, game):
         self.game = game

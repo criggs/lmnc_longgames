@@ -69,8 +69,9 @@ class AudioVizDemo(MultiverseGame):
         super().__init__("Audio Viz", 120, multiverse_displays, fixed_fps = True)
 
         self.bar_width = 3
+        self.bars_per_screen = 3 # bps * width + bps needs to equal 12
         self.chunk_pow = 10
-        self.bar_num = 20
+        self.bar_num = multiverse_displays.display_num * self.bars_per_screen # 2 bands per screen
         self.chunk = 2 ** self.chunk_pow
 
         self.fft_bins = [int(v) for v in numpy.logspace(0,self.chunk_pow - 1, num = self.bar_num + 3, base=2)[2:]]
@@ -171,15 +172,27 @@ class AudioVizDemo(MultiverseGame):
         #     start = (i * self.upscale_factor * self.bar_width, self.height * self.upscale_factor)
         #     end = (i * self.upscale_factor * self.bar_width, (self.height - scaled_value) * self.upscale_factor)
         #     pygame.draw.line(self.screen, color, start, end, width = self.upscale_factor * self.bar_width)
-
+        
+        band_offset = 0
         for i in range(self.bar_num):
             #v = fft[self.fft_bins[i]]
-            v = numpy.mean(fft[self.fft_bins[i]:self.fft_bins[i+1]])
+
+            l = self.fft_bins[i]
+            r = self.fft_bins[i+1]
+            if r >= l:
+                # TODO Change this to an average between the previous and next bins, unless it's the first
+                r = l + 1
+            v = numpy.mean(fft[l:r])
             scaled_value = int(v * scale_value)
-            r = pygame.rect.Rect(i * self.bar_width * self.upscale_factor, 
-                (self.height - scaled_value) * self.upscale_factor,
-                self.bar_width * self.upscale_factor,
-                scaled_value * self.upscale_factor)
+
+            left = band_offset * self.upscale_factor
+            band_offset += self.bar_width
+            if i % self.bars_per_screen != self.bars_per_screen - 1:
+                band_offset += 1 # add a pixel of separation
+            top = (self.height - scaled_value) * self.upscale_factor
+            width = self.bar_width * self.upscale_factor
+            height = scaled_value * self.upscale_factor
+            r = pygame.rect.Rect(left, top, width, height)
             pygame.draw.rect(self.screen, color, r)
 
 
