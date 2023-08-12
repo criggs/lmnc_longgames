@@ -191,7 +191,7 @@ class InvadersGame(MultiverseGame):
         self.invader_bullets = []
         self.invader_shift = False
         self.invader_move_dir = 1
-        self.invader_speed = 20
+        self.invader_speed = 12
         self.animation_index = 0
         self.next_animation_tick = 0
         gap = INVADER_GAP * self.upscale_factor
@@ -271,7 +271,7 @@ class InvadersGame(MultiverseGame):
                 self.invader_move_dir = -self.invader_move_dir
                 for invader in self.invaders:
                     invader.move_down()
-                self.invader_speed += 5
+                self.invader_speed += 3
             
             for bullet in self.player_bullets:
                 bullet.update(dt)
