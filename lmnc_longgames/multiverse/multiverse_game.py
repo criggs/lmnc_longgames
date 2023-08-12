@@ -404,6 +404,7 @@ class MultiverseMain:
         from lmnc_longgames.games.breakout import BreakoutGame
 
         from lmnc_longgames.sound.spectrum import SpectrumAnalyzer
+        from lmnc_longgames.sound.waveform import Waveform
         from lmnc_longgames.demos.fire_demo import FireDemo
         from lmnc_longgames.demos.matrix_demo import MatrixDemo
         from lmnc_longgames.demos.life_demo import LifeDemo
@@ -435,6 +436,7 @@ class MultiverseMain:
                 MenuItem("Invaders", props={"constructor": InvadersGame}),
                 MenuItem("Combat", props={"constructor": CombatGame}),
                 MenuItem("Spectrum Analyzer", props={"constructor": SpectrumAnalyzer}),
+                MenuItem("Waveform", props={"constructor": Waveform}),
                 MenuItem(
                     "Demos",
                     [
