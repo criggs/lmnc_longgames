@@ -38,7 +38,15 @@ class SpectrumAnalyzer(MultiverseGame):
 
         self.buffer = None
 
-        self.p = pyaudio.PyAudio()
+        p = pyaudio.PyAudio()
+        self.p = p
+        logging.info(f"Device Count: {p.get_device_count()}")
+        logging.info(f"Default Device Info: {p.get_default_output_device_info()}")
+
+        for i in range(p.get_device_count()):
+            logging.info(f"Device {i}: {p.get_device_info_by_index(i)}")
+
+
         self.stream = self.p.open(
             format = pyaudio.paInt16,
             channels = 1,
