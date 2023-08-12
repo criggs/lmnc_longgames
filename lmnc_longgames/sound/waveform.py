@@ -16,6 +16,10 @@ font = pygame.font.Font(f"{script_path}/../icl8x8u.bdf", 8)
 
 RATE = 44100 # in Hz
 
+GAIN_STEP = 0.5
+GAIN_MAX = 10
+GAIN_MIN = 0.5
+
 class Waveform(MultiverseGame):
 
     def __init__(self, multiverse_display):
@@ -24,6 +28,8 @@ class Waveform(MultiverseGame):
         #Sample Config
         self.chunk_pow = 10
         self.chunk = 2 ** self.chunk_pow
+
+        self.gain = 2.0
 
         self.setup_audio()
 
@@ -100,6 +106,13 @@ class Waveform(MultiverseGame):
             if event.type == BUTTON_RELEASED and event.input in [BUTTON_B, ROTARY_PUSH]:
                 self.exit_game()
 
+            if event.type == ROTATED_CW or (event.type == pygame.KEYUP and event.key == pygame.K_RIGHT):
+                self.gain = min(self.gain + GAIN_STEP, GAIN_MAX)
+
+            if event.type == ROTATED_CCW or (event.type == pygame.KEYUP and event.key == pygame.K_LEFT):
+                self.gain = max(self.gain - GAIN_STEP, GAIN_MIN)
+
+
         start = time.time()
         self.screen.fill(BLACK)
 
@@ -107,6 +120,14 @@ class Waveform(MultiverseGame):
             return
 
         values = numpy.frombuffer(self.buffer, dtype=numpy.int16)
+
+        values = values * self.gain
+
+        # Don't think this actually does anything. Need to calculate the largest scaler and clamp that based on initial values
+        # # Clamp if clipping
+        # max_val = numpy.max(numpy.abs(values))
+        # if(max_val > 32767):
+        #     values = values * (32767/max_val)
 
         # Here we should how to draw it onto a screen.
         wf = pygame.Surface((self.width, self.height)).convert_alpha()
