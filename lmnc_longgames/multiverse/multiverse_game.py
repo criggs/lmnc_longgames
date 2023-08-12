@@ -256,6 +256,9 @@ class MultiverseGame:
     def exit_game(self):
         self.exit_game_flag = True
 
+    def teardown(self):
+        pass
+
     def loop(self, events, dt):
         """1    
         Override this method for the game loop
@@ -513,6 +516,7 @@ class MultiverseMain:
             previous_frame_start_time = frame_start_time
 
             if self.game is not None and self.game.exit_game_flag:
+                self.game.teardown()
                 self.game = None
                 game_start_time = None
                 self.menu_inactive_start_time = time.time()
@@ -536,6 +540,7 @@ class MultiverseMain:
                     self.exit_flag.set()
                     continue
                 if self.running_demo and event.type in [pygame.KEYUP, BUTTON_RELEASED, ROTATED_CW, ROTATED_CCW]:
+                    self.game.teardown()
                     self.game = None
                     self.menu_inactive_start_time = time.time()
                     self.running_demo = False
@@ -550,6 +555,7 @@ class MultiverseMain:
                 if (event.type == pygame.KEYUP and event.key == pygame.K_m) or (
                     event.type == BUTTON_RELEASED and event.input == BUTTON_MENU
                 ):
+                    self.game.teardown()
                     self.game = None
                     self.menu_inactive_start_time = time.time()
                     continue
