@@ -403,7 +403,7 @@ class MultiverseMain:
         from lmnc_longgames.games.snake import SnakeGame
         from lmnc_longgames.games.breakout import BreakoutGame
 
-        from lmnc_longgames.demos.audio_viz import AudioVizDemo
+        from lmnc_longgames.sound.spectrum import SpectrumAnalyzer
         from lmnc_longgames.demos.fire_demo import FireDemo
         from lmnc_longgames.demos.matrix_demo import MatrixDemo
         from lmnc_longgames.demos.life_demo import LifeDemo
@@ -434,10 +434,10 @@ class MultiverseMain:
                 MenuItem("Breakout", props={"constructor": BreakoutGame}),
                 MenuItem("Invaders", props={"constructor": InvadersGame}),
                 MenuItem("Combat", props={"constructor": CombatGame}),
+                MenuItem("Spectrum Analyzer", props={"constructor": SpectrumAnalyzer}),
                 MenuItem(
                     "Demos",
                     [
-                        MenuItem("Audio Viz", props={"constructor": AudioVizDemo}),
                         MenuItem("Fire", props={"constructor": FireDemo}),
                         MenuItem("Matrix", props={"constructor": MatrixDemo}),
                         MenuItem("Life", props={"constructor": LifeDemo}),
