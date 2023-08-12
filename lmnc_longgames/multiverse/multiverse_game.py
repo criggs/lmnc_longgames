@@ -122,6 +122,10 @@ class PygameMultiverseDisplay:
     def reset(self):
         self.multiverse.reset()
 
+    @property
+    def display_num(self):
+        return len(self.multiverse.displays)
+
 class GameObject:
     def __init__(self, game):
         self.game = game
@@ -251,6 +255,9 @@ class MultiverseGame:
 
     def exit_game(self):
         self.exit_game_flag = True
+
+    def teardown(self):
+        pass
 
     def loop(self, events, dt):
         """1    
@@ -396,6 +403,7 @@ class MultiverseMain:
         from lmnc_longgames.games.snake import SnakeGame
         from lmnc_longgames.games.breakout import BreakoutGame
 
+        from lmnc_longgames.sound.spectrum import SpectrumAnalyzer
         from lmnc_longgames.demos.fire_demo import FireDemo
         from lmnc_longgames.demos.matrix_demo import MatrixDemo
         from lmnc_longgames.demos.life_demo import LifeDemo
@@ -426,6 +434,7 @@ class MultiverseMain:
                 MenuItem("Breakout", props={"constructor": BreakoutGame}),
                 MenuItem("Invaders", props={"constructor": InvadersGame}),
                 MenuItem("Combat", props={"constructor": CombatGame}),
+                MenuItem("Spectrum Analyzer", props={"constructor": SpectrumAnalyzer}),
                 MenuItem(
                     "Demos",
                     [
@@ -507,6 +516,7 @@ class MultiverseMain:
             previous_frame_start_time = frame_start_time
 
             if self.game is not None and self.game.exit_game_flag:
+                self.game.teardown()
                 self.game = None
                 game_start_time = None
                 self.menu_inactive_start_time = time.time()
@@ -530,6 +540,7 @@ class MultiverseMain:
                     self.exit_flag.set()
                     continue
                 if self.running_demo and event.type in [pygame.KEYUP, BUTTON_RELEASED, ROTATED_CW, ROTATED_CCW]:
+                    self.game.teardown()
                     self.game = None
                     self.menu_inactive_start_time = time.time()
                     self.running_demo = False
@@ -544,6 +555,7 @@ class MultiverseMain:
                 if (event.type == pygame.KEYUP and event.key == pygame.K_m) or (
                     event.type == BUTTON_RELEASED and event.input == BUTTON_MENU
                 ):
+                    self.game.teardown()
                     self.game = None
                     self.menu_inactive_start_time = time.time()
                     continue
