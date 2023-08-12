@@ -500,6 +500,15 @@ class MultiverseMain:
         logging.debug("Quitting Pygame")
         pygame.quit()
 
+    def teardown_game(self):
+        if self.game is not None:
+            self.game.teardown()
+            self.game = None
+
+    def reset_game(self):
+        if self.game is not None:
+            self.game.reset()
+
     """
     Runs the game loop.
     
@@ -518,8 +527,7 @@ class MultiverseMain:
             previous_frame_start_time = frame_start_time
 
             if self.game is not None and self.game.exit_game_flag:
-                self.game.teardown()
-                self.game = None
+                self.teardown_game()
                 game_start_time = None
                 self.menu_inactive_start_time = time.time()
                 self.running_demo = False
@@ -542,8 +550,7 @@ class MultiverseMain:
                     self.exit_flag.set()
                     continue
                 if self.running_demo and event.type in [pygame.KEYUP, BUTTON_RELEASED, ROTATED_CW, ROTATED_CCW]:
-                    self.game.teardown()
-                    self.game = None
+                    self.teardown_game()
                     self.menu_inactive_start_time = time.time()
                     self.running_demo = False
                     continue
@@ -552,13 +559,12 @@ class MultiverseMain:
                     and event.key == pygame.K_r
                     or (event.type == BUTTON_RELEASED and event.input == BUTTON_RESET)
                 ):
-                    self.game.reset()
+                    self.reset_game()
                     continue
                 if (event.type == pygame.KEYUP and event.key == pygame.K_m) or (
                     event.type == BUTTON_RELEASED and event.input == BUTTON_MENU
                 ):
-                    self.game.teardown()
-                    self.game = None
+                    self.teardown_game()
                     self.menu_inactive_start_time = time.time()
                     continue
             elapsed = time.time() - start
