@@ -5,19 +5,17 @@
 
 ## Goal
 
-20ish unicorn boards plugged into 3 usb hubs pluged into a raspberry pi
+20ish unicorn boards plugged into 3 usb hubs plugged into a raspberry pi
 
 all to run pong :D
 
+YouTube: TBD
+
 ## Installation
 
-Make sure you have python 3 installed
+Dependencies can be installed by running:
 
-Make sure the following python libraries are installed:
-* pygame
-* piserial
-* RPi.GPIO
-
+`scripts/install.sh`
 
 ## Configure your Screens
 
@@ -27,23 +25,30 @@ Make sure the following python libraries are installed:
 
 `scripts/game.sh`
 
-### longpong.py Arguments
-```
--h                 Help
--c <CONFIG>        Configruation File
--w                 Show Pygame Window  
-```
+or
+
+`scripts/game_headless.sh`
 
 ## Development
 
-Install Poetry for dependency management: https://python-poetry.org/docs/#installation
+TODO
 
-Add a new dependency with `poetry add <dependency>`
+## Credits
 
-Build a release with `poetry build`. Releases will be in the `dist` directory.
+Special Thanks goes to:
+* Chris Riggs (VKTx/criggs)
+* Dax
+* Gadgetoid
+* FineQuasar17
+* TheEPROM9 LaTeX
+* LMNC
+* This Museum Is (Not) Obsolete
+* Pimoroni
+* LMNC Patreon Supporters
+
 
 ## Relevant Links
 
 * https://github.com/Gadgetoid/gu-multiverse
-* https://github.com/Daft-Freak/32blit-beta/blob/multiverse/32blit-sdl/UnicornMultiverse.cpp
-* https://www.pygame.org/docs/ref/bufferproxy.html
+* https://shop.pimoroni.com/products/space-unicorns?variant=40842033561683
+
