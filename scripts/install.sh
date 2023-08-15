@@ -10,7 +10,7 @@ echo "Reloading udev rules"
 sudo udevadm control --reload-rules
 sudo udevadm trigger
 
-sudo apt install -y ffmpeg libsdl2-image-2.0-0 libsdl2-ttf-2.0-0 libportaudio0 libportaudio2 libportaudiocpp0 portaudio19-dev python3-pyaudio
+sudo apt install -y ffmpeg libsdl2-image-2.0-0 libsdl2-ttf-2.0-0 libportaudio2 libportaudiocpp0 portaudio19-dev python3-pyaudio
 
 echo "Installing python dependencies"
 pip3 install -r $DIR/../requirements.txt
