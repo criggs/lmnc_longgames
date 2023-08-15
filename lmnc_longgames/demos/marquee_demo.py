@@ -24,6 +24,13 @@ PALETTE = [
     (0,245,212)
 ]
 
+EXTRA_SPECIAL_THANKS = [
+    "Dax",
+    "Gadgetoid",
+    "FineQuasar17",
+    "TheEPROM9 LaTeX",
+    "Chris Riggs"
+]
 
 font = pygame.font.Font(f"{script_path}/../icl8x8u.bdf", 8)
 
@@ -83,6 +90,8 @@ class MarqueeDemo(MultiverseGame):
         else:
             self.txt_lines = [f'Kosmo {i}' for i in range(35)]
         random.shuffle(self.txt_lines)
+        random.shuffle(EXTRA_SPECIAL_THANKS)
+        self.txt_lines = EXTRA_SPECIAL_THANKS + self.txt_lines
         logging.info(f'Starting Name Marquee with {len(self.txt_lines)} names')
             
     
