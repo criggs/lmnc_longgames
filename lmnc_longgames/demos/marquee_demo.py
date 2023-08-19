@@ -32,6 +32,10 @@ EXTRA_SPECIAL_THANKS = [
     "Chris Riggs"
 ]
 
+SEPCIAL_THANKS_ADDITIONS = [
+    "24 sausage and egg baguettees"
+]
+
 font = pygame.font.Font(f"{script_path}/../icl8x8u.bdf", 8)
 
 """
@@ -89,6 +93,7 @@ class MarqueeDemo(MultiverseGame):
             self.txt_lines = [stripped_name for name in f.readlines() if (stripped_name := name.strip()) != '']
         else:
             self.txt_lines = [f'Kosmo {i}' for i in range(35)]
+        self.txt_lines += SEPCIAL_THANKS_ADDITIONS
         random.shuffle(self.txt_lines)
         random.shuffle(EXTRA_SPECIAL_THANKS)
         self.txt_lines = EXTRA_SPECIAL_THANKS + self.txt_lines
