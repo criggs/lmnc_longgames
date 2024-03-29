@@ -11,6 +11,10 @@ all to run pong :D
 
 YouTube: https://www.youtube.com/watch?v=cm83RIhDbwo
 
+## How does it work?
+
+The 220 by 53 pixel display is made up of 20 Pimoroni Galactic Unicorns. Each one is controlled with a built-in Raspberry Pi Pico microcontroller running a custom firmware that displays whatever pixels it's sent over USB. The Unicorn displays are all connected to a Raspberry Pi 4 through a few USB hubs. The Raspberry Pi runs all of the game software, written in Python. It reads the player's controller input over GPIO and renders each full 220 by 53 pixel frame on the Pi as a 2d matrix of RGB values. As each full frame is rendered, it is split into 20 sub matrices, one for each Unicorn display. This data is sent to each Unicorn over the USB serial connection, where the custom Pico firmware takes the RGB pixel data and updates each of its LEDs. This happens anywhere from 60 times a second to 120 times a second. Because we're able to display any frame we want, we're not just limited to games. We can also send it video frames, or even frames from a webcam.
+
 ## Installation
 
 Dependencies can be installed by running:
