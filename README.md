@@ -9,7 +9,7 @@
 
 all to run pong :D
 
-YouTube: TBD
+YouTube: https://www.youtube.com/watch?v=cm83RIhDbwo
 
 ## Installation
 
@@ -45,6 +45,7 @@ Special Thanks goes to:
 * This Museum Is (Not) Obsolete
 * Pimoroni
 * LMNC Patreon Supporters
+* 24 sausage and egg baguettees
 
 
 ## Relevant Links
