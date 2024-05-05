@@ -1,11 +1,8 @@
 import os, signal, time, sys, threading, getopt
 import logging
+import platform
 
-try:
-    import RPi.GPIO as gpio
-
-    logging.info("Running on a Raspberry PI")
-except (ImportError, RuntimeError):
+if platform.machine() != 'aarch64':
     logging.info("Not running on a Raspberry PI. Setting mock GPIO Zero Pin Factory.")
     os.environ["GPIOZERO_PIN_FACTORY"] = "mock"
 
