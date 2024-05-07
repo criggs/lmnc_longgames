@@ -337,21 +337,10 @@ class LongPongGame(MultiverseGame):
                 if event.type == ROTATED_CW and event.controller == P2:
                     self.player_two.move_paddle(PLAYER_PADDLE_MOVE_STEPS)
 
-
-
-        # Fill the screen
-        self.screen.fill(BLACK)
-
         if self.game_over:
-            if self.winner == 1:
-                text = self.font.render("PLAYER 1 WINS!", False, (135, 135, 0))
-            else:
-                text = self.font.render("PLAYER 2 WINS!", False, (135, 135, 0))
-            text = pygame.transform.scale_by(text, self.upscale_factor)
-            text_x = (self.width // 2) - (text.get_width() // 2)
-            text_y = (self.height // 2) - (text.get_height() // 2)
-            self.screen.blit(text, (text_x, text_y))
+            self.game_over_loop(events)
         else:
+            self.screen.fill(BLACK)
             # Update game elements
             self.player_one.update_paddle(dt)
             self.player_two.update_paddle(dt)

@@ -266,6 +266,36 @@ class MultiverseGame:
             if event.type in [ROTATED_CW, ROTATED_CCW, BUTTON_RELEASED]:
                 self.update_history(event.controller, (event.type, event.input))
 
+    def game_over_loop(self, events):
+        self.screen.fill(BLACK)
+
+        if self.game_over_start_time is None:
+            self.game_over_start_time = time.time()
+
+        # only accept an event after 3 seconds have passed and the game is over
+        if time.time() - self.game_over_start_time > 3:
+            # Check for user input to exit or reset
+            for event in events:
+                if self.game_over and event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_A]:
+                    self.reset()
+                    return
+                if self.game_over and event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_B, ROTARY_PUSH]:
+                    self.exit_game()
+                    return
+
+        if self.winner == 0:
+            text = self.font.render("YOU WON", False, (135, 135, 0))
+        if self.winner == P1:
+            text = self.font.render("PLAYER 1 WINS!", False, (135, 135, 0))
+        elif self.winner == P2:
+            text = self.font.render("PLAYER 2 WINS!", False, (135, 135, 0))
+        else:
+            text = self.font.render("YOU DIED", False, (135, 0, 0))
+        text = pygame.transform.scale_by(text, self.upscale_factor)
+        text_x = (self.width // 2) - (text.get_width() // 2)
+        text_y = (self.height // 2) - (text.get_height() // 2)
+        self.screen.blit(text, (text_x, text_y))
+
     def reset(self):
         """
         Override this method for game reset
@@ -273,6 +303,8 @@ class MultiverseGame:
         self.reset_input_history(P1)
         self.reset_input_history(P2)
         self.game_over = False
+        self.winner = None
+        self.game_over_start_time = None
 
     def reset_input_history(self, controller):
         if controller == P1:
@@ -293,7 +325,7 @@ class MultiverseGame:
         self.play_note(0, 880, release=1000, waveform=32)
         self.play_note(1, 440, release=1000, waveform=32)
         self.play_note(2, 220, release=1000, waveform=32)
-        self.play_note(4, 110, release=1000, waveform=32)
+        self.play_note(3, 110, release=1000, waveform=32)
 
     def display_countdown(self):
         logging.info("Starting countdown...")

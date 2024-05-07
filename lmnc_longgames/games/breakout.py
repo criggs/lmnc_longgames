@@ -23,9 +23,10 @@ PADDLE_WIDTH = 15
 PADDLE_HEIGHT = 2
 TILE_ROWS = 5
 TILE_COLUMNS = 4
-TILE_WIDTH = 10
-TILE_HEIGHT = 4
-TILE_GAP = 1
+TILE_WIDTH = 11
+TILE_HEIGHT = 3
+TILE_GAP = 0
+TOP_ROWS = 2
 
 
 class Ball:
@@ -183,7 +184,7 @@ class BreakoutGame(MultiverseGame):
         self.reset()
 
     def reset(self):
-        self.game_over = False
+        super().reset()
         self.tiles = []
         t_gap = TILE_GAP * self.upscale_factor
         t_width = TILE_WIDTH * self.upscale_factor
@@ -192,7 +193,7 @@ class BreakoutGame(MultiverseGame):
         for row in range(TILE_ROWS):
             for column in range(columns):
                 x = column * ((t_width) + t_gap) + t_gap
-                y = row * (t_height + t_gap) + t_gap
+                y = (row + TOP_ROWS) * (t_height + t_gap) + t_gap
                 tile = Tile(x, y, self)
                 self.tiles.append(tile)
         self.ball = Ball(self)
@@ -212,14 +213,7 @@ class BreakoutGame(MultiverseGame):
                 self.paddle.move(1)
             if event.type == ROTATED_CCW and event.controller == P1:
                 self.paddle.move(-1)
-            if self.game_over and event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_A]:
-                self.reset()
-                return
-            if self.game_over and event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_B, ROTARY_PUSH]:
-                self.exit_game()
-                return
                 
-
         keys = pygame.key.get_pressed()
         if keys[K_RIGHT]:
             self.paddle.move(1 / 5)
@@ -229,13 +223,7 @@ class BreakoutGame(MultiverseGame):
         self.screen.fill(BLACK)
 
         if self.game_over:
-            text = self.font.render("YOU DIED", False, (135, 0, 0))
-            if all(not tile.is_visible for tile in self.tiles):
-                text = self.font.render("YOU WON", False, (135, 135, 0))
-            text = pygame.transform.scale_by(text, self.upscale_factor)
-            text_x = (self.width // 2) - (text.get_width() // 2)
-            text_y = (self.height // 2) - (text.get_height() // 2)
-            self.screen.blit(text, (text_x, text_y))
+            super().game_over_loop(events)
         else:
             #Update the ball and paddle
             self.ball.update(dt)
@@ -260,6 +248,7 @@ class BreakoutGame(MultiverseGame):
             if all(not tile.is_visible for tile in self.tiles):
                 self.win_note()
                 self.game_over = True
+                self.winner = 0
                 return
 
             # Draw the ball, paddle, and tiles
