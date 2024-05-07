@@ -298,13 +298,6 @@ class LongPongGame(MultiverseGame):
         """
         super().loop(events, dt)
 
-
-        if self.game_over and self.player_one.is_ai and self.player_two.is_ai:
-            # Automatically reset the game if both players are AI
-            if time.time() - self.game_over_start_time > 5:
-                self.reset()
-                return
-
         if self.has_history(P1, CODE_1):
             self.reset_input_history(P1)
             self.player_one._rect.height = 10 * self.upscale_factor * 2
@@ -347,6 +340,13 @@ class LongPongGame(MultiverseGame):
 
         if self.game_over:
             self.game_over_loop(events)
+
+            if self.player_one.is_ai and self.player_two.is_ai:
+                # Automatically reset the game if both players are AI
+                if time.time() - self.game_over_start_time > 5:
+                    self.reset()
+                    return
+
         else:
             self.screen.fill(BLACK)
             # Update game elements
