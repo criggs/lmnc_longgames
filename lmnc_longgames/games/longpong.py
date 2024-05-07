@@ -14,6 +14,8 @@ PLAYER_PADDLE_MOVE_STEPS = 3
 PLAYER_PADDLE_SPEED = PLAYER_PADDLE_MOVE_STEPS * 30
 AI_PADDLE_SPEED = 2 * 30
 
+POINTS_TO_WIN = 10
+
 CODE_1 = [
     (ROTATED_CCW, ROTARY_PUSH),
     (ROTATED_CW, ROTARY_PUSH),
@@ -30,11 +32,12 @@ longpong
 
 
 class Player:
-    def __init__(self, rect: pygame.Rect, game) -> None:
+    def __init__(self, rect: pygame.Rect, game, player_id) -> None:
         # Paddle
         self._rect = rect
         self.direction: int = 0  # Direction the player's paddle is moving
         self.speed: int = 0
+        self.player_id = player_id
 
         # Game
         self.is_ai: bool = True
@@ -132,14 +135,18 @@ class Ball:
         self.angle = random.uniform(0.2, math.pi / 4)
         self.direction_y = random.choice((-1, 1))
         self.speed = ((self.max_speed - self.min_speed) / 2) + self.min_speed
+        self.speed_multiplier = 1.0
+
+    def speedup(self):
+        self.speed_multiplier = self.speed_multiplier + 0.05
 
     @property
     def speed_x(self):
-        return self.speed * math.cos(self.angle) * self.direction_x
+        return self.speed * math.cos(self.angle) * self.direction_x * self.speed_multiplier
 
     @property
     def speed_y(self):
-        return self.speed * math.sin(self.angle) * self.direction_y
+        return self.speed * math.sin(self.angle) * self.direction_y * self.speed_multiplier
 
 
 class LongPongGame(MultiverseGame):
@@ -156,6 +163,7 @@ class LongPongGame(MultiverseGame):
                 0, self.height // 2 - paddle_height // 2, paddle_width, paddle_height
             ),
             self,
+            P1
         )
         self.player_one.is_ai = game_mode == MODE_AI_VS_AI
 
@@ -169,6 +177,7 @@ class LongPongGame(MultiverseGame):
                 paddle_height,
             ),
             self,
+            P2
         )
         self.player_two.is_ai = game_mode != MODE_TWO_PLAYER
         print(f"Player Two is AI? {self.player_two.is_ai}")
@@ -207,6 +216,11 @@ class LongPongGame(MultiverseGame):
         print(f"Score: {self.player_one.score}/{self.player_two.score}")
         self.ball.reset()
         self.play_note(0, 55, release=1000, waveform=32)
+
+        if player.score == POINTS_TO_WIN:
+            self.win_note()
+            self.game_over = True
+            self.winner = player.player_id
 
     # Function to update the ball's position
     def update_ball(self, dt: float):
@@ -268,6 +282,8 @@ class LongPongGame(MultiverseGame):
         # Reverse the direction of travel
         self.ball.direction_x = colliding_paddle.position * -1
 
+        self.ball.speedup()
+
         # Beep!
         self.random_note()
 
@@ -321,29 +337,40 @@ class LongPongGame(MultiverseGame):
                 if event.type == ROTATED_CW and event.controller == P2:
                     self.player_two.move_paddle(PLAYER_PADDLE_MOVE_STEPS)
 
-        # Update game elements
-        self.player_one.update_paddle(dt)
-        self.player_two.update_paddle(dt)
-        self.update_ball(dt)
+
 
         # Fill the screen
         self.screen.fill(BLACK)
 
-        # Draw paddles and ball
-        pygame.draw.rect(self.screen, WHITE, self.player_one._rect)
-        pygame.draw.rect(self.screen, WHITE, self.player_two._rect)
-        pygame.draw.rect(self.screen, WHITE, self.ball._rect)
+        if self.game_over:
+            if self.winner == 1:
+                text = self.font.render("PLAYER 1 WINS!", False, (135, 135, 0))
+            else:
+                text = self.font.render("PLAYER 2 WINS!", False, (135, 135, 0))
+            text = pygame.transform.scale_by(text, self.upscale_factor)
+            text_x = (self.width // 2) - (text.get_width() // 2)
+            text_y = (self.height // 2) - (text.get_height() // 2)
+            self.screen.blit(text, (text_x, text_y))
+        else:
+            # Update game elements
+            self.player_one.update_paddle(dt)
+            self.player_two.update_paddle(dt)
+            self.update_ball(dt)
 
-        pygame.draw.line(
-            self.screen,
-            WHITE,
-            (self.width // 2, 0),
-            (self.width // 2, self.height),
-            self.upscale_factor,
-        )
+            # Draw paddles and ball
+            pygame.draw.rect(self.screen, WHITE, self.player_one._rect)
+            pygame.draw.rect(self.screen, WHITE, self.player_two._rect)
+            pygame.draw.rect(self.screen, WHITE, self.ball._rect)
 
-        # Draw score
-        self.draw_score()
+            pygame.draw.line(
+                self.screen,
+                WHITE,
+                (self.width // 2, 0),
+                (self.width // 2, self.height),
+                self.upscale_factor,
+            )
+            # Draw score
+            self.draw_score()
 
     def reset(self):
         super().reset()

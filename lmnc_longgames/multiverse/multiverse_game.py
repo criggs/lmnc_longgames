@@ -208,6 +208,8 @@ class MultiverseGame:
         self.reset_input_history(P1)
         self.reset_input_history(P2)
         self.exit_game_flag = False
+        self.game_over = False
+        self.winner = None
 
         self.config = LongGameConfig()
 
@@ -270,6 +272,7 @@ class MultiverseGame:
         """
         self.reset_input_history(P1)
         self.reset_input_history(P2)
+        self.game_over = False
 
     def reset_input_history(self, controller):
         if controller == P1:
