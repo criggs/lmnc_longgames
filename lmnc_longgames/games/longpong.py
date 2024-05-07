@@ -1,3 +1,4 @@
+import time
 from typing import List
 import pygame
 import random
@@ -14,7 +15,7 @@ PLAYER_PADDLE_MOVE_STEPS = 3
 PLAYER_PADDLE_SPEED = PLAYER_PADDLE_MOVE_STEPS * 30
 AI_PADDLE_SPEED = 2 * 30
 
-POINTS_TO_WIN = 10
+POINTS_TO_WIN = 5
 
 CODE_1 = [
     (ROTATED_CCW, ROTARY_PUSH),
@@ -138,7 +139,7 @@ class Ball:
         self.speed_multiplier = 1.0
 
     def speedup(self):
-        self.speed_multiplier = self.speed_multiplier + 0.05
+        self.speed_multiplier = self.speed_multiplier + 0.075
 
     @property
     def speed_x(self):
@@ -296,6 +297,13 @@ class LongPongGame(MultiverseGame):
             dt: The delta time since the last loop iteration. This is for framerate independence.
         """
         super().loop(events, dt)
+
+
+        if self.game_over and self.player_one.is_ai and self.player_two.is_ai:
+            # Automatically reset the game if both players are AI
+            if time.time() - self.game_over_start_time > 5:
+                self.reset()
+                return
 
         if self.has_history(P1, CODE_1):
             self.reset_input_history(P1)

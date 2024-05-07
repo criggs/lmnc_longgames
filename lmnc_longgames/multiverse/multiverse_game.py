@@ -210,6 +210,7 @@ class MultiverseGame:
         self.exit_game_flag = False
         self.game_over = False
         self.winner = None
+        self.game_over_start_time = None
 
         self.config = LongGameConfig()
 
