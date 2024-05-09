@@ -737,20 +737,20 @@ class MultiverseMain:
             ):
                 self.menu_inactive_start_time = time.time()
                 self.select_menu_item()
-                self.multiverse_display.play_note(0, C_MINOR[8*3], waveform=64)
+                self.multiverse_display.play_note(0, C_MINOR[8*4], waveform=64)
             # See if we moved, increase/decrease highlighting
             if (event.type == pygame.KEYUP and event.key == pygame.K_UP) or (
                 event.type == ROTATED_CCW
             ):
                 self.menu_inactive_start_time = time.time()
                 highlight_change = -1
-                self.multiverse_display.play_note(0, C_MINOR[8*2], waveform=64)
+                self.multiverse_display.play_note(0, C_MINOR[8*3], waveform=64)
             if (event.type == pygame.KEYUP and event.key == pygame.K_DOWN) or (
                 event.type == ROTATED_CW
             ):
                 self.menu_inactive_start_time = time.time()
                 highlight_change = 1
-                self.multiverse_display.play_note(0, C_MINOR[8*2], waveform=64)
+                self.multiverse_display.play_note(0, C_MINOR[8*3], waveform=64)
 
 
         self.game_menu.highlight(self.game_menu.highlighted_index + highlight_change)
