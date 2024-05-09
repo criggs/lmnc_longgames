@@ -2,6 +2,8 @@ import os, signal, time, sys, threading, getopt
 import logging
 import platform
 
+from lmnc_longgames.util.song import get_next_note
+
 if platform.machine() != 'aarch64':
     logging.info("Not running on a Raspberry PI. Setting mock GPIO Zero Pin Factory.")
     os.environ["GPIOZERO_PIN_FACTORY"] = "mock"
@@ -110,6 +112,10 @@ class PygameMultiverseDisplay:
 
         if self.mute:
             return
+        
+        if kwargs.get("release", None) is None:
+            kwargs["release"] = 1000
+
         self.multiverse.play_note(*args, **kwargs)
         #self.multiverse.play_note(0, 55, phase=Display.PHASE_OFF)
 
@@ -211,6 +217,7 @@ class MultiverseGame:
         self.game_over = False
         self.winner = None
         self.game_over_start_time = None
+        self.song_pos = 0
 
         self.config = LongGameConfig()
 
@@ -306,15 +313,21 @@ class MultiverseGame:
         self.game_over = False
         self.winner = None
         self.game_over_start_time = None
+        self.song_pos = 0
+
 
     def reset_input_history(self, controller):
         if controller == P1:
             self.p1_input_history = [0] * 20
         else:
             self.p2_input_history = [0] * 20
+    
+    def play_song_note(self):
+        self.play_note(0, get_next_note(self.song_pos, YOUTH_8500_NOTES), release=1000, waveform=32)
+        self.song_pos += 1
 
     def random_note(self, waveform=64):
-        self.play_note(0, PENTATONIC[random.randint(4*5,5*5)], waveform=waveform)
+        self.play_note(0, PENTATONIC[random.randint(4*3,5*3)], waveform=waveform)
 
     def death_note(self):
         self.play_note(0, 55, release=1000, waveform=32)

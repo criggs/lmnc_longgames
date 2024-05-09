@@ -253,12 +253,14 @@ class LongPongGame(MultiverseGame):
         # Check collision with top
         if self.ball._rect.top <= 0:
             self.ball.direction_y = 1
-            self.random_note()
+            #self.random_note()
+            self.play_song_note()
 
         # Check collision with bottom
         if self.ball._rect.bottom >= (self.height - 1):
             self.ball.direction_y = -1
-            self.random_note()
+            #self.random_note()
+            self.play_song_note()
 
         # Check if the ball went out of bounds
         if self.ball._rect.right <= 0:
@@ -286,8 +288,9 @@ class LongPongGame(MultiverseGame):
         self.ball.speedup()
 
         # Beep!
-        self.random_note()
-
+        #self.random_note()
+        self.play_song_note()
+        
     def loop(self, events: List, dt: float):
         """
         Called for each iteration of the game loop

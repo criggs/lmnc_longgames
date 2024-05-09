@@ -125,7 +125,7 @@ class Player(GameObject):
     def fire(self):
         bullet = Bullet(self.game, self._rect.centerx, self._rect.centery, self.dir, self.player)
         self.game.bullets.add(bullet)
-        self.game.random_note()
+        self.game.play_song_note()
     
 class Bullet(GameObject):
     def __init__(self, game, x, y, dir: Direction, player):
