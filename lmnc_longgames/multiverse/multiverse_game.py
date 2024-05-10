@@ -2,7 +2,7 @@ import os, signal, time, sys, threading, getopt
 import logging
 import platform
 
-from lmnc_longgames.util.song import get_next_note
+from lmnc_longgames.util.music import get_next_note
 
 if platform.machine() != 'aarch64':
     logging.info("Not running on a Raspberry PI. Setting mock GPIO Zero Pin Factory.")

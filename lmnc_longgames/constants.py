@@ -1,5 +1,7 @@
 from pygame import USEREVENT
 
+from lmnc_longgames.util.music import midi_to_hz
+
 # Colors
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -52,10 +54,6 @@ PIN_TRIGGER_OUT = 12
 TRIGGER_OUT_ON_TIME = 0.05
 
 # Notes
-
-def midi_to_hz(note):
-    return round(2 ** ((note - 69) / 12) * 440)
-
 NOTES = [midi_to_hz(i) for i in range(0, 8*12)]
 
 _C_MINOR_POS = [0,2,3,5,7,8,10]

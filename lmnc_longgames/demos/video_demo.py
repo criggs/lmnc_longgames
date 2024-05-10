@@ -7,6 +7,9 @@ import pygame
 import imageio.v3 as iio
 from lmnc_longgames.constants import *
 from lmnc_longgames.multiverse.multiverse_game import MultiverseGame
+import mido
+
+from lmnc_longgames.sound.midi_player import MidiPlayer
 
 '''
 Play the video
@@ -21,7 +24,7 @@ class VideoDemo(MultiverseGame):
     TILE_INDIVISIBLE=1
     TILE_FILL=2
 
-    def __init__(self, multiverse_displays, video_file_path, fit_mode = FIT_HEIGHT, tile_mode = TILE_INDIVISIBLE):
+    def __init__(self, multiverse_displays, video_file_path, fit_mode = FIT_HEIGHT, tile_mode = TILE_INDIVISIBLE, midi_file_path = None):
         self.video_file_path = video_file_path
         print(f'Playing video {video_file_path}')
 
@@ -32,6 +35,10 @@ class VideoDemo(MultiverseGame):
 
         super().__init__("Video", 60, multiverse_displays, fixed_fps = True)
         
+        midi_file_path = '/home/pi/badapple_midi_sync.mid'
+        if midi_file_path is not None:
+            self.midi_player = MidiPlayer(midi_file_path, self.multiverse_display)
+
         self.fit_mode = fit_mode
         self.tile_mode = tile_mode
         self.setup_video()
@@ -74,6 +81,9 @@ class VideoDemo(MultiverseGame):
                 filter_sequence=[("scale", f"{scale_param}:flags=neighbor"),("fps", f"{self.fps}")]
             )
         self.frame = next(self.frame_iter)
+        
+        if self.midi_player is not None:
+            self.midi_player.start()
 
     def loop(self, events: List, dt: float):
 
@@ -138,8 +148,12 @@ class VideoDemo(MultiverseGame):
             if self.frame_count  % 100 == 0:
                 logging.debug(f'Next video frame took {elapsed * 1000} ms')
         except StopIteration:
+            if self.midi_player is not None:
+                self.midi_player.stop()
             self.setup_video()
                         
 
     def reset(self):
+        if self.midi_player is not None:
+            self.midi_player.stop()
         self.setup_video()
