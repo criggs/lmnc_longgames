@@ -1,6 +1,7 @@
 import os, signal, time, sys, threading, getopt
 import logging
 import platform
+import logging
 
 from lmnc_longgames.util.music import get_next_note
 
@@ -508,7 +509,7 @@ class MultiverseMain:
         '''
         video_config = config.config.get("videos",[])
 
-        video_items = [MenuItem(v.get('name'), props={"constructor": VideoDemo, "args":[v.get('path')]}) for v in video_config]
+        video_items = [MenuItem(v.get('name'), props={"constructor": VideoDemo, "args":[v]}) for v in video_config]
         if(len(video_items)):
             video_items.append(MenuItem("Back"))
             self.game_menu.children.append(MenuItem("Videos", video_items, parent=self.game_menu))

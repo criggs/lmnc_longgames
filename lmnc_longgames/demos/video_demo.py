@@ -24,20 +24,19 @@ class VideoDemo(MultiverseGame):
     TILE_INDIVISIBLE=1
     TILE_FILL=2
 
-    def __init__(self, multiverse_displays, video_file_path, fit_mode = FIT_HEIGHT, tile_mode = TILE_INDIVISIBLE, midi_file_path = None):
-        self.video_file_path = video_file_path
-        print(f'Playing video {video_file_path}')
+    def __init__(self, multiverse_displays, video_config, fit_mode = FIT_HEIGHT, tile_mode = TILE_INDIVISIBLE):
+        self.video_file_path = video_config.get("path")
+        self.midi_path = video_config.get("midi")
+        print(f'Playing video {self.video_file_path}')
+        print(f'Config: {video_config}')
 
-        if '<video' in video_file_path:
+        if '<video' in self.video_file_path:
             fit_mode = self.FIT_WIDTH
             tile_mode = self.TILE_OFF
 
 
         super().__init__("Video", 60, multiverse_displays, fixed_fps = True)
         
-        midi_file_path = '/home/pi/badapple_midi_sync.mid'
-        if midi_file_path is not None:
-            self.midi_player = MidiPlayer(midi_file_path, self.multiverse_display)
 
         self.fit_mode = fit_mode
         self.tile_mode = tile_mode
@@ -82,7 +81,8 @@ class VideoDemo(MultiverseGame):
             )
         self.frame = next(self.frame_iter)
         
-        if self.midi_player is not None:
+        if self.midi_path is not None:
+            self.midi_player = MidiPlayer(self.midi_path, self.multiverse_display)
             self.midi_player.start()
 
     def loop(self, events: List, dt: float):
@@ -151,9 +151,15 @@ class VideoDemo(MultiverseGame):
             if self.midi_player is not None:
                 self.midi_player.stop()
             self.setup_video()
-                        
+    
+    def teardown(self):
+        super().teardown()
+        if self.midi_player is not None:
+            self.midi_player.stop()
+
 
     def reset(self):
         if self.midi_player is not None:
             self.midi_player.stop()
+            self.midi_player = None
         self.setup_video()

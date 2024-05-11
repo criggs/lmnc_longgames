@@ -1,5 +1,6 @@
 import os
 import platform
+import logging
 
 if platform.machine() != 'aarch64':
     logging.info("Not running on a Raspberry PI. Setting mock GPIO Zero Pin Factory.")
