@@ -2,6 +2,13 @@
   "games": {
     "longpong": {}
   },
+  "videos":[
+  	{
+      "name":"Bad Apple", 
+      "path": "/home/pi/Videos/BadAspect_LongPong.mp4", 
+      "midi": "/home/pi/Videos/badapple_midi_sync.mid"
+    }
+  ],
   "displays": {
     "main": {
       "devices": [
