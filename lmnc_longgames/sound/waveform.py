@@ -22,6 +22,9 @@ GAIN_STEP = 0.5
 GAIN_MAX = 10
 GAIN_MIN = 0.5
 
+DECAY_COLOR = (0, 30, 75)
+BACKGROUND_DECAY = 0.0075
+
 class Waveform(MultiverseGame):
 
     def __init__(self, multiverse_display):
@@ -31,6 +34,8 @@ class Waveform(MultiverseGame):
 
         device = self.config.config.get("audio", {}).get("main", "default")
         self.microphone = Microphone(device)
+
+        self.background = None
         
 
     def scale_samples_to_surf(self, width, height, samples):
@@ -113,8 +118,30 @@ class Waveform(MultiverseGame):
 
         # Here we should how to draw it onto a screen.
         wf = pygame.Surface((self.width, self.height)).convert_alpha()
-        self.draw_wave(wf, values, wave_color=(255,0,0), background_color=BLACK)
+        self.draw_wave(wf, values, wave_color=(255,0,0), background_color=(0,0,0,0))
         self.screen.fill(BLACK)
+
+        wave_frame = pygame.surfarray.array3d(wf)
+
+        np_wave_frame = numpy.array(wave_frame)
+
+        #replace red in the np_wave_frame with the color we want
+        np_wave_frame[np_wave_frame[:,:,0] == 255] = DECAY_COLOR
+
+        if self.background is None:
+            self.background = np_wave_frame
+        else:
+
+            scaledDecay = BACKGROUND_DECAY * (self.fps * dt)
+            # half the values in the background
+            self.background = self.background * (1 - scaledDecay)
+            # update background to have matching pixels from np_wave_frame
+            self.background = numpy.where(np_wave_frame == DECAY_COLOR, np_wave_frame, self.background)
+        
+
+        background_frame = pygame.surfarray.map_array(self.screen, numpy.round(self.background).astype(int))
+        pygame.surfarray.blit_array(self.screen, background_frame)
+        
         self.screen.blit(wf, (0, 0))
 
     def teardown(self):

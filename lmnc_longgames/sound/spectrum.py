@@ -16,6 +16,10 @@ font = pygame.font.Font(f"{script_path}/../icl8x8u.bdf", 8)
 
 RATE = 44100 # in Hz
 
+
+DECAY_COLOR = (0, 30, 75)
+BACKGROUND_DECAY = 0.02
+
 class SpectrumAnalyzer(MultiverseGame):
 
     def __init__(self, multiverse_display):
@@ -24,6 +28,7 @@ class SpectrumAnalyzer(MultiverseGame):
         #Sample Config
         self.chunk_pow = 10
         self.chunk = 2 ** self.chunk_pow
+        self.background = None
 
         self.bars_per_screen = 2
         
@@ -107,7 +112,7 @@ class SpectrumAnalyzer(MultiverseGame):
 
         fft = fft
 
-        color = (200, 0, 0)
+        color = (255, 0, 0)
 
         #TODO: Smooth this
         self.max_val = max(200, max(fft))
@@ -130,7 +135,10 @@ class SpectrumAnalyzer(MultiverseGame):
             band_data.append(scaled_value)
 
         self.interpolate_ranges(band_data)
-        
+
+        bars_frame = pygame.Surface((self.width, self.height)).convert_alpha()
+        bars_frame.fill((0,0,0,0))
+
         for i in range(self.bar_num):
             scaled_value = band_data[i]
             left = band_offset * self.upscale_factor
@@ -141,7 +149,30 @@ class SpectrumAnalyzer(MultiverseGame):
             width = self.bar_width * self.upscale_factor
             height = scaled_value * self.upscale_factor
             r = pygame.rect.Rect(left, top, width, height)
-            pygame.draw.rect(self.screen, color, r)
+            pygame.draw.rect(bars_frame, color, r)
+
+
+        foreground_array = pygame.surfarray.array3d(bars_frame)
+
+        np_foreground_array = numpy.array(foreground_array)
+
+        #replace red with the color we want
+        np_foreground_array[np_foreground_array[:,:,0] == 255] = DECAY_COLOR
+
+        if self.background is None:
+            self.background = np_foreground_array
+        else:
+            scaledDecay = BACKGROUND_DECAY * (self.fps * dt)
+            # half the values in the background
+            self.background = self.background * (1 - scaledDecay)
+            # update background to have matching pixels from np_wave_frame
+            self.background = numpy.where(np_foreground_array == DECAY_COLOR, np_foreground_array, self.background)
+        
+
+        background_frame = pygame.surfarray.map_array(self.screen, numpy.round(self.background).astype(int))
+        pygame.surfarray.blit_array(self.screen, background_frame)
+
+        self.screen.blit(bars_frame, (0, 0))
 
         # rendered_text = font.render("Testing", False, (135, 0, 135))
         # rendered_text = pygame.transform.scale_by(rendered_text, self.upscale_factor)
