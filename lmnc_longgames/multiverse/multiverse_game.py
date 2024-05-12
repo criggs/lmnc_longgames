@@ -3,6 +3,7 @@ import logging
 import platform
 import logging
 
+from lmnc_longgames.sound.microphone import initialize_sd
 from lmnc_longgames.util.music import get_next_note
 
 if platform.machine() != 'aarch64':
@@ -463,16 +464,31 @@ class MultiverseMain:
             "Long Games",
             [
                 MenuItem(
-                    "Long Pong",
+                    "Voice Long Pong",
                     [
                         MenuItem(
-                            "1 Player", props={"constructor": LongPongGame, "args": [1]}
+                            "1 Player", props={"constructor": LongPongGame, "args": [1, True]}
                         ),
                         MenuItem(
-                            "2 Player", props={"constructor": LongPongGame, "args": [2]}
+                            "2 Player", props={"constructor": LongPongGame, "args": [2, True]}
                         ),
                         MenuItem(
-                            "AI vs AI", props={"constructor": LongPongGame, "args": [0]}
+                            "AI vs AI", props={"constructor": LongPongGame, "args": [0, True]}
+                        ),
+                        MenuItem("Back"),
+                    ],
+                ),
+                MenuItem(
+                    "Paddle Long Pong",
+                    [
+                        MenuItem(
+                            "1 Player", props={"constructor": LongPongGame, "args": [1, False]}
+                        ),
+                        MenuItem(
+                            "2 Player", props={"constructor": LongPongGame, "args": [2, False]}
+                        ),
+                        MenuItem(
+                            "AI vs AI", props={"constructor": LongPongGame, "args": [0, False]}
                         ),
                         MenuItem("Back"),
                     ],
@@ -827,6 +843,9 @@ def main():
 
     logging.info("Starting Long Game Program")
     upscale_factor = 5 if show_window and upscale else 1
+
+    logging.info("Initializing microphones")
+    initialize_sd()
 
     game_main = MultiverseMain(upscale_factor, headless=not show_window)
 

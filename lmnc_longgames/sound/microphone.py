@@ -2,6 +2,13 @@ import logging
 import numpy
 import sounddevice as sd
 
+def initialize_sd():
+    # We need to reinitialize sounddevice to make sure we can get the full list of devices
+    sd._terminate()
+    sd._initialize()
+    print(sd.query_devices())
+
+
 class Microphone:
 
     def __init__(self, microphone_name="default"):
@@ -11,10 +18,6 @@ class Microphone:
 
     def setup_audio(self):
         self.buffer = None
-        
-        # We need to reinitialize sounddevice to make sure we can get the full list of devices
-        sd._terminate()
-        sd._initialize()
 
         device = sd.query_devices(self.microphone_name)
 

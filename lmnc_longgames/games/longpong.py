@@ -5,6 +5,8 @@ import random
 import math
 from lmnc_longgames.multiverse.multiverse_game import MultiverseGame
 from lmnc_longgames.constants import *
+from lmnc_longgames.sound.microphone import Microphone
+import logging
 
 MODE_AI_VS_AI = 0
 MODE_ONE_PLAYER = 1
@@ -33,7 +35,7 @@ longpong
 
 
 class Player:
-    def __init__(self, rect: pygame.Rect, game, player_id) -> None:
+    def __init__(self, rect: pygame.Rect, game, player_id, is_ai: bool) -> None:
         # Paddle
         self._rect = rect
         self.direction: int = 0  # Direction the player's paddle is moving
@@ -41,10 +43,18 @@ class Player:
         self.player_id = player_id
 
         # Game
-        self.is_ai: bool = True
+        self.is_ai = is_ai
         self.score: int = 0
         self._y = rect.y
         self.game = game
+        self.microphone = None
+        if not is_ai and self.game.audio_pong:
+            device_name = self.game.config.config.get("audio", {}).get(f"p{player_id}")
+            self.microphone = Microphone(device_name)
+
+    def teardown(self):
+        if self.microphone is not None:
+            self.microphone.teardown()
 
     @property
     def y(self):
@@ -78,14 +88,30 @@ class Player:
 
     def update_paddle(self, dt: float):
         speed = PLAYER_PADDLE_SPEED * self.game.upscale_factor
-        if self.is_ai:
-            self.game.update_for_ai(self)
-            # Only use the slower ai speed if one player is human
-            speed = (
-                speed
-                if self.game.player_one.is_ai
-                else AI_PADDLE_SPEED * self.game.upscale_factor
-            )
+        if self.microphone is not None:
+            buffer = self.microphone.read_audio_buffer(1)
+            if buffer is None:
+                logging.info(f"No audio buffer from microphone for player {self.player_id}")
+                return
+            # get the max value of the buffer
+            max_value = max(max(buffer), abs( min(buffer)))
+            position_factor = (max_value / 32768) 
+
+            if position_factor > 0.5:
+                self.direction = 1
+            else:
+                self.direction = -1
+            
+        else:
+            if self.is_ai:
+                self.game.update_for_ai(self)
+                # Only use the slower ai speed if one player is human
+                speed = (
+                    speed
+                    if self.game.player_one.is_ai
+                    else AI_PADDLE_SPEED * self.game.upscale_factor
+                )
+
         self.y += speed * dt * self.direction
         self.y = max(min(self.y, self.game.height - self.height), 0)
 
@@ -151,12 +177,13 @@ class Ball:
 
 
 class LongPongGame(MultiverseGame):
-    def __init__(self, multiverse_display, game_mode=0):
+    def __init__(self, multiverse_display, game_mode=0, audio_pong=False):
         super().__init__("Long Pong", 120, multiverse_display)
         print(f"Game Mode: {game_mode}")
 
         paddle_width = 2 * self.upscale_factor
         paddle_height = 10 * self.upscale_factor
+        self.audio_pong = audio_pong
 
         # Create players
         self.player_one = Player(
@@ -164,9 +191,9 @@ class LongPongGame(MultiverseGame):
                 0, self.height // 2 - paddle_height // 2, paddle_width, paddle_height
             ),
             self,
-            P1
+            P1,
+            game_mode == MODE_AI_VS_AI
         )
-        self.player_one.is_ai = game_mode == MODE_AI_VS_AI
 
         print(f"Player One is AI? {self.player_one.is_ai}")
 
@@ -178,9 +205,10 @@ class LongPongGame(MultiverseGame):
                 paddle_height,
             ),
             self,
-            P2
+            P2,
+            game_mode != MODE_TWO_PLAYER
         )
-        self.player_two.is_ai = game_mode != MODE_TWO_PLAYER
+        
         print(f"Player Two is AI? {self.player_two.is_ai}")
 
         # Create ball
@@ -377,4 +405,9 @@ class LongPongGame(MultiverseGame):
         self.ball.reset()
         self.player_one.reset()
         self.player_two.reset()
+    
+    def teardown(self):
+        super().teardown()
+        self.player_one.teardown()
+        self.player_two.teardown()
 
