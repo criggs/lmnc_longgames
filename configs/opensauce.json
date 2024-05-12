@@ -9,11 +9,16 @@
       "midi": "/home/pi/Videos/badapple_midi_sync.mid"
     }
   ],
+  "audio": {
+    "main": "C93: USB Audio",
+    "p1": "CMTECK: USB Audio (hw:4,0)",
+    "p2": "CMTECK: USB Audio (hw:5,0)"
+  },
   "displays": {
     "main": {
       "devices": [
-	    "/dev/serial/by-id/usb-Pimoroni_Multiverse_E661410403868C2C-if00",
-	    "/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614864D377A334-if00",
+	      "/dev/serial/by-id/usb-Pimoroni_Multiverse_E661410403868C2C-if00",
+	      "/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614864D377A334-if00",
         "/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614103E72F7938-if00",
         "/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614103E7164C22-if00",
         "/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614103E786A622-if00",

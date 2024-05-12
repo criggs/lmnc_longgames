@@ -4,12 +4,12 @@ import time
 import logging
 import itertools
 import pygame
-import pyaudio
 import numpy
 from math import sqrt
 import imageio.v3 as iio
 from lmnc_longgames.constants import *
 from lmnc_longgames.multiverse.multiverse_game import MultiverseGame
+from lmnc_longgames.sound.microphone import Microphone
 
 script_path = os.path.realpath(os.path.dirname(__file__))
 font = pygame.font.Font(f"{script_path}/../icl8x8u.bdf", 8)
@@ -19,7 +19,7 @@ RATE = 44100 # in Hz
 class SpectrumAnalyzer(MultiverseGame):
 
     def __init__(self, multiverse_display):
-        super().__init__("Audio Viz", 60, multiverse_display, fixed_fps = True)
+        super().__init__("Spectrum", 180, multiverse_display, fixed_fps = True)
 
         #Sample Config
         self.chunk_pow = 10
@@ -29,39 +29,11 @@ class SpectrumAnalyzer(MultiverseGame):
         
         # Floor to filter out some noise
         self.fft_level_floor = 15
-
-        self.setup_audio()
-
-
-    def setup_audio(self):
-        self.update_bars(self.bars_per_screen)
-
-        self.buffer = None
-
-        p = pyaudio.PyAudio()
-        self.p = p
-        logging.info(f"Device Count: {p.get_device_count()}")
-        logging.info(f"Default Device Info: {p.get_default_output_device_info()}")
-
-        for i in range(p.get_device_count()):
-            logging.info(f"Device {i}: {p.get_device_info_by_index(i)}")
-
-
-        self.stream = self.p.open(
-            format = pyaudio.paInt16,
-            channels = 1,
-            rate = RATE,
-            input=True,
-            output=False,
-            frames_per_buffer=self.chunk,
-            stream_callback=self.non_blocking_stream_read
-        )
         self.max_val = 200
 
-        # print(self.chunk)
-        # print(self.chunk_pow)
-        # print(self.bar_num)
-        # print(self.fft_bins)
+        device = self.config.config.get("audio", {}).get("main", "default")
+        self.microphone = Microphone(device)
+        self.update_bars(self.bars_per_screen)
 
     def update_bars(self, bars_per_screen):
         # 12 - 1
@@ -100,10 +72,6 @@ class SpectrumAnalyzer(MultiverseGame):
         logging.debug(f"Ranges: {ranges}")
         return ranges
 
-    def non_blocking_stream_read(self, in_data, frame_count, time_info, status):
-        self.buffer = in_data
-        return in_data, pyaudio.paContinue
-
     def interpolate_ranges(self, data):
         for (a,b) in self.ranges_to_interpolate:
             b = b + 1
@@ -111,6 +79,8 @@ class SpectrumAnalyzer(MultiverseGame):
             data[a:b+1] = new_data_slice
 
     def loop(self, events: List, dt: float):
+
+        self.buffer = self.microphone.read_audio_buffer(2)
 
         for event in events:
             if event.type == BUTTON_RELEASED and event.input in [BUTTON_A]:
@@ -126,10 +96,11 @@ class SpectrumAnalyzer(MultiverseGame):
                 self.update_bars((self.bars_per_screen - 2) % 4 + 1)
 
         start = time.time()
-        self.screen.fill(BLACK)
 
         if self.buffer is None:
             return
+        
+        self.screen.fill(BLACK)
         
         data = numpy.fft.rfft(numpy.frombuffer(self.buffer, dtype=numpy.int16))[1:]
         fft = numpy.sqrt(numpy.real(data)**2+numpy.imag(data)**2) / self.chunk 
@@ -172,17 +143,10 @@ class SpectrumAnalyzer(MultiverseGame):
             r = pygame.rect.Rect(left, top, width, height)
             pygame.draw.rect(self.screen, color, r)
 
-
         # rendered_text = font.render("Testing", False, (135, 0, 135))
         # rendered_text = pygame.transform.scale_by(rendered_text, self.upscale_factor)
         # self.screen.blit(rendered_text, (0, 0))
 
-    def reset(self):
-        self.setup_audio()
-
     def teardown(self):
         logging.info("Tearing down audio_viz")
-        try:
-            self.stream.close()
-        except Exception as e:
-            logging.error("Exception while stopping pyaudio stream.", exc_info=e)
+        self.microphone.teardown()
