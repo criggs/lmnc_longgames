@@ -18,7 +18,7 @@ PALETTE = [
 
 
 # Game constants
-BALL_RADIUS = 2
+BALL_SIZE = 2
 PADDLE_WIDTH = 15
 PADDLE_HEIGHT = 2
 TILE_ROWS = 5
@@ -32,7 +32,7 @@ TOP_ROWS = 2
 class Ball:
     def __init__(self, game):
         self.game = game
-        self.radius: int = BALL_RADIUS * game.upscale_factor
+        self.diameter: int = BALL_SIZE * game.upscale_factor
         self._x: int = game.width // 2
         self._y: int = game.height - (10 * game.upscale_factor)
         self.speed_x: int = 20 * random.choice([-1, 1])
@@ -41,8 +41,8 @@ class Ball:
         self._rect = pygame.Rect(
             int(self._x),
             int(self._y),
-            self.radius,
-            self.radius,
+            self.diameter,
+            self.diameter,
         )
 
     @property
@@ -71,8 +71,18 @@ class Ball:
         pygame.draw.rect(self.game.screen, WHITE, self._rect)
 
     def collide_paddle(self, paddle):
-        if self.y + self.radius >= paddle.y and paddle.x <= self.x <= paddle.x + paddle.width:
+        # TODO: Make this update the speed x and y to be for an angle,
+        # based on where on the paddle the ball hits
+        if self.y + self.diameter >= paddle.y and paddle.x <= self.x <= paddle.x + paddle.width:
             self.speed_y = -abs(self.speed_y)
+            
+            middle_of_paddle = paddle.x + (paddle.width//2)
+            middle_of_ball = self.x + (self.diameter // 2)
+            
+            angle_factor = 2 * (middle_of_ball - middle_of_paddle) / paddle.width
+            
+            self.speed_x = angle_factor * 25
+            
             self.game.random_note()
 
     def collide_tile(self, tile):
@@ -120,7 +130,7 @@ class Ball:
         return False
 
     def collide_window_sides(self):
-        if self.x <= 0 or self.x + self.radius >= self.game.width:
+        if self.x <= 0 or self.x + self.diameter >= self.game.width:
             self.speed_x *= -1
             self.game.random_note()
 
@@ -130,7 +140,7 @@ class Ball:
             self.game.random_note()
 
     def off_screen(self):
-        return self.y + self.radius >= self.game.height
+        return self.y + self.diameter >= self.game.height
 
 class Tile:
     def __init__(self, x, y, game):
