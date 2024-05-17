@@ -34,7 +34,7 @@ class MidiPlayer:
             if message.type == 'note_on':
                 logging.info(f"Playing note: {message.note}")
                 note_hz = midi_to_hz(message.note)
-                self.multiverse_display.play_note(self._channel, note_hz, release=1000, waveform=32)
+                self.multiverse_display.play_note(self._channel, note_hz, waveform=32)
                 self._channel = (self._channel + 1) % 4
         logging.info(f"song thread complete: {self.midi_file_path}")
 

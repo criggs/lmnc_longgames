@@ -12,7 +12,7 @@ from lmnc_longgames.multiverse.multiverse_game import MultiverseGame
 BYTES_PER_PIXEL = 4
 
 
-class FireDemo(MultiverseGame):
+class Fire(MultiverseGame):
     def __init__(self, multiverse_displays):
         super().__init__("Fire!!!", 80, multiverse_displays)
 

@@ -114,11 +114,10 @@ class PygameMultiverseDisplay:
         if self.mute:
             return
         
-        if kwargs.get("release", None) is None:
-            kwargs["release"] = 1000
+        if kwargs.get("attack", None) is None:
+            kwargs["attack"] = 20
 
         self.multiverse.play_note(*args, **kwargs)
-        #self.multiverse.play_note(0, 55, phase=Display.PHASE_OFF)
 
     def stop(self):
         self.multiverse.stop()
@@ -452,11 +451,11 @@ class MultiverseMain:
 
         from lmnc_longgames.sound.spectrum import SpectrumAnalyzer
         from lmnc_longgames.sound.waveform import Waveform
-        from lmnc_longgames.demos.fire_demo import FireDemo
-        from lmnc_longgames.demos.matrix_demo import MatrixDemo
-        from lmnc_longgames.demos.life_demo import LifeDemo
-        from lmnc_longgames.demos.video_demo import VideoDemo
-        from lmnc_longgames.demos.marquee_demo import MarqueeDemo
+        from lmnc_longgames.simulations.fire import Fire
+        from lmnc_longgames.simulations.matrix import Matrix
+        from lmnc_longgames.simulations.life import Life
+        from lmnc_longgames.video.video_player import VideoPlayer
+        from lmnc_longgames.simulations.marquee import Marquee
         from lmnc_longgames.games.invaders import InvadersGame
         from lmnc_longgames.games.combat import CombatGame
 
@@ -485,11 +484,11 @@ class MultiverseMain:
                 MenuItem("Spectrum Analyzer", props={"constructor": SpectrumAnalyzer}),
                 MenuItem("Waveform", props={"constructor": Waveform}),
                 MenuItem(
-                    "Demos",
+                    "Simulations",
                     [
-                        MenuItem("Fire", props={"constructor": FireDemo}),
-                        MenuItem("Matrix", props={"constructor": MatrixDemo}),
-                        MenuItem("Life", props={"constructor": LifeDemo}),
+                        MenuItem("Fire", props={"constructor": Fire}),
+                        MenuItem("Matrix", props={"constructor": Matrix}),
+                        MenuItem("Life", props={"constructor": Life}),
                         MenuItem("Back"),
                     ],
                 )
@@ -509,12 +508,12 @@ class MultiverseMain:
         '''
         video_config = config.config.get("videos",[])
 
-        video_items = [MenuItem(v.get('name'), props={"constructor": VideoDemo, "args":[v]}) for v in video_config]
+        video_items = [MenuItem(v.get('name'), props={"constructor": VideoPlayer, "args":[v]}) for v in video_config]
         if(len(video_items)):
             video_items.append(MenuItem("Back"))
             self.game_menu.children.append(MenuItem("Videos", video_items, parent=self.game_menu))
 
-        self.game_menu.children.append(MenuItem("Special Thanks", parent=self.game_menu, props={"constructor": MarqueeDemo, "args": ["Special Thanks"]}))
+        self.game_menu.children.append(MenuItem("Special Thanks", parent=self.game_menu, props={"constructor": Marquee, "args": ["Special Thanks"]}))
         
         signal.signal(signal.SIGINT, self.signal_handler)
 

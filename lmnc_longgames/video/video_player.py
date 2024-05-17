@@ -14,7 +14,7 @@ from lmnc_longgames.sound.midi_player import MidiPlayer
 '''
 Play the video
 '''
-class VideoDemo(MultiverseGame):
+class VideoPlayer(MultiverseGame):
 
     FIT_ALL = 0
     FIT_WIDTH = 1
