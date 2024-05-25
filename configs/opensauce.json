@@ -7,6 +7,10 @@
       "name":"Bad Apple", 
       "path": "/home/pi/Videos/BadAspect_LongPong.mp4", 
       "midi": "/home/pi/Videos/badapple_midi_sync.mid"
+    },
+    {
+      "name":"Camera",
+      "path": "<video0>"
     }
   ],
   "audio": {

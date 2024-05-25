@@ -27,6 +27,7 @@ class VideoPlayer(MultiverseGame):
     def __init__(self, multiverse_displays, video_config, fit_mode = FIT_HEIGHT, tile_mode = TILE_INDIVISIBLE):
         self.video_file_path = video_config.get("path")
         self.midi_path = video_config.get("midi")
+        self.midi_player = None
         print(f'Playing video {self.video_file_path}')
         print(f'Config: {video_config}')
 
