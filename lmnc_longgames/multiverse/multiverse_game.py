@@ -701,18 +701,18 @@ class MultiverseMain:
         self.stop()
 
     def load_demo_disc(self):
-        from lmnc_longgames.demos.fire_demo import FireDemo
-        from lmnc_longgames.demos.matrix_demo import MatrixDemo
-        from lmnc_longgames.demos.life_demo import LifeDemo
+        from lmnc_longgames.simulations.fire import Fire
+        from lmnc_longgames.simulations.matrix import Matrix
+        from lmnc_longgames.simulations.life import Life
         from lmnc_longgames.games.longpong import LongPongGame
-        from lmnc_longgames.demos.marquee_demo import MarqueeDemo
+        from lmnc_longgames.simulations.marquee import Marquee
 
         options = [
             (LongPongGame, [0]),
-            (FireDemo, []),
-            (MatrixDemo, []),
-            (LifeDemo, []),
-            (MarqueeDemo, ["Special Thanks"]),
+            (Fire, []),
+            (Matrix, []),
+            (Life, []),
+            (Marquee, ["Special Thanks"]),
         ]
         game_class, args = random.choice(options)
 
