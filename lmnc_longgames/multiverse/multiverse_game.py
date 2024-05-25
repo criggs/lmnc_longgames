@@ -706,12 +706,16 @@ class MultiverseMain:
         from lmnc_longgames.simulations.life import Life
         from lmnc_longgames.games.longpong import LongPongGame
         from lmnc_longgames.simulations.marquee import Marquee
+        from lmnc_longgames.sound.spectrum import SpectrumAnalyzer
+        from lmnc_longgames.sound.waveform import Waveform
 
         options = [
             (LongPongGame, [0]),
             (Fire, []),
             (Matrix, []),
             (Life, []),
+            (SpectrumAnalyzer, []),
+            (Waveform, []),
             (Marquee, ["Special Thanks"]),
         ]
         game_class, args = random.choice(options)

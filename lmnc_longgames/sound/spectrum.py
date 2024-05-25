@@ -37,7 +37,13 @@ class SpectrumAnalyzer(MultiverseGame):
         self.max_val = 200
 
         device = self.config.config.get("audio", {}).get("main", "default")
-        self.microphone = Microphone(device)
+
+        try:
+            self.microphone = Microphone(device)
+        except Exception as e:
+            logging.error(f"Failed to initialize microphone: {e}")
+            self.microphone = None
+
         self.update_bars(self.bars_per_screen)
 
     def update_bars(self, bars_per_screen):
@@ -84,6 +90,11 @@ class SpectrumAnalyzer(MultiverseGame):
             data[a:b+1] = new_data_slice
 
     def loop(self, events: List, dt: float):
+
+        if self.microphone is None:
+            self.exit_game()
+        else:
+            self.buffer = self.microphone.read_audio_buffer()
 
         self.buffer = self.microphone.read_audio_buffer(2)
 

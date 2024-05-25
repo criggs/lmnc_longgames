@@ -33,7 +33,12 @@ class Waveform(MultiverseGame):
         self.gain = 2.0
 
         device = self.config.config.get("audio", {}).get("main", "default")
-        self.microphone = Microphone(device)
+
+        try:
+            self.microphone = Microphone(device)
+        except Exception as e:
+            logging.error(f"Failed to initialize microphone: {e}")
+            self.microphone = None
 
         self.background = None
         
@@ -84,7 +89,10 @@ class Waveform(MultiverseGame):
 
     def loop(self, events: List, dt: float):
 
-        self.buffer = self.microphone.read_audio_buffer()
+        if self.microphone is None:
+            self.exit_game()
+        else:
+            self.buffer = self.microphone.read_audio_buffer()
 
         for event in events:
             if event.type == BUTTON_RELEASED and event.input in [BUTTON_A]:
