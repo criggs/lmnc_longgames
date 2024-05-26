@@ -1,4 +1,4 @@
-import termios
+#import termios
 import numpy
 import serial
 import threading
@@ -125,9 +125,9 @@ class Display:
         except serial.SerialException as e:
             logging.debug(f"{self.x},{self.y}: SerialException while writing.", exc_info = e)
             self._close()
-        except termios.error as e:
-            logging.debug(f"{self.x},{self.y}: termios.error while writing.", exc_info = e)
-            self._close()
+        # except termios.error as e:
+        #     logging.debug(f"{self.x},{self.y}: termios.error while writing.", exc_info = e)
+        #     self._close()
         except Exception as e:
             logging.debug(f"{self.x},{self.y}: Error while writing", exc_info = e)
             raise e # don't want to swallow the exception

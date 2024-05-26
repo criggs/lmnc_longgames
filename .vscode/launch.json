@@ -13,12 +13,19 @@
             "justMyCode": true
         },
         {
-            "name": "Python: Longpong",
-            "type": "python",
+            "name": "Python: Multiverse Start",
+            "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/lmnc_longgames/longpong.py",
+            "program": "${workspaceFolder}/lmnc_longgames/multiverse/multiverse_game.py",
+            "args": [
+                "-w",
+                "-u"
+            ],
             "console": "integratedTerminal",
-            "justMyCode": true
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
         }
     ]
 }
