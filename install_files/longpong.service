@@ -1,0 +1,10 @@
+[Unit]
+Description=Longpong service
+After=multi-user.target
+[Service]
+Type=simple
+Restart=always
+User=1000
+ExecStart=/home/pi/start.sh
+[Install]
+WantedBy=multi-user.target

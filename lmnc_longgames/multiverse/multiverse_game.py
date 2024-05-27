@@ -4,6 +4,7 @@ import platform
 import logging
 
 from lmnc_longgames.sound.microphone import initialize_sd
+from lmnc_longgames.util.exit_game import ExitButton
 from lmnc_longgames.util.music import get_next_note
 
 if platform.machine() != 'aarch64':
@@ -18,7 +19,6 @@ import numpy
 from lmnc_longgames.config import LongGameConfig
 from lmnc_longgames.multiverse import Multiverse, Display
 from lmnc_longgames.util.rotary_encoder_controller import RotaryEncoderController
-from lmnc_longgames.util.screen_power_reset import ScreenPowerReset
 from lmnc_longgames.constants import *
 from gpiozero import Button, DigitalOutputDevice
 
@@ -887,10 +887,11 @@ def main():
         )
         pygame.event.post(event)
 
-    game_reset_button = Button(PIN_BUTTON_GAME_RESET, bounce_time=BUTTON_BOUNCE_TIME_SEC)
-    game_reset_button.when_released = reset_game
+    # game_reset_button = Button(PIN_BUTTON_GAME_RESET, bounce_time=BUTTON_BOUNCE_TIME_SEC)
+    # game_reset_button.when_released = reset_game
 
     #ScreenPowerReset(reset_pin=PIN_RESET_RELAY, button_pin=PIN_BUTTON_SCREEN_RESET)
+    ExitButton(button_pin=PIN_BUTTON_GAME_RESET)
 
     def reset_screen():
         logging.info("Reset Screens Button Pressed.")
