@@ -292,9 +292,11 @@ class MultiverseGame:
                     self.exit_game()
                     return
 
+        logging.info("Winner: " + str(self.winner))
+
         if self.winner == 0:
             text = self.font.render("YOU WON", False, (135, 135, 0))
-        if self.winner == P1:
+        elif self.winner == P1:
             text = self.font.render("PLAYER 1 WINS!", False, (135, 135, 0))
         elif self.winner == P2:
             text = self.font.render("PLAYER 2 WINS!", False, (135, 135, 0))

@@ -78,6 +78,10 @@ class SnakeGame(MultiverseGame):
                 return
             if new_cell == 2:
                 # We got food!
+                self.play_note(0, 200, release=1000, waveform=32)
+                self.play_note(1, 400, release=1000, waveform=64)
+                self.play_note(2, 440, release=1000, waveform=128)
+                self.play_note(3, 440, release=1000, waveform=128)
                 self.food_position = None
                 self.snake_target_length = self.snake_target_length + 5
                 self.food_timer = 2.0 # New food in 2 seconds
@@ -115,9 +119,9 @@ class SnakeGame(MultiverseGame):
     def handle_events(self, events: List):
         for event in events:
             if (event.type == ROTATED_CCW and event.controller == P1) or (event.type == pygame.KEYDOWN and event.key == pygame.K_UP):
-                self.turn_snake(-1)
-            if event.type == ROTATED_CW and event.controller == P1 or (event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN):
                 self.turn_snake(1)
+            if event.type == ROTATED_CW and event.controller == P1 or (event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN):
+                self.turn_snake(-1)
 
     def loop(self, events: List, dt: float):
         """
