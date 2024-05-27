@@ -17,6 +17,8 @@ script_path = os.path.realpath(os.path.dirname(__file__))
 TANK_WIDTH = 5
 TANK_HEIGHT = 5
 WALL_COLOR = (150,150,150)
+P1_BULLET_COLOR=(255,0,255)
+P2_BULLET_COLOR=(0,255,255)
 
 def load_sprites(name, count):
     return [pygame.image.load(f"{script_path}/assets/{name}_{i}.png").convert_alpha() for i in range(count)]
@@ -49,13 +51,13 @@ class Player(GameObject):
         self.health = PLAYER_HEALTH
         
         if player == P1:
-            self.x =  0
-            self.y = 0
+            self.x =  self.game.wall_width
+            self.y = self.game.wall_width
             self.dir = E
             images = TANK_A
         else:
-            self.x = game.width - self.width
-            self.y = game.height - self.height
+            self.x = game.width - self.width - self.game.wall_width
+            self.y = game.height - self.height - self.game.wall_width
             self.dir = W
             images = TANK_B
         self.speed = 10
@@ -212,7 +214,8 @@ class Bullet(GameObject):
         return False
     
     def draw(self, screen):
-        pygame.draw.rect(screen, WHITE, self._rect)
+        bullet_color = P1_BULLET_COLOR if self.player == P1 else P2_BULLET_COLOR
+        pygame.draw.rect(screen, bullet_color, self._rect)
            
 
 class CombatGame(MultiverseGame):
@@ -223,6 +226,7 @@ class CombatGame(MultiverseGame):
         super().__init__("Combat", 60, multiverse_display)
         self.bullets = set()
         self.walls = []
+        self.wall_width = 2 * self.upscale_factor
         self.reset()
         
 
@@ -233,17 +237,18 @@ class CombatGame(MultiverseGame):
         self.p2_tank = Player(self, P2)
         self.walls = []
         
-        # Build the walls
-        wall_width = 2 * self.upscale_factor
-        
         # 4 vertical walls
         
         v_wall_gap = self.width // 5
         for i in range(1,5):
-            wall = pygame.Rect(i * v_wall_gap, self.height // 4, wall_width, self.height // 2)
+            wall = pygame.Rect(i * v_wall_gap, self.height // 4, self.wall_width, self.height // 2)
             self.walls.append(wall)
         
-        # 2 horizontal walls
+        # Add the board walls
+        self.walls.append(pygame.Rect(0, 0, self.wall_width, self.height))
+        self.walls.append(pygame.Rect(self.width - self.wall_width, 0, self.wall_width, self.height))
+        self.walls.append(pygame.Rect(self.wall_width, 0, self.width - (self.wall_width * 2), self.wall_width))
+        self.walls.append(pygame.Rect(self.wall_width, self.height - self.wall_width, self.width - (self.wall_width * 2), self.wall_width))
         
     def handle_events(self, events):
          for event in events:
