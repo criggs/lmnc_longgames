@@ -319,25 +319,8 @@ class LongPongGame(MultiverseGame):
         #self.random_note()
         self.play_song_note()
         
-    def loop(self, events: List, dt: float):
-        """
-        Called for each iteration of the game loop
 
-        Parameters:
-            events: The pygame events list for this loop iteration
-            dt: The delta time since the last loop iteration. This is for framerate independence.
-        """
-        super().loop(events, dt)
-
-        if self.has_history(P1, CODE_1):
-            self.reset_input_history(P1)
-            self.player_one._rect.height = 10 * self.upscale_factor * 2
-            print("Code 1 for P1")
-        if self.has_history(P2, CODE_1):
-            self.reset_input_history(P2)
-            self.player_two._rect.height = 10 * self.upscale_factor * 2
-            print("Code 1 for P2")
-
+    def handle_events(self, events: List):
         for event in events:
             # Player One
             if not self.player_one.is_ai:
@@ -369,6 +352,26 @@ class LongPongGame(MultiverseGame):
                 if event.type == ROTATED_CW and event.controller == P2:
                     self.player_two.move_paddle(PLAYER_PADDLE_MOVE_STEPS)
 
+
+    def loop(self, events: List, dt: float):
+        """
+        Called for each iteration of the game loop
+
+        Parameters:
+            events: The pygame events list for this loop iteration
+            dt: The delta time since the last loop iteration. This is for framerate independence.
+        """
+        super().loop(events, dt)
+
+        if self.has_history(P1, CODE_1):
+            self.reset_input_history(P1)
+            self.player_one._rect.height = 10 * self.upscale_factor * 2
+            print("Code 1 for P1")
+        if self.has_history(P2, CODE_1):
+            self.reset_input_history(P2)
+            self.player_two._rect.height = 10 * self.upscale_factor * 2
+            print("Code 1 for P2")
+
         if self.game_over:
             self.game_over_loop(events)
 
@@ -379,6 +382,7 @@ class LongPongGame(MultiverseGame):
                     return
 
         else:
+            self.handle_events(events)
             self.screen.fill(BLACK)
             # Update game elements
             self.player_one.update_paddle(dt)

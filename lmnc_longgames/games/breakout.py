@@ -209,15 +209,7 @@ class BreakoutGame(MultiverseGame):
         self.ball = Ball(self)
         self.paddle = Paddle(self)
 
-    def loop(self, events: List, dt: float):
-        """
-        Called for each iteration of the game loop
-
-        Parameters:
-            events: The pygame events list for this loop iteration
-            dt: The delta time since the last loop iteration. This is for framerate independence.
-        """
-
+    def handle_events(self, events):
         for event in events:
             if event.type == ROTATED_CW and event.controller == P1:
                 self.paddle.move(1)
@@ -230,11 +222,20 @@ class BreakoutGame(MultiverseGame):
         elif keys[K_LEFT]:
             self.paddle.move(-1 / 5)
 
+    def loop(self, events: List, dt: float):
+        """
+        Called for each iteration of the game loop
+
+        Parameters:
+            events: The pygame events list for this loop iteration
+            dt: The delta time since the last loop iteration. This is for framerate independence.
+        """
         self.screen.fill(BLACK)
 
         if self.game_over:
             super().game_over_loop(events)
         else:
+            self.handle_events(events)
             #Update the ball and paddle
             self.ball.update(dt)
 

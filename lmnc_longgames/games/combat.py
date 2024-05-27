@@ -227,7 +227,7 @@ class CombatGame(MultiverseGame):
         
 
     def reset(self):
-        self.game_over = False
+        super().reset()
         self.bullets = set()
         self.p1_tank = Player(self, P1)
         self.p2_tank = Player(self, P2)
@@ -245,19 +245,8 @@ class CombatGame(MultiverseGame):
         
         # 2 horizontal walls
         
-        
-
-    def loop(self, events: List, dt: float):
-        """
-        Called for each iteration of the game loop
-
-        Parameters:
-            events: The pygame events list for this loop iteration
-            dt: The delta time since the last loop iteration. This is for framerate independence.
-        """
-        now_ticks = pygame.time.get_ticks()
-
-        for event in events:
+    def handle_events(self, events):
+         for event in events:
             
             #Turn
             if (event.type == ROTATED_CW and event.controller == P1) or (event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT):
@@ -284,29 +273,21 @@ class CombatGame(MultiverseGame):
                 self.p2_tank.moving = True
             if (event.type == BUTTON_RELEASED and event.controller == P2 and event.input in [BUTTON_B]) or (event.type == pygame.KEYUP and event.key == pygame.K_w):
                 self.p2_tank.moving = False
-            
-            # Reset/Quit
-            if self.game_over and event.type == BUTTON_RELEASED and event.input in [BUTTON_A]:
-                self.reset()
-                return
-            if self.game_over and event.type == BUTTON_RELEASED and event.input in [BUTTON_B, ROTARY_PUSH]:
-                self.exit_game()
-                return
-                
 
+    def loop(self, events: List, dt: float):
+        """
+        Called for each iteration of the game loop
+
+        Parameters:
+            events: The pygame events list for this loop iteration
+            dt: The delta time since the last loop iteration. This is for framerate independence.
+        """
         self.screen.fill(BLACK)
 
         if self.game_over:
-            if self.winner == 1:
-                text = self.font.render("PLAYER 1 WINS!", False, (135, 135, 0))
-            else:
-                text = self.font.render("PLAYER 2 WINS!", False, (135, 135, 0))
-            text = pygame.transform.scale_by(text, self.upscale_factor)
-            text_x = (self.width // 2) - (text.get_width() // 2)
-            text_y = (self.height // 2) - (text.get_height() // 2)
-            self.screen.blit(text, (text_x, text_y))
+            super().game_over_loop(events)
         else:
-
+            self.handle_events(events)
             self.p1_tank.update(dt)
             self.p2_tank.update(dt)
             
