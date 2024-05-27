@@ -71,7 +71,7 @@ class VideoPlayer(MultiverseGame):
         if '<video' in self.video_file_path:
             self.fps = 30
             print(f"Resetting FPS to {self.fps} for video")
-            self.frame_iter = iio.imiter(self.video_file_path, fps="30", size=(320,240))
+            self.frame_iter = iio.imiter(self.video_file_path, fps="30", size=(320,240), output_params=["-vf", "hflip"])
         else:
             scale_param = f"-1:{raw_height}" if self.fit_mode == self.FIT_HEIGHT else f"{raw_width}:-1"
             self.frame_iter = iio.imiter(
