@@ -49,8 +49,8 @@ class Player:
         self.game = game
         self.microphone = None
         if not is_ai and self.game.audio_pong:
-            device_name = self.game.config.config.get("audio", {}).get(f"p{player_id}")
-            self.microphone = Microphone(device_name)
+            device = self.game.config.config.get("audio", {}).get(f"p{player_id}")
+            self.microphone = Microphone(device["name"], device["index"])
 
     def teardown(self):
         if self.microphone is not None:

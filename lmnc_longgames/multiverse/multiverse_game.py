@@ -329,8 +329,8 @@ class MultiverseGame:
         self.play_note(0, get_next_note(self.song_pos, YOUTH_8500_NOTES), release=1000, waveform=32)
         self.song_pos += 1
 
-    def random_note(self, waveform=64):
-        self.play_note(0, PENTATONIC[random.randint(4*3,5*3)], waveform=waveform)
+    def random_note(self, channel=0, waveform=64):
+        self.play_note(channel, PENTATONIC[random.randint(4*3,5*3)], waveform=waveform)
 
     def death_note(self):
         self.play_note(0, 55, release=1000, waveform=32)

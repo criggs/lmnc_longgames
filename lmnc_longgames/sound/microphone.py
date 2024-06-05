@@ -11,15 +11,21 @@ def initialize_sd():
 
 class Microphone:
 
-    def __init__(self, microphone_name="default"):
+    def __init__(self, microphone_name="default", microphone_index=0):
         self.microphone_name = microphone_name
+        self.microphone_index = int(microphone_index)
         self.chunk = 1024
         self.setup_audio()
 
     def setup_audio(self):
         self.buffer = None
 
-        device = sd.query_devices(self.microphone_name)
+        candidate_devices = sorted([d for d in sd.query_devices() if self.microphone_name in d['name']], key=lambda d: d['name'])
+
+        if len(candidate_devices) < self.microphone_index + 1:
+            raise Exception(f"No microphones found with name {self.microphone_name} with index {self.microphone_index}")
+
+        device = candidate_devices[self.microphone_index]
 
         logging.info(f"Found main mic: {device}")
 

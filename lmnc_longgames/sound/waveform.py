@@ -32,10 +32,9 @@ class Waveform(MultiverseGame):
 
         self.gain = 2.0
 
-        device = self.config.config.get("audio", {}).get("main", "default")
-
+        device = self.config.config.get("audio", {}).get("main", {"name": "default", "index": 0})
         try:
-            self.microphone = Microphone(device)
+            self.microphone = Microphone(device["name"], device["index"])
         except Exception as e:
             logging.error(f"Failed to initialize microphone: {e}")
             self.microphone = None

@@ -14,9 +14,9 @@
     }
   ],
   "audio": {
-    "main": "C93: USB Audio",
-    "p1": "CMTECK: USB Audio (hw:4,0)",
-    "p2": "CMTECK: USB Audio (hw:5,0)"
+    "main": {"name": "C93: USB Audio", "index": 0},
+    "p1": {"name": "CMTECK", "index": 0},
+    "p2": {"name": "CMTECK", "index": 1}
   },
   "displays": {
     "main": {

@@ -12,7 +12,7 @@ from collections import namedtuple
 
 script_path = os.path.realpath(os.path.dirname(__file__))
 
-
+BULLET_CHANNEL=1
 # Game constants
 TANK_WIDTH = 5
 TANK_HEIGHT = 5
@@ -209,7 +209,7 @@ class Bullet(GameObject):
                 self.x_dir = -1
                 # self.y = wall.top - self.height
                 # self.x = wall.left - self.width
-            self.game.random_note(waveform=32)
+            self.game.random_note(channel=BULLET_CHANNEL, waveform=32)
             return True
         return False
     
