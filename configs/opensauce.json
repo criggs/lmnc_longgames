@@ -1,4 +1,5 @@
 {
+  "names_file": "/home/pi/names.txt",
   "games": {
     "longpong": {}
   },
