@@ -121,8 +121,9 @@ class Player:
 
 
 class Ball:
-    max_speed = 80
-    min_speed = 15
+    max_speed = 250
+    min_speed = 50
+    starting_speed = 75
 
     def __init__(self, radius: int, game: MultiverseGame) -> None:
         self.radius = radius
@@ -161,11 +162,11 @@ class Ball:
         self._y = self._rect.y
         self.angle = random.uniform(0.2, math.pi / 4)
         self.direction_y = random.choice((-1, 1))
-        self.speed = ((self.max_speed - self.min_speed) / 2) + self.min_speed
+        self.speed = self.starting_speed
         self.speed_multiplier = 1.0
 
     def speedup(self):
-        self.speed_multiplier = self.speed_multiplier + 0.075
+        self.speed_multiplier = self.speed_multiplier + 0.1
 
     @property
     def speed_x(self):
@@ -333,9 +334,9 @@ class LongPongGame(MultiverseGame):
                     if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
                         self.player_one.direction = 0
                 if event.type == ROTATED_CCW and event.controller == P1:
-                    self.player_one.move_paddle(-1 * PLAYER_PADDLE_MOVE_STEPS)
-                if event.type == ROTATED_CW and event.controller == P1:
                     self.player_one.move_paddle(PLAYER_PADDLE_MOVE_STEPS)
+                if event.type == ROTATED_CW and event.controller == P1:
+                    self.player_one.move_paddle(-1 * PLAYER_PADDLE_MOVE_STEPS)
 
             # Player Two
             if not self.player_two.is_ai:
@@ -348,9 +349,9 @@ class LongPongGame(MultiverseGame):
                     if event.key == pygame.K_w or event.key == pygame.K_s:
                         self.player_two.direction = 0
                 if event.type == ROTATED_CCW and event.controller == P2:
-                    self.player_two.move_paddle(-1 * PLAYER_PADDLE_MOVE_STEPS)
-                if event.type == ROTATED_CW and event.controller == P2:
                     self.player_two.move_paddle(PLAYER_PADDLE_MOVE_STEPS)
+                if event.type == ROTATED_CW and event.controller == P2:
+                    self.player_two.move_paddle(-1 * PLAYER_PADDLE_MOVE_STEPS)
 
 
     def loop(self, events: List, dt: float):

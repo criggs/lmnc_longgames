@@ -5,6 +5,18 @@ import logging
 from lmnc_longgames.multiverse.multiverse_game import PygameMultiverseDisplay
 from lmnc_longgames.util.music import midi_to_hz
 
+WAVEFORM_NOISE = 128
+WAVEFORM_SQUARE = 64
+WAVEFORM_SAW = 32
+WAVEFORM_TRIANGLE = 16
+WAVEFORM_SINE = 8
+WAVEFORM_WAVE = 1
+
+PHASE_ATTACK = 0
+PHASE_DECAY = 1
+PHASE_SUSTAIN = 2
+PHASE_RELEASE = 3
+PHASE_OFF = 4
 
 class MidiPlayer:
 
@@ -30,13 +42,35 @@ class MidiPlayer:
         for message in self.midi_player.play():
             if self._stop_flag.is_set():
                 logging.info(f"midi thread stop flag set: {self.midi_file_path}")
+                self.stop_notes()
                 return
             if message.type == 'note_on':
-                logging.info(f"Playing note: {message.note}")
+                logging.info(f"Playing note: C{message.channel}:{message.note}")
                 note_hz = midi_to_hz(message.note)
-                self.multiverse_display.play_note(self._channel, note_hz, waveform=32)
-                self._channel = (self._channel + 1) % 4
+
+                if message.channel == 2:
+                    #drum note
+                    self.play_note(3, 40, waveform=WAVEFORM_SAW)
+                elif message.channel == 1:
+                    #bass note
+                    self.play_note(2, note_hz, waveform=WAVEFORM_SQUARE)
+                else:
+                    self.play_note(self._channel, note_hz, waveform=WAVEFORM_SAW)
+                    self._channel = (self._channel + 1) % 2
+
         logging.info(f"song thread complete: {self.midi_file_path}")
+
+        # Play off notes (0 hertz)
+        self.stop_notes()
+
+    def stop_notes(self):
+        self.multiverse_display.play_note(0, 0, waveform=64)
+        self.multiverse_display.play_note(1, 0, waveform=64)
+        self.multiverse_display.play_note(2, 0, waveform=64)
+        self.multiverse_display.play_note(3, 0, waveform=64)
+
+    def play_note(self, channel, frequency, waveform):
+        self.multiverse_display.play_note(channel, frequency, waveform=waveform)
 
     def stop(self):
         logging.info(f"Stopping midi thread: {self.midi_file_path}")

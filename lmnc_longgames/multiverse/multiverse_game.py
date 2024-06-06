@@ -224,6 +224,8 @@ class MultiverseGame:
 
         logging.info(f"Initializing game {self.game_title}")
         logging.info(f"fps: {fps}")
+        self.play_off_notes()
+
 
     @property
     def upscale_factor(self):
@@ -245,6 +247,7 @@ class MultiverseGame:
     def display_count(self):
         return len(self.multiverse_display.multiverse.displays)
     
+    #def play_note(self, channel, frequency, waveform=WAVEFORM_TRIANGLE, attack=10, decay=200, sustain=0, release=0, phase=PHASE_ATTACK)
     def play_note(self, *args, **kwargs):
         self.multiverse_display.play_note(*args, **kwargs)
 
@@ -262,6 +265,7 @@ class MultiverseGame:
         return history_slice == to_check
 
     def exit_game(self):
+        self.play_off_notes()
         self.exit_game_flag = True
 
     def teardown(self):
@@ -317,6 +321,7 @@ class MultiverseGame:
         self.winner = None
         self.game_over_start_time = None
         self.song_pos = 0
+        self.play_off_notes()
 
 
     def reset_input_history(self, controller):
@@ -325,6 +330,14 @@ class MultiverseGame:
         else:
             self.p2_input_history = [0] * 20
     
+    def play_off_notes(self):
+        # I don't think the off note phase is implmented in teh firmare, 
+        # so we'll just play a note at 0 hertz :shrug:
+        self.play_note(0, 0, waveform=64)
+        self.play_note(1, 0, waveform=64)
+        self.play_note(2, 0, waveform=64)
+        self.play_note(3, 0, waveform=64)
+
     def play_song_note(self):
         self.play_note(0, get_next_note(self.song_pos, YOUTH_8500_NOTES), release=1000, waveform=32)
         self.song_pos += 1
