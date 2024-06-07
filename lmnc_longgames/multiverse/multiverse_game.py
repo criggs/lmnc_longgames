@@ -280,8 +280,6 @@ class MultiverseGame:
                 self.update_history(event.controller, (event.type, event.input))
 
     def game_over_loop(self, events):
-        self.screen.fill(BLACK)
-
         if self.game_over_start_time is None:
             self.game_over_start_time = time.time()
 

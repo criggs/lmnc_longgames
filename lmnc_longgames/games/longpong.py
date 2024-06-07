@@ -372,6 +372,8 @@ class LongPongGame(MultiverseGame):
             self.reset_input_history(P2)
             self.player_two._rect.height = 10 * self.upscale_factor * 2
             print("Code 1 for P2")
+            
+        self.screen.fill(BLACK)
 
         if self.game_over:
             self.game_over_loop(events)
@@ -384,7 +386,6 @@ class LongPongGame(MultiverseGame):
 
         else:
             self.handle_events(events)
-            self.screen.fill(BLACK)
             # Update game elements
             self.player_one.update_paddle(dt)
             self.player_two.update_paddle(dt)

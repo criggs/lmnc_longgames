@@ -43,8 +43,8 @@ class SnakeGame(MultiverseGame):
         # Speed up a bit
         self.speedup_timer = self.speedup_timer - dt
         if self.speedup_timer <= 0:
-            self.speedup_timer = 5.0
-            self.snake_speed = self.snake_speed + 0.1
+            self.speedup_timer = 2.0
+            self.snake_speed = self.snake_speed + 0.2
             print(f'Speed is now {self.snake_speed}')
         
         new_x, new_y = self.snake_head
@@ -135,6 +135,7 @@ class SnakeGame(MultiverseGame):
         self.screen.fill(BLACK)
         
         if self.game_over:
+            self.draw_grid()
             self.game_over_loop(events)
         else:
             self.handle_events(events)
