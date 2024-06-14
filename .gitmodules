@@ -1,0 +1,3 @@
+[submodule "lmnc_longgames/games/cydoomgeneric"]
+	path = lmnc_longgames/games/cydoomgeneric
+	url = https://github.com/wojciech-graj/cydoomgeneric.git

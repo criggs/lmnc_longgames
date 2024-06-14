@@ -33,6 +33,13 @@ or
 
 `scripts/game_headless.sh`
 
+## Installing Doom
+1. Download a WAD file such as [DOOM1.WAD](https://doomwiki.org/wiki/DOOM1.WAD) and place in root directory
+2. From `/mnt/c/Code/lmnc_longgames/lmnc_longgames/games/cydoomgeneric/cydoomgeneric`
+    1. `pip install .`
+3. Install longpong nomrally
+4. Profit
+
 ## Development
 
 TODO

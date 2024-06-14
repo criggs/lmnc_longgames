@@ -302,4 +302,3 @@ class Multiverse:
     def play_note(self, *args, **kwargs):
         for display in self.displays:
             display.play_note(*args, **kwargs)
-

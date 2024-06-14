@@ -472,6 +472,7 @@ class MultiverseMain:
         from lmnc_longgames.simulations.marquee import Marquee
         from lmnc_longgames.games.invaders import InvadersGame
         from lmnc_longgames.games.combat import CombatGame
+        from lmnc_longgames.games.cydoom import Cydoom
 
         self.game_menu = MenuItem(
             "Long Games",
@@ -510,6 +511,7 @@ class MultiverseMain:
                 MenuItem("Breakout", props={"constructor": BreakoutGame}),
                 MenuItem("Invaders", props={"constructor": InvadersGame}),
                 MenuItem("Combat", props={"constructor": CombatGame}),
+                MenuItem("Doom", props={"constructor": Cydoom}),
                 MenuItem("Spectrum Analyzer", props={"constructor": SpectrumAnalyzer}),
                 MenuItem("Waveform", props={"constructor": Waveform}),
                 MenuItem(
