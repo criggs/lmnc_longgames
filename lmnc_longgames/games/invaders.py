@@ -185,7 +185,7 @@ class InvadersGame(MultiverseGame):
         self.reset()
 
     def reset(self):
-        self.game_over = False
+        super().reset()
         self.invaders = []
         self.player_bullets = []
         self.invader_bullets = []
@@ -207,21 +207,8 @@ class InvadersGame(MultiverseGame):
                 self.invaders.append(invader)
         self.player = Player(self)
 
-    def loop(self, events: List, dt: float):
-        """
-        Called for each iteration of the game loop
-
-        Parameters:
-            events: The pygame events list for this loop iteration
-            dt: The delta time since the last loop iteration. This is for framerate independence.
-        """
-        now_ticks = pygame.time.get_ticks()
-        invader_fire = False
-        if self.next_animation_tick < pygame.time.get_ticks():
-            self.animation_index = (self.animation_index + 1) % 2
-            self.next_animation_tick = now_ticks + 1000
-            invader_fire = True
-            
+    def handle_events(self, events):
+        
 
         for event in events:
             if event.type == ROTATED_CW and event.controller == P1:
@@ -231,12 +218,6 @@ class InvadersGame(MultiverseGame):
             if event.type == BUTTON_PRESSED and event.controller == P1 and event.input in [BUTTON_A] or (event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE):
                 #Fire
                 self.player.fire()
-            if self.game_over and event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_A]:
-                self.reset()
-                return
-            if self.game_over and event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_B, ROTARY_PUSH]:
-                self.exit_game()
-                return
                 
 
         keys = pygame.key.get_pressed()
@@ -245,22 +226,33 @@ class InvadersGame(MultiverseGame):
         elif keys[K_LEFT]:
             self.player.move(-1 / 5)
 
+    def loop(self, events: List, dt: float):
+        """
+        Called for each iteration of the game loop
+
+        Parameters:
+            events: The pygame events list for this loop iteration
+            dt: The delta time since the last loop iteration. This is for framerate independence.
+        """
+
         self.screen.fill(BLACK)
 
-        if self.game_over:
-            if len(self.invaders) == 0:
-                text = self.font.render("YOU WON", False, (135, 135, 0))
-            else:
-                text = self.font.render("YOU DIED", False, (135, 0, 0))
-            text = pygame.transform.scale_by(text, self.upscale_factor)
-            text_x = (self.width // 2) - (text.get_width() // 2)
-            text_y = (self.height // 2) - (text.get_height() // 2)
-            self.screen.blit(text, (text_x, text_y))
+        if self.game_over:        
+            self.game_over_loop(events)
         else:
+            now_ticks = pygame.time.get_ticks()
+            invader_fire = False
+            if self.next_animation_tick < pygame.time.get_ticks():
+                self.animation_index = (self.animation_index + 1) % 2
+                self.next_animation_tick = now_ticks + 1000
+                invader_fire = True
+            
+            self.handle_events(events)
             for invader in self.invaders:
                 invader.update(dt, self.invader_move_dir)
                 if invader._rect.bottom > self.player.y:
                     self.game_over = True
+                    self.winner = None
                     self.death_note()
                     return
             if len(self.invaders) > 0 and invader_fire:
@@ -296,15 +288,15 @@ class InvadersGame(MultiverseGame):
                 if bullet.collides_with(self.player):
                     #You Got Hit!
                     self.game_over = True
+                    self.winner = None
                     self.death_note()
                     return
-            
-            
             
             
             # Check if all invaders are cleared
             if not self.game_over and len(self.invaders) == 0:
                 self.game_over = True
+                self.winner = 0
                 self.win_note()
                 return
 

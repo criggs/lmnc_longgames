@@ -26,7 +26,7 @@ class SnakeGame(MultiverseGame):
         self.reset()
 
     def reset(self):
-        self.game_over = False
+        super().reset()
         self.grid = numpy.zeros((self.grid_width, self.grid_height))
         self.snake_head = (self.grid_width//2, self.grid_height//2)
         self.snake = [(int(self.snake_head[0]), int(self.snake_head[1]))]
@@ -43,8 +43,8 @@ class SnakeGame(MultiverseGame):
         # Speed up a bit
         self.speedup_timer = self.speedup_timer - dt
         if self.speedup_timer <= 0:
-            self.speedup_timer = 5.0
-            self.snake_speed = self.snake_speed + 0.1
+            self.speedup_timer = 2.0
+            self.snake_speed = self.snake_speed + 0.2
             print(f'Speed is now {self.snake_speed}')
         
         new_x, new_y = self.snake_head
@@ -78,6 +78,10 @@ class SnakeGame(MultiverseGame):
                 return
             if new_cell == 2:
                 # We got food!
+                self.play_note(0, 200, release=1000, waveform=32)
+                self.play_note(1, 400, release=1000, waveform=64)
+                self.play_note(2, 440, release=1000, waveform=128)
+                self.play_note(3, 440, release=1000, waveform=128)
                 self.food_position = None
                 self.snake_target_length = self.snake_target_length + 5
                 self.food_timer = 2.0 # New food in 2 seconds
@@ -112,6 +116,13 @@ class SnakeGame(MultiverseGame):
             self.random_note()
             self.moving_active = False
 
+    def handle_events(self, events: List):
+        for event in events:
+            if (event.type == ROTATED_CCW and event.controller == P1) or (event.type == pygame.KEYDOWN and event.key == pygame.K_UP):
+                self.turn_snake(1)
+            if event.type == ROTATED_CW and event.controller == P1 or (event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN):
+                self.turn_snake(-1)
+
     def loop(self, events: List, dt: float):
         """
         Called for each iteration of the game loop
@@ -120,28 +131,14 @@ class SnakeGame(MultiverseGame):
             events: The pygame events list for this loop iteration
             dt: The delta time since the last loop iteration. This is for framerate independence.
         """
-        for event in events:
-            if (event.type == ROTATED_CCW and event.controller == P1) or (event.type == pygame.KEYDOWN and event.key == pygame.K_UP):
-                self.turn_snake(-1)
-            if event.type == ROTATED_CW and event.controller == P1 or (event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN):
-                self.turn_snake(1)
-            if self.game_over and event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_A]:
-                self.reset()
-                return
-            if self.game_over and event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_B, ROTARY_PUSH]:
-                self.exit_game()
-                return
-
         # Fill the screen
         self.screen.fill(BLACK)
         
         if self.game_over:
-            text = self.font.render("YOU DIED", False, (135, 0, 0))
-            text = pygame.transform.scale_by(text, self.upscale_factor)
-            text_x = (self.width // 2) - (text.get_width() // 2)
-            text_y = (self.height // 2) - (text.get_height() // 2)
-            self.screen.blit(text, (text_x, text_y))
-        else:     
+            self.draw_grid()
+            self.game_over_loop(events)
+        else:
+            self.handle_events(events)
             # Update game elements
             self.update_snake(dt)
             self.update_food(dt)

@@ -1,9 +1,12 @@
+import time
 from typing import List
 import pygame
 import random
 import math
 from lmnc_longgames.multiverse.multiverse_game import MultiverseGame
 from lmnc_longgames.constants import *
+from lmnc_longgames.sound.microphone import Microphone
+import logging
 
 MODE_AI_VS_AI = 0
 MODE_ONE_PLAYER = 1
@@ -13,6 +16,8 @@ PLAYER_PADDLE_MOVE_STEPS = 3
 
 PLAYER_PADDLE_SPEED = PLAYER_PADDLE_MOVE_STEPS * 30
 AI_PADDLE_SPEED = 2 * 30
+
+POINTS_TO_WIN = 5
 
 CODE_1 = [
     (ROTATED_CCW, ROTARY_PUSH),
@@ -30,17 +35,26 @@ longpong
 
 
 class Player:
-    def __init__(self, rect: pygame.Rect, game) -> None:
+    def __init__(self, rect: pygame.Rect, game, player_id, is_ai: bool) -> None:
         # Paddle
         self._rect = rect
         self.direction: int = 0  # Direction the player's paddle is moving
         self.speed: int = 0
+        self.player_id = player_id
 
         # Game
-        self.is_ai: bool = True
+        self.is_ai = is_ai
         self.score: int = 0
         self._y = rect.y
         self.game = game
+        self.microphone = None
+        if not is_ai and self.game.audio_pong:
+            device = self.game.config.config.get("audio", {}).get(f"p{player_id}")
+            self.microphone = Microphone(device["name"], device["index"])
+
+    def teardown(self):
+        if self.microphone is not None:
+            self.microphone.teardown()
 
     @property
     def y(self):
@@ -74,14 +88,30 @@ class Player:
 
     def update_paddle(self, dt: float):
         speed = PLAYER_PADDLE_SPEED * self.game.upscale_factor
-        if self.is_ai:
-            self.game.update_for_ai(self)
-            # Only use the slower ai speed if one player is human
-            speed = (
-                speed
-                if self.game.player_one.is_ai
-                else AI_PADDLE_SPEED * self.game.upscale_factor
-            )
+        if self.microphone is not None:
+            buffer = self.microphone.read_audio_buffer(1)
+            if buffer is None:
+                logging.info(f"No audio buffer from microphone for player {self.player_id}")
+                return
+            # get the max value of the buffer
+            max_value = max(max(buffer), abs( min(buffer)))
+            position_factor = (max_value / 32768) 
+
+            if position_factor > 0.5:
+                self.direction = 1
+            else:
+                self.direction = -1
+            
+        else:
+            if self.is_ai:
+                self.game.update_for_ai(self)
+                # Only use the slower ai speed if one player is human
+                speed = (
+                    speed
+                    if self.game.player_one.is_ai
+                    else AI_PADDLE_SPEED * self.game.upscale_factor
+                )
+
         self.y += speed * dt * self.direction
         self.y = max(min(self.y, self.game.height - self.height), 0)
 
@@ -91,8 +121,9 @@ class Player:
 
 
 class Ball:
-    max_speed = 80
-    min_speed = 15
+    max_speed = 250
+    min_speed = 50
+    starting_speed = 75
 
     def __init__(self, radius: int, game: MultiverseGame) -> None:
         self.radius = radius
@@ -131,24 +162,29 @@ class Ball:
         self._y = self._rect.y
         self.angle = random.uniform(0.2, math.pi / 4)
         self.direction_y = random.choice((-1, 1))
-        self.speed = ((self.max_speed - self.min_speed) / 2) + self.min_speed
+        self.speed = self.starting_speed
+        self.speed_multiplier = 1.0
+
+    def speedup(self):
+        self.speed_multiplier = self.speed_multiplier + 0.1
 
     @property
     def speed_x(self):
-        return self.speed * math.cos(self.angle) * self.direction_x
+        return self.speed * math.cos(self.angle) * self.direction_x * self.speed_multiplier
 
     @property
     def speed_y(self):
-        return self.speed * math.sin(self.angle) * self.direction_y
+        return self.speed * math.sin(self.angle) * self.direction_y * self.speed_multiplier
 
 
 class LongPongGame(MultiverseGame):
-    def __init__(self, multiverse_display, game_mode=0):
+    def __init__(self, multiverse_display, game_mode=0, audio_pong=False):
         super().__init__("Long Pong", 120, multiverse_display)
         print(f"Game Mode: {game_mode}")
 
         paddle_width = 2 * self.upscale_factor
         paddle_height = 10 * self.upscale_factor
+        self.audio_pong = audio_pong
 
         # Create players
         self.player_one = Player(
@@ -156,8 +192,9 @@ class LongPongGame(MultiverseGame):
                 0, self.height // 2 - paddle_height // 2, paddle_width, paddle_height
             ),
             self,
+            P1,
+            game_mode == MODE_AI_VS_AI
         )
-        self.player_one.is_ai = game_mode == MODE_AI_VS_AI
 
         print(f"Player One is AI? {self.player_one.is_ai}")
 
@@ -169,8 +206,10 @@ class LongPongGame(MultiverseGame):
                 paddle_height,
             ),
             self,
+            P2,
+            game_mode != MODE_TWO_PLAYER
         )
-        self.player_two.is_ai = game_mode != MODE_TWO_PLAYER
+        
         print(f"Player Two is AI? {self.player_two.is_ai}")
 
         # Create ball
@@ -208,6 +247,11 @@ class LongPongGame(MultiverseGame):
         self.ball.reset()
         self.play_note(0, 55, release=1000, waveform=32)
 
+        if player.score == POINTS_TO_WIN:
+            self.win_note()
+            self.game_over = True
+            self.winner = player.player_id
+
     # Function to update the ball's position
     def update_ball(self, dt: float):
         self.ball.x += self.ball.speed_x * dt * self.upscale_factor
@@ -238,12 +282,14 @@ class LongPongGame(MultiverseGame):
         # Check collision with top
         if self.ball._rect.top <= 0:
             self.ball.direction_y = 1
-            self.random_note()
+            #self.random_note()
+            self.play_song_note()
 
         # Check collision with bottom
         if self.ball._rect.bottom >= (self.height - 1):
             self.ball.direction_y = -1
-            self.random_note()
+            #self.random_note()
+            self.play_song_note()
 
         # Check if the ball went out of bounds
         if self.ball._rect.right <= 0:
@@ -268,8 +314,45 @@ class LongPongGame(MultiverseGame):
         # Reverse the direction of travel
         self.ball.direction_x = colliding_paddle.position * -1
 
+        self.ball.speedup()
+
         # Beep!
-        self.random_note()
+        #self.random_note()
+        self.play_song_note()
+        
+
+    def handle_events(self, events: List):
+        for event in events:
+            # Player One
+            if not self.player_one.is_ai:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP:
+                        self.player_one.direction = -1
+                    elif event.key == pygame.K_DOWN:
+                        self.player_one.direction = 1
+                if event.type == pygame.KEYUP:
+                    if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
+                        self.player_one.direction = 0
+                if event.type == ROTATED_CCW and event.controller == P1:
+                    self.player_one.move_paddle(PLAYER_PADDLE_MOVE_STEPS)
+                if event.type == ROTATED_CW and event.controller == P1:
+                    self.player_one.move_paddle(-1 * PLAYER_PADDLE_MOVE_STEPS)
+
+            # Player Two
+            if not self.player_two.is_ai:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_w:
+                        self.player_two.direction = -1
+                    elif event.key == pygame.K_s:
+                        self.player_two.direction = 1
+                if event.type == pygame.KEYUP:
+                    if event.key == pygame.K_w or event.key == pygame.K_s:
+                        self.player_two.direction = 0
+                if event.type == ROTATED_CCW and event.controller == P2:
+                    self.player_two.move_paddle(PLAYER_PADDLE_MOVE_STEPS)
+                if event.type == ROTATED_CW and event.controller == P2:
+                    self.player_two.move_paddle(-1 * PLAYER_PADDLE_MOVE_STEPS)
+
 
     def loop(self, events: List, dt: float):
         """
@@ -289,65 +372,48 @@ class LongPongGame(MultiverseGame):
             self.reset_input_history(P2)
             self.player_two._rect.height = 10 * self.upscale_factor * 2
             print("Code 1 for P2")
-
-        for event in events:
-            # Player One
-            if not self.player_one.is_ai:
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_UP:
-                        self.player_one.direction = -1
-                    elif event.key == pygame.K_DOWN:
-                        self.player_one.direction = 1
-                if event.type == pygame.KEYUP:
-                    if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
-                        self.player_one.direction = 0
-                if event.type == ROTATED_CCW and event.controller == P1:
-                    self.player_one.move_paddle(-1 * PLAYER_PADDLE_MOVE_STEPS)
-                if event.type == ROTATED_CW and event.controller == P1:
-                    self.player_one.move_paddle(PLAYER_PADDLE_MOVE_STEPS)
-
-            # Player Two
-            if not self.player_two.is_ai:
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_w:
-                        self.player_two.direction = -1
-                    elif event.key == pygame.K_s:
-                        self.player_two.direction = 1
-                if event.type == pygame.KEYUP:
-                    if event.key == pygame.K_w or event.key == pygame.K_s:
-                        self.player_two.direction = 0
-                if event.type == ROTATED_CCW and event.controller == P2:
-                    self.player_two.move_paddle(-1 * PLAYER_PADDLE_MOVE_STEPS)
-                if event.type == ROTATED_CW and event.controller == P2:
-                    self.player_two.move_paddle(PLAYER_PADDLE_MOVE_STEPS)
-
-        # Update game elements
-        self.player_one.update_paddle(dt)
-        self.player_two.update_paddle(dt)
-        self.update_ball(dt)
-
-        # Fill the screen
+            
         self.screen.fill(BLACK)
 
-        # Draw paddles and ball
-        pygame.draw.rect(self.screen, WHITE, self.player_one._rect)
-        pygame.draw.rect(self.screen, WHITE, self.player_two._rect)
-        pygame.draw.rect(self.screen, WHITE, self.ball._rect)
+        if self.game_over:
+            self.game_over_loop(events)
 
-        pygame.draw.line(
-            self.screen,
-            WHITE,
-            (self.width // 2, 0),
-            (self.width // 2, self.height),
-            self.upscale_factor,
-        )
+            if self.player_one.is_ai and self.player_two.is_ai:
+                # Automatically reset the game if both players are AI
+                if time.time() - self.game_over_start_time > 5:
+                    self.reset()
+                    return
 
-        # Draw score
-        self.draw_score()
+        else:
+            self.handle_events(events)
+            # Update game elements
+            self.player_one.update_paddle(dt)
+            self.player_two.update_paddle(dt)
+            self.update_ball(dt)
+
+            # Draw paddles and ball
+            pygame.draw.rect(self.screen, WHITE, self.player_one._rect)
+            pygame.draw.rect(self.screen, WHITE, self.player_two._rect)
+            pygame.draw.rect(self.screen, WHITE, self.ball._rect)
+
+            pygame.draw.line(
+                self.screen,
+                WHITE,
+                (self.width // 2, 0),
+                (self.width // 2, self.height),
+                self.upscale_factor,
+            )
+            # Draw score
+            self.draw_score()
 
     def reset(self):
         super().reset()
         self.ball.reset()
         self.player_one.reset()
         self.player_two.reset()
+    
+    def teardown(self):
+        super().teardown()
+        self.player_one.teardown()
+        self.player_two.teardown()
 

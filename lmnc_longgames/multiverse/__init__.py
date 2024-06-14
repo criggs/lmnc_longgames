@@ -74,7 +74,7 @@ class Display:
 
     def run(self):
         logging.debug(f"{self.x},{self.y}: Running....")
-        while not self._stop_flag.wait(timeout=0.005):
+        while not self._stop_flag.wait(timeout=0.0025):
             if self.dummy:
                 # Nothing to do here, move along
                 continue

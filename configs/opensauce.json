@@ -1,0 +1,53 @@
+{
+  "names_file": "/home/pi/names.txt",
+  "games": {
+    "longpong": {}
+  },
+  "videos":[
+  	{
+      "name":"Bad Apple", 
+      "path": "/home/pi/Videos/BadAspect_LongPong.mp4", 
+      "midi": "/home/pi/Videos/badapple_midi_sync.mid"
+    },
+    {
+      "name":"Camera",
+      "path": "<video0>"
+    }
+  ],
+  "audio": {
+    "main": {"name": "C93: USB Audio", "index": 0},
+    "p1": {"name": "CMTECK", "index": 0},
+    "p2": {"name": "CMTECK", "index": 1}
+  },
+  "displays": {
+    "main": {
+      "devices": [
+	      "/dev/serial/by-id/usb-Pimoroni_Multiverse_E661410403868C2C-if00",
+	      "/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614864D377A334-if00",
+        "/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614103E72F7938-if00",
+        "/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614103E7164C22-if00",
+        "/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614103E786A622-if00",
+        "/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614C311B836F25-if00",
+        "/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614C311B0E5325-if00",
+        "/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614104038E3C2B-if00",
+        "/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614864D3174134-if00",
+        "/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614864D3838434-if00",
+        "/dev/serial/by-id/usb-Pimoroni_Multiverse_E66141040357352A-if00",
+        "/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614104030E6B2B-if00",
+        "/dev/serial/by-id/usb-Pimoroni_Multiverse_E66141040377962B-if00",
+        "/dev/serial/by-id/usb-Pimoroni_Multiverse_E66164084345652E-if00",
+        "/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614C311B425233-if00",
+        "/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614104037E8A2C-if00",
+        "/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614104037D9F30-if00",
+        "/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614C311B848E37-if00",
+        "/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614103E76B3D23-if00",
+        "/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614864D37E5B34-if00",
+        "/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614103E7301237-if00",
+        "/dev/serial/by-id/usb-Pimoroni_Multiverse_E661410403984E2B-if00",
+        "/dev/serial/by-id/usb-Pimoroni_Multiverse_E6616408438F4A2E-if00",
+        "/dev/serial/by-id/usb-Pimoroni_Multiverse_E6614864D36AC336-if00",
+        "/dev/serial/by-id/usb-Pimoroni_Multiverse_E661410403422430-if00"
+      ]
+    }
+  }
+}

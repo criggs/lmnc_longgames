@@ -66,7 +66,7 @@ class TextBox:
         screen.blit(self.rendered_text, (int(self.x), int(self.y)))
         
 
-class MarqueeDemo(MultiverseGame):
+class Marquee(MultiverseGame):
 
     def __init__(self, multiverse_displays, header_text):
         super().__init__("Marquee", 120, multiverse_displays)

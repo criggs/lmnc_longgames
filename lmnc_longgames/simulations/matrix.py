@@ -6,7 +6,7 @@ from lmnc_longgames.constants import *
 from lmnc_longgames.multiverse.multiverse_game import MultiverseGame
 
 
-class MatrixDemo(MultiverseGame):
+class Matrix(MultiverseGame):
     def __init__(self, multiverse_displays):
         super().__init__("Matrix", 60, multiverse_displays)
 

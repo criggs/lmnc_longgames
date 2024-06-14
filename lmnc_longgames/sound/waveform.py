@@ -4,12 +4,14 @@ import time
 import logging
 import itertools
 import pygame
-import pyaudio
 import numpy
 from math import sqrt
 import imageio.v3 as iio
 from lmnc_longgames.constants import *
 from lmnc_longgames.multiverse.multiverse_game import MultiverseGame
+import sounddevice as sd
+
+from lmnc_longgames.sound.microphone import Microphone
 
 script_path = os.path.realpath(os.path.dirname(__file__))
 font = pygame.font.Font(f"{script_path}/../icl8x8u.bdf", 8)
@@ -20,38 +22,25 @@ GAIN_STEP = 0.5
 GAIN_MAX = 10
 GAIN_MIN = 0.5
 
+DECAY_COLOR = (0, 30, 75)
+BACKGROUND_DECAY = 0.0075
+
 class Waveform(MultiverseGame):
 
     def __init__(self, multiverse_display):
-        super().__init__("Waveform", 60, multiverse_display, fixed_fps = True)
-
-        #Sample Config
-        self.chunk_pow = 10
-        self.chunk = 2 ** self.chunk_pow
+        super().__init__("Waveform", 180, multiverse_display, fixed_fps = True)
 
         self.gain = 2.0
 
-        self.setup_audio()
+        device = self.config.config.get("audio", {}).get("main", {"name": "default", "index": 0})
+        try:
+            self.microphone = Microphone(device["name"], device["index"])
+        except Exception as e:
+            logging.error(f"Failed to initialize microphone: {e}")
+            self.microphone = None
 
-
-    def setup_audio(self):
-        self.buffer = None
-
-        self.p = pyaudio.PyAudio()
-        self.stream = self.p.open(
-            format = pyaudio.paInt16,
-            channels = 1,
-            rate = RATE,
-            input=True,
-            output=False,
-            frames_per_buffer=self.chunk,
-            stream_callback=self.non_blocking_stream_read
-        )
-
-    def non_blocking_stream_read(self, in_data, frame_count, time_info, status):
-        self.buffer = in_data
-        return in_data, pyaudio.paContinue
-
+        self.background = None
+        
 
     def scale_samples_to_surf(self, width, height, samples):
         """ Returns a generator containing (x, y) to draw a waveform.
@@ -99,6 +88,11 @@ class Waveform(MultiverseGame):
 
     def loop(self, events: List, dt: float):
 
+        if self.microphone is None:
+            self.exit_game()
+        else:
+            self.buffer = self.microphone.read_audio_buffer()
+
         for event in events:
             if event.type == BUTTON_RELEASED and event.input in [BUTTON_A]:
                 self.reset()
@@ -114,14 +108,14 @@ class Waveform(MultiverseGame):
 
 
         start = time.time()
-        self.screen.fill(BLACK)
 
         if self.buffer is None:
             return
-
-        values = numpy.frombuffer(self.buffer, dtype=numpy.int16)
-
-        values = values * self.gain
+        
+        # We don't want to clear the screen if we didn't get a new buffer
+        self.screen.fill(BLACK)
+        
+        values = self.buffer * self.gain
 
         # Don't think this actually does anything. Need to calculate the largest scaler and clamp that based on initial values
         # # Clamp if clipping
@@ -131,17 +125,31 @@ class Waveform(MultiverseGame):
 
         # Here we should how to draw it onto a screen.
         wf = pygame.Surface((self.width, self.height)).convert_alpha()
-        self.draw_wave(wf, values, wave_color=(255,0,0), background_color=BLACK)
+        self.draw_wave(wf, values, wave_color=(255,0,0), background_color=(0,0,0,0))
         self.screen.fill(BLACK)
+
+        wave_frame = pygame.surfarray.array3d(wf)
+
+        np_wave_frame = numpy.array(wave_frame)
+
+        #replace red in the np_wave_frame with the color we want
+        np_wave_frame[np_wave_frame[:,:,0] == 255] = DECAY_COLOR
+
+        if self.background is None:
+            self.background = np_wave_frame
+        else:
+
+            scaledDecay = BACKGROUND_DECAY * (self.fps * dt)
+            # half the values in the background
+            self.background = self.background * (1 - scaledDecay)
+            # update background to have matching pixels from np_wave_frame
+            self.background = numpy.where(np_wave_frame == DECAY_COLOR, np_wave_frame, self.background)
+        
+
+        background_frame = pygame.surfarray.map_array(self.screen, numpy.round(self.background).astype(int))
+        pygame.surfarray.blit_array(self.screen, background_frame)
+        
         self.screen.blit(wf, (0, 0))
 
-        
-    def reset(self):
-        self.setup_audio()
-
     def teardown(self):
-        logging.info("Tearing down audio_viz")
-        try:
-            self.stream.close()
-        except Exception as e:
-            logging.error("Exception while stopping pyaudio stream.", exc_info=e)
+        self.microphone.teardown()

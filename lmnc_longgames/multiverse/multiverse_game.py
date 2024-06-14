@@ -1,11 +1,13 @@
 import os, signal, time, sys, threading, getopt
 import logging
+import platform
+import logging
 
-try:
-    import RPi.GPIO as gpio
+from lmnc_longgames.sound.microphone import initialize_sd
+from lmnc_longgames.util.exit_game import ExitButton
+from lmnc_longgames.util.music import get_next_note
 
-    logging.info("Running on a Raspberry PI")
-except (ImportError, RuntimeError):
+if platform.machine() != 'aarch64':
     logging.info("Not running on a Raspberry PI. Setting mock GPIO Zero Pin Factory.")
     os.environ["GPIOZERO_PIN_FACTORY"] = "mock"
 
@@ -17,7 +19,6 @@ import numpy
 from lmnc_longgames.config import LongGameConfig
 from lmnc_longgames.multiverse import Multiverse, Display
 from lmnc_longgames.util.rotary_encoder_controller import RotaryEncoderController
-from lmnc_longgames.util.screen_power_reset import ScreenPowerReset
 from lmnc_longgames.constants import *
 from gpiozero import Button, DigitalOutputDevice
 
@@ -113,8 +114,11 @@ class PygameMultiverseDisplay:
 
         if self.mute:
             return
+        
+        if kwargs.get("attack", None) is None:
+            kwargs["attack"] = 20
+
         self.multiverse.play_note(*args, **kwargs)
-        #self.multiverse.play_note(0, 55, phase=Display.PHASE_OFF)
 
     def stop(self):
         self.multiverse.stop()
@@ -211,11 +215,17 @@ class MultiverseGame:
         self.reset_input_history(P1)
         self.reset_input_history(P2)
         self.exit_game_flag = False
+        self.game_over = False
+        self.winner = None
+        self.game_over_start_time = None
+        self.song_pos = 0
 
         self.config = LongGameConfig()
 
         logging.info(f"Initializing game {self.game_title}")
         logging.info(f"fps: {fps}")
+        self.play_off_notes()
+
 
     @property
     def upscale_factor(self):
@@ -237,6 +247,7 @@ class MultiverseGame:
     def display_count(self):
         return len(self.multiverse_display.multiverse.displays)
     
+    #def play_note(self, channel, frequency, waveform=WAVEFORM_TRIANGLE, attack=10, decay=200, sustain=0, release=0, phase=PHASE_ATTACK)
     def play_note(self, *args, **kwargs):
         self.multiverse_display.play_note(*args, **kwargs)
 
@@ -254,6 +265,7 @@ class MultiverseGame:
         return history_slice == to_check
 
     def exit_game(self):
+        self.play_off_notes()
         self.exit_game_flag = True
 
     def teardown(self):
@@ -267,21 +279,69 @@ class MultiverseGame:
             if event.type in [ROTATED_CW, ROTATED_CCW, BUTTON_RELEASED]:
                 self.update_history(event.controller, (event.type, event.input))
 
+    def game_over_loop(self, events):
+        if self.game_over_start_time is None:
+            self.game_over_start_time = time.time()
+
+        # only accept an event after 3 seconds have passed and the game is over
+        if time.time() - self.game_over_start_time > 3:
+            # Check for user input to exit or reset
+            for event in events:
+                if self.game_over and event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_A]:
+                    self.reset()
+                    return
+                if self.game_over and event.type == BUTTON_RELEASED and event.controller == P1 and event.input in [BUTTON_B, ROTARY_PUSH]:
+                    self.exit_game()
+                    return
+
+        #logging.info("Winner: " + str(self.winner))
+
+        if self.winner == 0:
+            text = self.font.render("YOU WON", False, (135, 135, 0))
+        elif self.winner == P1:
+            text = self.font.render("PLAYER 1 WINS!", False, (135, 135, 0))
+        elif self.winner == P2:
+            text = self.font.render("PLAYER 2 WINS!", False, (135, 135, 0))
+        else:
+            text = self.font.render("YOU DIED", False, (135, 0, 0))
+        text = pygame.transform.scale_by(text, self.upscale_factor)
+        text_x = (self.width // 2) - (text.get_width() // 2)
+        text_y = (self.height // 2) - (text.get_height() // 2)
+        self.screen.blit(text, (text_x, text_y))
+
     def reset(self):
         """
         Override this method for game reset
         """
         self.reset_input_history(P1)
         self.reset_input_history(P2)
+        self.game_over = False
+        self.winner = None
+        self.game_over_start_time = None
+        self.song_pos = 0
+        self.play_off_notes()
+
 
     def reset_input_history(self, controller):
         if controller == P1:
             self.p1_input_history = [0] * 20
         else:
             self.p2_input_history = [0] * 20
+    
+    def play_off_notes(self):
+        # I don't think the off note phase is implmented in teh firmare, 
+        # so we'll just play a note at 0 hertz :shrug:
+        self.play_note(0, 0, waveform=64)
+        self.play_note(1, 0, waveform=64)
+        self.play_note(2, 0, waveform=64)
+        self.play_note(3, 0, waveform=64)
 
-    def random_note(self, waveform=64):
-        self.play_note(0, PENTATONIC[random.randint(4*5,5*5)], waveform=waveform)
+    def play_song_note(self):
+        self.play_note(0, get_next_note(self.song_pos, YOUTH_8500_NOTES), release=1000, waveform=32)
+        self.song_pos += 1
+
+    def random_note(self, channel=0, waveform=64):
+        self.play_note(channel, PENTATONIC[random.randint(4*3,5*3)], waveform=waveform)
 
     def death_note(self):
         self.play_note(0, 55, release=1000, waveform=32)
@@ -293,7 +353,7 @@ class MultiverseGame:
         self.play_note(0, 880, release=1000, waveform=32)
         self.play_note(1, 440, release=1000, waveform=32)
         self.play_note(2, 220, release=1000, waveform=32)
-        self.play_note(4, 110, release=1000, waveform=32)
+        self.play_note(3, 110, release=1000, waveform=32)
 
     def display_countdown(self):
         logging.info("Starting countdown...")
@@ -405,11 +465,11 @@ class MultiverseMain:
 
         from lmnc_longgames.sound.spectrum import SpectrumAnalyzer
         from lmnc_longgames.sound.waveform import Waveform
-        from lmnc_longgames.demos.fire_demo import FireDemo
-        from lmnc_longgames.demos.matrix_demo import MatrixDemo
-        from lmnc_longgames.demos.life_demo import LifeDemo
-        from lmnc_longgames.demos.video_demo import VideoDemo
-        from lmnc_longgames.demos.marquee_demo import MarqueeDemo
+        from lmnc_longgames.simulations.fire import Fire
+        from lmnc_longgames.simulations.matrix import Matrix
+        from lmnc_longgames.simulations.life import Life
+        from lmnc_longgames.video.video_player import VideoPlayer
+        from lmnc_longgames.simulations.marquee import Marquee
         from lmnc_longgames.games.invaders import InvadersGame
         from lmnc_longgames.games.combat import CombatGame
         from lmnc_longgames.games.cydoom import Cydoom
@@ -418,16 +478,31 @@ class MultiverseMain:
             "Long Games",
             [
                 MenuItem(
-                    "Long Pong",
+                    "Voice Long Pong",
                     [
                         MenuItem(
-                            "1 Player", props={"constructor": LongPongGame, "args": [1]}
+                            "1 Player", props={"constructor": LongPongGame, "args": [1, True]}
                         ),
                         MenuItem(
-                            "2 Player", props={"constructor": LongPongGame, "args": [2]}
+                            "2 Player", props={"constructor": LongPongGame, "args": [2, True]}
                         ),
                         MenuItem(
-                            "AI vs AI", props={"constructor": LongPongGame, "args": [0]}
+                            "AI vs AI", props={"constructor": LongPongGame, "args": [0, True]}
+                        ),
+                        MenuItem("Back"),
+                    ],
+                ),
+                MenuItem(
+                    "Paddle Long Pong",
+                    [
+                        MenuItem(
+                            "1 Player", props={"constructor": LongPongGame, "args": [1, False]}
+                        ),
+                        MenuItem(
+                            "2 Player", props={"constructor": LongPongGame, "args": [2, False]}
+                        ),
+                        MenuItem(
+                            "AI vs AI", props={"constructor": LongPongGame, "args": [0, False]}
                         ),
                         MenuItem("Back"),
                     ],
@@ -440,11 +515,11 @@ class MultiverseMain:
                 MenuItem("Spectrum Analyzer", props={"constructor": SpectrumAnalyzer}),
                 MenuItem("Waveform", props={"constructor": Waveform}),
                 MenuItem(
-                    "Demos",
+                    "Simulations",
                     [
-                        MenuItem("Fire", props={"constructor": FireDemo}),
-                        MenuItem("Matrix", props={"constructor": MatrixDemo}),
-                        MenuItem("Life", props={"constructor": LifeDemo}),
+                        MenuItem("Fire", props={"constructor": Fire}),
+                        MenuItem("Matrix", props={"constructor": Matrix}),
+                        MenuItem("Life", props={"constructor": Life}),
                         MenuItem("Back"),
                     ],
                 )
@@ -464,12 +539,12 @@ class MultiverseMain:
         '''
         video_config = config.config.get("videos",[])
 
-        video_items = [MenuItem(v.get('name'), props={"constructor": VideoDemo, "args":[v.get('path')]}) for v in video_config]
+        video_items = [MenuItem(v.get('name'), props={"constructor": VideoPlayer, "args":[v]}) for v in video_config]
         if(len(video_items)):
             video_items.append(MenuItem("Back"))
             self.game_menu.children.append(MenuItem("Videos", video_items, parent=self.game_menu))
 
-        self.game_menu.children.append(MenuItem("Special Thanks", parent=self.game_menu, props={"constructor": MarqueeDemo, "args": ["Special Thanks"]}))
+        self.game_menu.children.append(MenuItem("Special Thanks", parent=self.game_menu, props={"constructor": Marquee, "args": ["Special Thanks"]}))
         
         signal.signal(signal.SIGINT, self.signal_handler)
 
@@ -641,18 +716,22 @@ class MultiverseMain:
         self.stop()
 
     def load_demo_disc(self):
-        from lmnc_longgames.demos.fire_demo import FireDemo
-        from lmnc_longgames.demos.matrix_demo import MatrixDemo
-        from lmnc_longgames.demos.life_demo import LifeDemo
+        from lmnc_longgames.simulations.fire import Fire
+        from lmnc_longgames.simulations.matrix import Matrix
+        from lmnc_longgames.simulations.life import Life
         from lmnc_longgames.games.longpong import LongPongGame
-        from lmnc_longgames.demos.marquee_demo import MarqueeDemo
+        from lmnc_longgames.simulations.marquee import Marquee
+        from lmnc_longgames.sound.spectrum import SpectrumAnalyzer
+        from lmnc_longgames.sound.waveform import Waveform
 
         options = [
             (LongPongGame, [0]),
-            (FireDemo, []),
-            (MatrixDemo, []),
-            (LifeDemo, []),
-            (MarqueeDemo, ["Special Thanks"]),
+            (Fire, []),
+            (Matrix, []),
+            (Life, []),
+            (SpectrumAnalyzer, []),
+            (Waveform, []),
+            (Marquee, ["Special Thanks"]),
         ]
         game_class, args = random.choice(options)
 
@@ -693,20 +772,20 @@ class MultiverseMain:
             ):
                 self.menu_inactive_start_time = time.time()
                 self.select_menu_item()
-                self.multiverse_display.play_note(0, C_MINOR[8*3], waveform=64)
+                self.multiverse_display.play_note(0, C_MINOR[8*4], waveform=64)
             # See if we moved, increase/decrease highlighting
             if (event.type == pygame.KEYUP and event.key == pygame.K_UP) or (
                 event.type == ROTATED_CCW
             ):
                 self.menu_inactive_start_time = time.time()
                 highlight_change = -1
-                self.multiverse_display.play_note(0, C_MINOR[8*2], waveform=64)
+                self.multiverse_display.play_note(0, C_MINOR[8*3], waveform=64)
             if (event.type == pygame.KEYUP and event.key == pygame.K_DOWN) or (
                 event.type == ROTATED_CW
             ):
                 self.menu_inactive_start_time = time.time()
                 highlight_change = 1
-                self.multiverse_display.play_note(0, C_MINOR[8*2], waveform=64)
+                self.multiverse_display.play_note(0, C_MINOR[8*3], waveform=64)
 
 
         self.game_menu.highlight(self.game_menu.highlighted_index + highlight_change)
@@ -784,6 +863,9 @@ def main():
     logging.info("Starting Long Game Program")
     upscale_factor = 5 if show_window and upscale else 1
 
+    logging.info("Initializing microphones")
+    initialize_sd()
+
     game_main = MultiverseMain(upscale_factor, headless=not show_window)
 
     # Set up control buttons
@@ -820,10 +902,11 @@ def main():
         )
         pygame.event.post(event)
 
-    game_reset_button = Button(PIN_BUTTON_GAME_RESET, bounce_time=BUTTON_BOUNCE_TIME_SEC)
-    game_reset_button.when_released = reset_game
+    # game_reset_button = Button(PIN_BUTTON_GAME_RESET, bounce_time=BUTTON_BOUNCE_TIME_SEC)
+    # game_reset_button.when_released = reset_game
 
     #ScreenPowerReset(reset_pin=PIN_RESET_RELAY, button_pin=PIN_BUTTON_SCREEN_RESET)
+    ExitButton(button_pin=PIN_BUTTON_GAME_RESET)
 
     def reset_screen():
         logging.info("Reset Screens Button Pressed.")

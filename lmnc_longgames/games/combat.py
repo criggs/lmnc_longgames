@@ -12,11 +12,13 @@ from collections import namedtuple
 
 script_path = os.path.realpath(os.path.dirname(__file__))
 
-
+BULLET_CHANNEL=1
 # Game constants
 TANK_WIDTH = 5
 TANK_HEIGHT = 5
 WALL_COLOR = (150,150,150)
+P1_BULLET_COLOR=(255,0,255)
+P2_BULLET_COLOR=(0,255,255)
 
 def load_sprites(name, count):
     return [pygame.image.load(f"{script_path}/assets/{name}_{i}.png").convert_alpha() for i in range(count)]
@@ -49,13 +51,13 @@ class Player(GameObject):
         self.health = PLAYER_HEALTH
         
         if player == P1:
-            self.x =  0
-            self.y = 0
+            self.x =  self.game.wall_width
+            self.y = self.game.wall_width
             self.dir = E
             images = TANK_A
         else:
-            self.x = game.width - self.width
-            self.y = game.height - self.height
+            self.x = game.width - self.width - self.game.wall_width
+            self.y = game.height - self.height - self.game.wall_width
             self.dir = W
             images = TANK_B
         self.speed = 10
@@ -125,7 +127,7 @@ class Player(GameObject):
     def fire(self):
         bullet = Bullet(self.game, self._rect.centerx, self._rect.centery, self.dir, self.player)
         self.game.bullets.add(bullet)
-        self.game.random_note()
+        self.game.play_song_note()
     
 class Bullet(GameObject):
     def __init__(self, game, x, y, dir: Direction, player):
@@ -207,12 +209,13 @@ class Bullet(GameObject):
                 self.x_dir = -1
                 # self.y = wall.top - self.height
                 # self.x = wall.left - self.width
-            self.game.random_note(waveform=32)
+            self.game.random_note(channel=BULLET_CHANNEL, waveform=32)
             return True
         return False
     
     def draw(self, screen):
-        pygame.draw.rect(screen, WHITE, self._rect)
+        bullet_color = P1_BULLET_COLOR if self.player == P1 else P2_BULLET_COLOR
+        pygame.draw.rect(screen, bullet_color, self._rect)
            
 
 class CombatGame(MultiverseGame):
@@ -223,41 +226,32 @@ class CombatGame(MultiverseGame):
         super().__init__("Combat", 60, multiverse_display)
         self.bullets = set()
         self.walls = []
+        self.wall_width = 2 * self.upscale_factor
         self.reset()
         
 
     def reset(self):
-        self.game_over = False
+        super().reset()
         self.bullets = set()
         self.p1_tank = Player(self, P1)
         self.p2_tank = Player(self, P2)
         self.walls = []
         
-        # Build the walls
-        wall_width = 2 * self.upscale_factor
-        
         # 4 vertical walls
         
         v_wall_gap = self.width // 5
         for i in range(1,5):
-            wall = pygame.Rect(i * v_wall_gap, self.height // 4, wall_width, self.height // 2)
+            wall = pygame.Rect(i * v_wall_gap, self.height // 4, self.wall_width, self.height // 2)
             self.walls.append(wall)
         
-        # 2 horizontal walls
+        # Add the board walls
+        self.walls.append(pygame.Rect(0, 0, self.wall_width, self.height))
+        self.walls.append(pygame.Rect(self.width - self.wall_width, 0, self.wall_width, self.height))
+        self.walls.append(pygame.Rect(self.wall_width, 0, self.width - (self.wall_width * 2), self.wall_width))
+        self.walls.append(pygame.Rect(self.wall_width, self.height - self.wall_width, self.width - (self.wall_width * 2), self.wall_width))
         
-        
-
-    def loop(self, events: List, dt: float):
-        """
-        Called for each iteration of the game loop
-
-        Parameters:
-            events: The pygame events list for this loop iteration
-            dt: The delta time since the last loop iteration. This is for framerate independence.
-        """
-        now_ticks = pygame.time.get_ticks()
-
-        for event in events:
+    def handle_events(self, events):
+         for event in events:
             
             #Turn
             if (event.type == ROTATED_CW and event.controller == P1) or (event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT):
@@ -284,29 +278,21 @@ class CombatGame(MultiverseGame):
                 self.p2_tank.moving = True
             if (event.type == BUTTON_RELEASED and event.controller == P2 and event.input in [BUTTON_B]) or (event.type == pygame.KEYUP and event.key == pygame.K_w):
                 self.p2_tank.moving = False
-            
-            # Reset/Quit
-            if self.game_over and event.type == BUTTON_RELEASED and event.input in [BUTTON_A]:
-                self.reset()
-                return
-            if self.game_over and event.type == BUTTON_RELEASED and event.input in [BUTTON_B, ROTARY_PUSH]:
-                self.exit_game()
-                return
-                
 
+    def loop(self, events: List, dt: float):
+        """
+        Called for each iteration of the game loop
+
+        Parameters:
+            events: The pygame events list for this loop iteration
+            dt: The delta time since the last loop iteration. This is for framerate independence.
+        """
         self.screen.fill(BLACK)
 
         if self.game_over:
-            if self.winner == 1:
-                text = self.font.render("PLAYER 1 WINS!", False, (135, 135, 0))
-            else:
-                text = self.font.render("PLAYER 2 WINS!", False, (135, 135, 0))
-            text = pygame.transform.scale_by(text, self.upscale_factor)
-            text_x = (self.width // 2) - (text.get_width() // 2)
-            text_y = (self.height // 2) - (text.get_height() // 2)
-            self.screen.blit(text, (text_x, text_y))
+            super().game_over_loop(events)
         else:
-
+            self.handle_events(events)
             self.p1_tank.update(dt)
             self.p2_tank.update(dt)
             

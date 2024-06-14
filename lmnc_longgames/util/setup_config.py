@@ -108,7 +108,28 @@ class SetupConfigMain:
         self.multiverse_display = PygameMultiverseDisplay(
             "Multiverse Games", upscale_factor, headless
         )
-        self.multiverse_display.configure_display([])
+    
+
+        serial_dir = r"/dev/serial/by-id"
+        found_devices = [
+            f"{serial_dir}/{file}" for file in os.listdir(serial_dir)
+        ]
+
+
+        print("Found the following serial devices:")
+        displays = []
+        for i, file in enumerate(found_devices):
+            print(f"{i}: {file}")
+            d = Display(f"{file}", 53, 11, 0, 11 * i)
+            d.reset()
+            displays.append(d)
+        print("")
+
+
+
+        self.multiverse_display.configure_display(displays)
+
+
         self.clock = pygame.time.Clock()
         self.game = SetupConfigGame(self.multiverse_display)
 

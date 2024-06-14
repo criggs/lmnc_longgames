@@ -7,11 +7,14 @@ import pygame
 import imageio.v3 as iio
 from lmnc_longgames.constants import *
 from lmnc_longgames.multiverse.multiverse_game import MultiverseGame
+import mido
+
+from lmnc_longgames.sound.midi_player import MidiPlayer
 
 '''
 Play the video
 '''
-class VideoDemo(MultiverseGame):
+class VideoPlayer(MultiverseGame):
 
     FIT_ALL = 0
     FIT_WIDTH = 1
@@ -21,17 +24,21 @@ class VideoDemo(MultiverseGame):
     TILE_INDIVISIBLE=1
     TILE_FILL=2
 
-    def __init__(self, multiverse_displays, video_file_path, fit_mode = FIT_HEIGHT, tile_mode = TILE_INDIVISIBLE):
-        self.video_file_path = video_file_path
-        print(f'Playing video {video_file_path}')
+    def __init__(self, multiverse_displays, video_config, fit_mode = FIT_HEIGHT, tile_mode = TILE_INDIVISIBLE):
+        self.video_file_path = video_config.get("path")
+        self.midi_path = video_config.get("midi")
+        self.midi_player = None
+        print(f'Playing video {self.video_file_path}')
+        print(f'Config: {video_config}')
 
-        if '<video' in video_file_path:
+        if '<video' in self.video_file_path:
             fit_mode = self.FIT_WIDTH
             tile_mode = self.TILE_OFF
 
 
         super().__init__("Video", 60, multiverse_displays, fixed_fps = True)
         
+
         self.fit_mode = fit_mode
         self.tile_mode = tile_mode
         self.setup_video()
@@ -64,7 +71,8 @@ class VideoDemo(MultiverseGame):
         if '<video' in self.video_file_path:
             self.fps = 30
             print(f"Resetting FPS to {self.fps} for video")
-            self.frame_iter = iio.imiter(self.video_file_path, fps="30", size=(320,240))
+            # We're using hflip to mirror the camera input
+            self.frame_iter = iio.imiter(self.video_file_path, fps="30", size=(320,240), output_params=["-vf", "hflip"])
         else:
             scale_param = f"-1:{raw_height}" if self.fit_mode == self.FIT_HEIGHT else f"{raw_width}:-1"
             self.frame_iter = iio.imiter(
@@ -74,6 +82,10 @@ class VideoDemo(MultiverseGame):
                 filter_sequence=[("scale", f"{scale_param}:flags=neighbor"),("fps", f"{self.fps}")]
             )
         self.frame = next(self.frame_iter)
+        
+        if self.midi_path is not None:
+            self.midi_player = MidiPlayer(self.midi_path, self.multiverse_display)
+            self.midi_player.start()
 
     def loop(self, events: List, dt: float):
 
@@ -138,8 +150,18 @@ class VideoDemo(MultiverseGame):
             if self.frame_count  % 100 == 0:
                 logging.debug(f'Next video frame took {elapsed * 1000} ms')
         except StopIteration:
+            if self.midi_player is not None:
+                self.midi_player.stop()
             self.setup_video()
-                        
+    
+    def teardown(self):
+        super().teardown()
+        if self.midi_player is not None:
+            self.midi_player.stop()
+
 
     def reset(self):
+        if self.midi_player is not None:
+            self.midi_player.stop()
+            self.midi_player = None
         self.setup_video()

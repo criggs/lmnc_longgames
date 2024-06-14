@@ -12,7 +12,7 @@ from lmnc_longgames.multiverse.multiverse_game import MultiverseGame
 """
 
 
-class LifeDemo(MultiverseGame):
+class Life(MultiverseGame):
     def __init__(self, multiverse_displays):
         super().__init__("Conway's Game of Life", 60, multiverse_displays)
 

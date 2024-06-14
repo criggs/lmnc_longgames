@@ -1,5 +1,7 @@
 from pygame import USEREVENT
 
+from lmnc_longgames.util.music import midi_to_hz
+
 # Colors
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -27,7 +29,7 @@ BUTTON_B = 2
 BUTTON_RESET = 30
 BUTTON_MENU = 31
 
-BUTTON_BOUNCE_TIME_SEC = None # 0.005
+BUTTON_BOUNCE_TIME_SEC = 0.005
 
 #GPIO
 PIN_RESET_RELAY = 19
@@ -52,11 +54,7 @@ PIN_TRIGGER_OUT = 12
 TRIGGER_OUT_ON_TIME = 0.05
 
 # Notes
-
-NOTES = []
-for i in range(1,9):
-    for note in [16.35, 17.32, 18.35, 19.45, 20.60, 21.83, 23.12, 24.50, 25.96, 27.50, 29.14, 30.87]:
-        NOTES.append(round(note * i))
+NOTES = [midi_to_hz(i) for i in range(0, 8*12)]
 
 _C_MINOR_POS = [0,2,3,5,7,8,10]
 C_MINOR = []
@@ -75,4 +73,5 @@ for i, note in enumerate(NOTES):
     if note_pos in _PENTATONIC_POS:
         PENTATONIC.append(note)
 
-
+_YOUTH_8500_MIDI_NOTES = [57,57,57,57,59,55,55,55,53,55,59,60,60,59,60,60,59,60,62,64,65,64,62,60,59]
+YOUTH_8500_NOTES = [midi_to_hz(midi_note) for midi_note in _YOUTH_8500_MIDI_NOTES]
