@@ -57,6 +57,8 @@ class DoomRunner:
 
     def draw_frame(self, pixels: np.ndarray) -> None:
         #print('draw_frame in DoomRunner class called')
+        print(f'in doom - closed:{self.pixel_pipe.closed}, readable:{self.pixel_pipe.readable}, writeable:{self.pixel_pipe.writable}')
+        
         self.pixel_pipe.send(pixels)
 
     def get_key(self) -> Optional[Tuple[int, int]]:
@@ -72,12 +74,10 @@ class Cydoom(MultiverseGame):
     def __init__(self, multiverse_display):
         # TODO: Make 60+ FPS
         super().__init__("Doom", 30, multiverse_display)
-        self.pixels_parent_conn, self.pixels_child_conn = Pipe(False)
-        self.key_queue = Queue()
         self.resx = screen_width * 4
         self.resy = screen_height * 4
         self.screen_pixels = None
-        self.reset()
+        self.start_doom()
 
     def loop(self, events: List, dt: float):
         """
@@ -88,6 +88,7 @@ class Cydoom(MultiverseGame):
             dt: The delta time since the last loop iteration. This is for framerate independence.
         """
         super().loop(events, dt)
+        print(f'closed:{self.pixels_parent_conn.closed}, readable:{self.pixels_parent_conn.readable}, writeable:{self.pixels_parent_conn.writable}')
         pixels = self.pixels_parent_conn.recv()
         pixels = np.rot90(pixels)
         pixels = np.flipud(pixels)
@@ -99,8 +100,6 @@ class Cydoom(MultiverseGame):
                 self.upscale_factor, axis=0
             )
         
-        #print(f'pixels[:,:,[2,1,0]] | w:{len(pixels[:,:,[2,1,0]])} h:{len(pixels[:,:,[2,1,0]][0])} d:{len(pixels[:,:,[2,1,0]][0][0])}')
-        #print(f'screen | X:{len(pygame.surfarray.array3d(self.screen))}, Y:{len(pygame.surfarray.array3d(self.screen)[0])}, D:{len(pygame.surfarray.array3d(self.screen)[0][0])}')
         pygame.surfarray.blit_array(self.screen, pixels[:,:,[2,1,0]])
         #print(f'Done updating screen from cydoom loop')
         
@@ -142,11 +141,23 @@ class Cydoom(MultiverseGame):
         #pygame.display.flip()
 
     def reset(self):
+        super().reset()
+        self.teardown()
+        self.start_doom()
+
+    def teardown(self):
+        self.doom_process.kill()
+        print('killed Doom')
+        super().teardown()
+
+
+    def start_doom(self):
         print('Starting Doom')
         doom_class = DoomRunner()
-        doom_process = Process(target=doom_class.run_doom, args=(self.resx, self.resy, self.pixels_child_conn, self.key_queue))
-        doom_process.start()
-        print('Now running Doom')
+        self.pixels_parent_conn, self.pixels_child_conn = Pipe(False)
+        self.key_queue = Queue()
+        self.doom_process = Process(target=doom_class.run_doom, args=(self.resx, self.resy, self.pixels_child_conn, self.key_queue))
+        self.doom_process.start()
 
 
     def set_window_title(self, t: str) -> None:
